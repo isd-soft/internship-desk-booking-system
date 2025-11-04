@@ -13,8 +13,6 @@ public record DeskDTO(
         Long id,
         @NotBlank
         String deskName,
-        @NotNull
-        Integer floor,
         @NotBlank
         String zone,
         DeskType deskType,

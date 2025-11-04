@@ -2,7 +2,6 @@ CREATE SEQUENCE id_desk_seq START 1;
 CREATE TABLE desk (
                       id integer default nextval('id_desk_seq') PRIMARY KEY ,
                       desk_name VARCHAR(50) NOT NULL UNIQUE,
-                      floor INTEGER NOT NULL,
                       zone VARCHAR(100) NOT NULL,
                       type VARCHAR(20) NOT NULL DEFAULT 'SHARED',
                       status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',

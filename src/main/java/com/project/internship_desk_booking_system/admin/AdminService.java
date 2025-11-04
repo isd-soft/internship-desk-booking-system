@@ -25,7 +25,6 @@ public class AdminService {
     ){
         Desk desk = new Desk();
         desk.setDeskName(deskDto.deskName());
-        desk.setFloor(deskDto.floor());
         desk.setZone(deskDto.zone());
 
         desk.setType(
