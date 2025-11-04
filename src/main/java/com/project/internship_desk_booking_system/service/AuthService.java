@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -32,15 +34,9 @@ public class AuthService {
             );
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
 
-            String token = jwtUtill.generateToken(
-                    principal.getUsername(),
-                    principal.getRole()
-            );
-            return new LoginResponseDto(
-                    principal.getEmail(),
-                    principal.getRole(),
-                    token
-            );
+            String token = jwtUtill.generateToken(principal.getUsername(), principal.getRole());
+            return new LoginResponseDto(principal.getEmail(), principal.getRole(), token);
+
         } catch (org.springframework.security.authentication.DisabledException e) {
             throw new ExceptionResponse(HttpStatus.UNAUTHORIZED, "AUTH_USER_DISABLED", "User account is disabled", e);
         } catch (org.springframework.security.authentication.LockedException e) {
@@ -52,16 +48,22 @@ public class AuthService {
         }
     }
 
-
     public void register(RegisterCommandRequest request) {
         checkIfUsernameExists(request.getEmail());
-        User newUser = new User(request.getFirstName(), request.getLastName(), request.getEmail(), request.getRole(), passwordEncoder.encode(request.getPassword()));
+        User newUser = new User(
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail(),
+                request.getRole(),
+                passwordEncoder.encode(request.getPassword())
+        );
         userRepository.save(newUser);
     }
 
     private void checkIfUsernameExists(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new ExceptionResponse(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "Email already exists", null);
+            throw new ExceptionResponse(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS",
+                    "User with this email already exists", Map.of("email", email));
         }
     }
 }

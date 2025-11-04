@@ -1,14 +1,17 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.exception.ExceptionResponse;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +88,10 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage mime = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(
-                    mime, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+                    mime,
+                    MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+                    StandardCharsets.UTF_8.name()
+            );
 
             helper.setFrom("noreply@isd-booking.com", "ISD Booking System");
             helper.setTo(to);
@@ -93,50 +99,59 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlBody, true);
 
             mailSender.send(mime);
+
         } catch (MessagingException | java.io.UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw new ExceptionResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "EMAIL_SENDING_FAILED",
+                    "Failed to send email",
+                    Map.of(
+                            "recipient", to,
+                            "subject", subject,
+                            "error", e.getMessage()
+                    )
+            );
         }
     }
 
     private String wrap(String innerHtml) {
         String template = """
-            <div style='font-family:Segoe UI,Roboto,Arial,sans-serif;
-                        font-size:14px;line-height:1.6;color:#111;
-                        background-color:#f9f9f9;padding:24px 0'>
-              <div style='max-width:580px;margin:0 auto;
-                          background:#fff;
-                          border:1px solid #eee;
-                          border-radius:8px;
-                          box-shadow:0 2px 6px rgba(0,0,0,0.05);
-                          overflow:hidden;'>
-
-                <!-- HEADER -->
-                <div style='background:linear-gradient(135deg, #ff8a00, #ffb347);
-                            text-align:center;
-                            padding:28px 0;'>
-                  <div style='color:#fff;
-                              font-weight:700;
-                              font-size:22px;
-                              letter-spacing:0.5px;'>
-                    ISD Booking System
+                <div style='font-family:Segoe UI,Roboto,Arial,sans-serif;
+                            font-size:14px;line-height:1.6;color:#111;
+                            background-color:#f9f9f9;padding:24px 0'>
+                  <div style='max-width:580px;margin:0 auto;
+                              background:#fff;
+                              border:1px solid #eee;
+                              border-radius:8px;
+                              box-shadow:0 2px 6px rgba(0,0,0,0.05);
+                              overflow:hidden;'>
+                
+                    <!-- HEADER -->
+                    <div style='background:linear-gradient(135deg, #ff8a00, #ffb347);
+                                text-align:center;
+                                padding:28px 0;'>
+                      <div style='color:#fff;
+                                  font-weight:700;
+                                  font-size:22px;
+                                  letter-spacing:0.5px;'>
+                        ISD Booking System
+                      </div>
+                    </div>
+                
+                    <!-- BODY -->
+                    <div style='padding:28px 24px;'>
+                      %s
+                    </div>
+                
+                    <!-- FOOTER -->
+                    <div style='font-size:12px;color:#888;
+                                text-align:center;border-top:1px solid #eee;
+                                padding:16px 0;background-color:#fafafa;'>
+                      This is an automated message. Please do not reply to this email.
+                    </div>
                   </div>
                 </div>
-
-                <!-- BODY -->
-                <div style='padding:28px 24px;'>
-                  %s
-                </div>
-
-                <!-- FOOTER -->
-                <div style='font-size:12px;color:#888;
-                            text-align:center;border-top:1px solid #eee;
-                            padding:16px 0;background-color:#fafafa;'>
-                  This is an automated message. Please do not reply to this email.
-                </div>
-              </div>
-            </div>
-            """;
-
+                """;
         return String.format(template, innerHtml);
     }
 }

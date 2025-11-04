@@ -1,22 +1,29 @@
 package com.project.internship_desk_booking_system.command;
 
 import com.project.internship_desk_booking_system.enums.Role;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 public class RegisterCommandRequest {
-    @NotEmpty
+    @NotBlank(message = "First name cannot be empty")
+    @Size(min = 2, max = 40, message = "First name must be between 2 and 40 characters")
     private String firstName;
-    @NotEmpty
+
+    @NotBlank(message = "Last name cannot be empty")
+    @Size(min = 2, max = 40, message = "Last name must be between 2 and 40 characters")
     private String lastName;
-    @NotEmpty
+
+    @NotBlank(message = "Email cannot be empty")
+    @Email(message = "Email format is invalid")
     private String email;
-    @NotEmpty
+
+    @NotBlank(message = "Password cannot be empty")
+    @Size(min = 6, max = 64, message = "Password must be between 6 and 64 characters")
     private String password;
-    @NotNull
+
+    @NotNull(message = "Role is required")
     private Role role;
 }
