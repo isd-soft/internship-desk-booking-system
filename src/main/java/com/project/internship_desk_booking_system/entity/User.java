@@ -2,7 +2,9 @@ package com.project.internship_desk_booking_system.entity;
 
 import com.project.internship_desk_booking_system.enums.Role;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User {
 
@@ -39,10 +42,6 @@ public class User {
             orphanRemoval = true
     )
     private List<Favourites> favourites;
-
-    protected User() {
-
-    }
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
         this.firstName = firstName;
