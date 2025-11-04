@@ -24,7 +24,7 @@ public class Desk {
     private Long id;
 
     @Column(name = "desk_name", nullable = false, unique = true, length = 50)
-    private String deskNumber;
+    private String deskName;
 
     @Column(nullable = false)
     private Integer floor;
