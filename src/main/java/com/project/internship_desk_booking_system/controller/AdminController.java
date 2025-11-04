@@ -1,6 +1,7 @@
-package com.project.internship_desk_booking_system.admin;
+package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.DTO.DeskDTO;
+import com.project.internship_desk_booking_system.service.AdminService;
 import com.project.internship_desk_booking_system.entity.Desk;
 import jakarta.validation.Valid;
 import org.springframework.data.crossstore.ChangeSetPersister;

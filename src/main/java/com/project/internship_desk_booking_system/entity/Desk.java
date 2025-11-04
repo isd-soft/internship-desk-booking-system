@@ -1,43 +1,41 @@
 package com.project.internship_desk_booking_system.entity;
 
+import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "desk")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class Desk {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "desk_seq")
     @SequenceGenerator(
             name = "desk_seq",
-            sequenceName = "desk_id_seq",
+            sequenceName = "id_desk_seq",
             allocationSize = 1
     )
     private Long id;
 
-    @Column(name = "desk_name", nullable = false, unique = true, length = 50)
+    @Column(name = "desk_name")
     private String deskName;
 
-    @Column(nullable = false)
-    private Integer floor;
-
-    @Column(nullable = false, length = 100)
+    @Column(name = "zone")
     private String zone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "desk_type")
     private DeskType type = DeskType.SHARED;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "desk_status")
     private DeskStatus status = DeskStatus.ACTIVE;
 
     @Column(name = "is_temporarily_available", nullable = false)
@@ -48,6 +46,30 @@ public class Desk {
 
     @Column(name = "temporary_available_until")
     private LocalDateTime temporaryAvailableUntil;
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Desk desk = (Desk) o;
+        return Objects.equals(id, desk.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    public Desk(String deskName, String zone, DeskType type, DeskStatus status,
+                Boolean isTemporarilyAvailable, LocalDateTime temporaryAvailableFrom,
+                LocalDateTime temporaryAvailableUntil) {
+        this.deskName = deskName;
+        this.zone = zone;
+        this.type = type;
+        this.status = status;
+        this.isTemporarilyAvailable = isTemporarilyAvailable;
+        this.temporaryAvailableFrom = temporaryAvailableFrom;
+        this.temporaryAvailableUntil = temporaryAvailableUntil;
+    }
 
     public boolean isAvailableForBooking() {
         if (status != DeskStatus.ACTIVE) {
