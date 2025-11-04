@@ -44,6 +44,14 @@ public class Favourites {
     )
     private Desk desk;
 
+    public Favourites(
+            User user,
+            Desk desk
+    ){
+        this.user = user;
+        this.desk = desk;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
