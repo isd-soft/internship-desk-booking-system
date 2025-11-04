@@ -1,14 +1,10 @@
 package com.project.service;
 
-import com.project.entities.Booking;
+import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 public class BookingService {
@@ -18,18 +14,22 @@ public class BookingService {
     public BookingService(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
     }
-    public Booking CreateBooking(Booking booking){
-        validateBookingDays();
+
+    public
+
+    public Booking save(Booking booking) {
+        return bookingRepository.save(booking);
     }
 
-    //Validation for booking days in advance
-    public void validateBookingDays(Booking booking, int N){
+    // TODO: DACA O SA AM TIMP (optional)
+    /*//Validation for booking days in advance
+    public void validateBookingDays(Booking booking){
         LocalDate now = LocalDate.now();
-        if(LocalDate.now().isAfter(now.plusDays(N))){
+        if(LocalDate.now().isAfter(now.plusDays(6))){
             throw new RuntimeException();
         }
-    }
-    // TO-DO: DACA O SA AM TIMP
+    }*/
+    // TODO: DACA O SA AM TIMP (optional)
     /*public void validateWeeklyHours(Booking booking, int M){
         LocalDate startOfWeek = booking.getStartTime().toLocalDate().with(DayOfWeek.MONDAY);
         LocalDate endOfWeek = startOfWeek.plusDays(6);

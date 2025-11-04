@@ -1,6 +1,5 @@
-package com.project.entities;
+package com.project.internship_desk_booking_system.entity;
 
-import com.project.internship_desk_booking_system.entity.Desk;
 import jakarta.persistence.*;
 import lombok.*;
 
