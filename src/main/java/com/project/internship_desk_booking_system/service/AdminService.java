@@ -69,7 +69,6 @@ public class AdminService {
                 desk.getId())
                 .orElseThrow(ChangeSetPersister.NotFoundException::new);
         oldDesk.setDeskName(desk.getDeskName());
-        oldDesk.setFloor(desk.getFloor());
         oldDesk.setZone(desk.getZone());
         oldDesk.setType(desk.getType());
         oldDesk.setStatus(desk.getStatus());
