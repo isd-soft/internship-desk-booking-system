@@ -17,5 +17,3 @@ CREATE TABLE favourite_desks (
 
     CONSTRAINT unique_user_desk UNIQUE (user_id, desk_id)
 );
-
-CREATE INDEX idx_favourite_desks_user_id ON favourite_desks(user_id);
