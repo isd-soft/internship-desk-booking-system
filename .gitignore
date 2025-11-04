@@ -18,7 +18,6 @@ backend/out/
 *.DS_Store
 !gradle-wrapper.jar
 .gradle/
-.mvn/
 **/logs/
 **/tmp/
 **/hs_err_pid*
