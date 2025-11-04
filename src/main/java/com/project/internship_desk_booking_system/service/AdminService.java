@@ -1,9 +1,9 @@
-package com.project.internship_desk_booking_system.admin;
+package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.DTO.DeskDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
-import com.project.internship_desk_booking_system.entity.DeskStatus;
-import com.project.internship_desk_booking_system.entity.DeskType;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;

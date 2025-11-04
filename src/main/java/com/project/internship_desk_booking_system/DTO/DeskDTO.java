@@ -1,9 +1,8 @@
 package com.project.internship_desk_booking_system.DTO;
 
-import com.project.internship_desk_booking_system.entity.DeskStatus;
-import com.project.internship_desk_booking_system.entity.DeskType;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 
 import java.time.LocalDateTime;

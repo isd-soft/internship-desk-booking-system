@@ -1,4 +1,4 @@
-package com.project.repository;
+package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,7 +38,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     //find all the bookings for a specific desk
-    List<Booking> findBookingsForASpecificDesk(Long deskId, Booking status);
+    //List<Booking> findBookingsForASpecificDesk(Long deskId, Booking status);
 
     //find the future bookings for a user
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +

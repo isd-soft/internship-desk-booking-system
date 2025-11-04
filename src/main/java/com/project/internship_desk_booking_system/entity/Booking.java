@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.entity;
 
+import com.project.internship_desk_booking_system.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,12 @@ import java.util.Objects;
 @Setter
 public class Booking {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "booking_seq")
+    @SequenceGenerator(
+            name = "booking_seq",
+            sequenceName = "booking_id_seq",
+            allocationSize = 1
+    )
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

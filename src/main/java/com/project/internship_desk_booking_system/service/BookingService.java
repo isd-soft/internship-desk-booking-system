@@ -1,8 +1,7 @@
-package com.project.service;
+package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.Desk;
-import com.project.repository.BookingRepository;
+import com.project.internship_desk_booking_system.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ public class BookingService {
         this.bookingRepository = bookingRepository;
     }
 
-    public
 
     public Booking save(Booking booking) {
         return bookingRepository.save(booking);
