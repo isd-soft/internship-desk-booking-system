@@ -6,6 +6,7 @@ import com.project.internship_desk_booking_system.entity.DeskStatus;
 import com.project.internship_desk_booking_system.entity.DeskType;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -60,6 +61,24 @@ public class AdminService {
         desk.setIsTemporarilyAvailable(false);
 
         return deskRepository.save(desk);
+    }
+
+    public Desk editDesk(
+            Desk desk
+    ) throws ChangeSetPersister.NotFoundException {
+        Desk oldDesk = deskRepository.findById(
+                desk.getId())
+                .orElseThrow(ChangeSetPersister.NotFoundException::new);
+        oldDesk.setDeskName(desk.getDeskName());
+        oldDesk.setFloor(desk.getFloor());
+        oldDesk.setZone(desk.getZone());
+        oldDesk.setType(desk.getType());
+        oldDesk.setStatus(desk.getStatus());
+        oldDesk.setIsTemporarilyAvailable(desk.getIsTemporarilyAvailable());
+        oldDesk.setTemporaryAvailableFrom(desk.getTemporaryAvailableFrom());
+        oldDesk.setTemporaryAvailableUntil(desk.getTemporaryAvailableUntil());
+
+        return deskRepository.save(oldDesk);
     }
 
     public void deleteDesk(
