@@ -1,4 +1,4 @@
-package com.project.internship_desk_booking_system.DTO;
+package com.project.internship_desk_booking_system.dto;
 
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
