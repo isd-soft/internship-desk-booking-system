@@ -20,7 +20,7 @@ public class UserController {
     public ResponseEntity<BookingDTO> createBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody @Valid CreateBookingCommand command
-    ){
+    ) {
         return ResponseEntity
                 .ok(userService.createBooking(principal, command));
     }
@@ -29,7 +29,7 @@ public class UserController {
     public ResponseEntity<String> removeBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestParam Long deskId
-    ){
+    ) {
         userService.deleteBooking(
                 principal,
                 deskId);
