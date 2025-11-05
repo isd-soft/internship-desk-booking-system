@@ -173,4 +173,8 @@ public class UserService {
         }
         return true;
     }
+
+    public List<Desk> getAllDesks(){
+        return deskRepository.findAll();
+    }
 }
