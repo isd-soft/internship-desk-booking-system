@@ -11,41 +11,40 @@ import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Book;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final DeskRepository deskRepository;
 
-    @Autowired
-    public BookingService(BookingRepository bookingRepository, UserRepository userRepository, DeskRepository deskRepository) {
-        this.bookingRepository = bookingRepository;
-        this.userRepository = userRepository;
-        this.deskRepository = deskRepository;
-    }
-
-    private static final int MaxBookingDaysInAdvance = 30;
-    private static final int MaxBookingHoursPerWeek = 20;
+//    private static final int MaxBookingDaysInAdvance = 30;
+//    private static final int MaxBookingHoursPerWeek = 20;
     private static final int MinBookingHours = 1;
     private static final int MaxBookingHours = 8;
 
 
 
-    public BookingResponseDto createBooking(Long user_id, BookingCreateRequest request){
-        User user = userRepository.findById(user_id).orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Desk desk = deskRepository.findById(request.getDeskId()).orElseThrow(() -> new EntityNotFoundException("Desk not found"));
+    public BookingResponseDto createBooking(String email, BookingCreateRequest request){
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() ->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user with email " +  email));
+        Desk desk = deskRepository.findById(request.getDeskId()).orElseThrow(() ->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_DESKID_FOUND", "Cannot find desk id"));
 
         validateBookingTimes(request.getStartTime(), request.getEndTime());
         checkDeskAvailability(request.getDeskId(), request.getStartTime(), request.getEndTime());
-        checkUserAvailability(user_id, request.getStartTime(), request.getEndTime());
+        checkUserAvailability(user.getId(), request.getStartTime(), request.getEndTime());
         //validateWeeklyAvailability(user_id, request.getStartTime(), request.getEndTime());
 
         Booking booking = Booking.builder()
@@ -58,6 +57,23 @@ public class BookingService {
         Booking savedBooking = bookingRepository.save(booking);
 
         return maptoDto(savedBooking);
+    }
+
+    public void cancelBooking(String email, Long id){
+        Booking booking = bookingRepository.findById(id).orElseThrow(()->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_EMAIL_FOUND", "Cannot find booking id"));
+        if(!booking.getUser().getEmail().equals(email)){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_CANCEL_BOOKING", "Cannot find user email");
+        }
+        if(!booking.getStartTime().isBefore(LocalDateTime.now())){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before today's date and time");
+        }
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+    }
+
+    public void deleteBooking(Long id){
+        bookingRepository.deleteById(id);
     }
 
     public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime){
@@ -100,6 +116,38 @@ public class BookingService {
         }
     }
 
+
+    public List<BookingResponseDto> getUserBookings(String email){
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(()->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_EMAIL_FOUND", "Cannot find user with email " +  email));
+        List<Booking> bookings = bookingRepository.findUserBookings(
+                user.getId(),
+                LocalDateTime.now().minusYears(1),
+                LocalDateTime.now().plusYears(1)
+        );
+        return bookings.stream().map(this::maptoDto).collect(Collectors.toList());
+    }
+
+    public List<BookingResponseDto> getUpcomingBookings(String email){
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(()->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user"));
+        List<Booking> bookings = bookingRepository.findUpcomingBookingsByUserId(
+                user.getId(),
+                LocalDateTime.now()
+        );
+        return bookings.stream().map(this::maptoDto).collect(Collectors.toList());
+    }
+
+    public BookingResponseDto getBookingById(String email, Long booking_id){
+        Booking booking = bookingRepository.findById(booking_id).orElseThrow(()->
+                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_BOOKING_FOUND", "Cannot find booking"));
+        if(!booking.getUser().getEmail().equals(email)){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_NOT_AVAILABLE", "Booking is not available for user with email " +  email);
+        }
+        return maptoDto(booking);
+    }
+
+
     private BookingResponseDto maptoDto(Booking booking){
         double durationHours = Duration.between(booking.getStartTime(),booking.getEndTime()).toHours();
 
@@ -118,7 +166,7 @@ public class BookingService {
 
     //optional
 /*    private void validateWeeklyAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
-        LocalDateTime weekStart = startTime.toLocalDate().atStartOfDay().with(java.time.DayOfWeek.MONDAY);
+        LocalDateTime weekStart = sttartTime.toLocalDate().atStartOfDay().with(java.time.DayOfWeek.MONDAY);
 
         LocalDateTime weekEnd = weekStart.plusDays(7);
         List<Booking> weeklyBookings = bookingRepository.findUserBookings(user_id, weekStart, weekEnd);
