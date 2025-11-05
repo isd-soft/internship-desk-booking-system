@@ -31,11 +31,11 @@ public class Desk {
     private String zone;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "desk_type")
+    @Column(name = "type")
     private DeskType type = DeskType.SHARED;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "desk_status")
+    @Column(name = "status")
     private DeskStatus status = DeskStatus.ACTIVE;
 
     @Column(name = "is_temporarily_available", nullable = false)
