@@ -9,7 +9,6 @@ import java.util.Objects;
 @Setter
 @Entity
 @Table(name = "favourite_desks")
-@RequiredArgsConstructor
 @NoArgsConstructor
 public class Favourites {
     @Id
