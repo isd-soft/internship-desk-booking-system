@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -18,6 +21,22 @@ import java.util.NoSuchElementException;
 public class AdminService {
     private final DeskRepository deskRepository;
 
+    private void applyTemporaryAvailability(
+            Desk desk,
+            Boolean isTemporarilyAvailable,
+            LocalDateTime from,
+            LocalDateTime until
+    ){
+        boolean enabled = Boolean.TRUE.equals(isTemporarilyAvailable);
+        desk.setIsTemporarilyAvailable(enabled);
+        if(enabled){
+            desk.setTemporaryAvailableFrom(from);
+            desk.setTemporaryAvailableUntil(until);
+        } else {
+            desk.setTemporaryAvailableFrom(null);
+            desk.setTemporaryAvailableUntil(null);
+        }
+    }
     public Desk addDesk(
             DeskDTO deskDto
     ) {
@@ -35,18 +54,17 @@ public class AdminService {
                         DeskStatus.ACTIVE
                         : deskDto.deskStatus()
         );
-        desk.setIsTemporarilyAvailable(true);
-        desk.setTemporaryAvailableFrom(LocalDateTime.now());
-        desk.setTemporaryAvailableUntil(
-                LocalDateTime
-                        .now()
-                        .plusDays(20)
+        applyTemporaryAvailability(
+                desk,
+                deskDto.isTemporarilyAvailable(),
+                LocalDateTime.now(),
+                LocalDateTime.now().plusDays(20)
         );
 
         return deskRepository
                 .save(desk);
     }
-
+    //TODO Prevent deactivation of desks that are currently occupied
     @Transactional
     public Desk deactivateDesk(
             Long id
@@ -59,26 +77,51 @@ public class AdminService {
         return deskRepository.save(desk);
     }
 
-    public Desk editDesk(
-            Desk desk
-    ) throws ChangeSetPersister.NotFoundException {
-        Desk oldDesk = deskRepository.findById(
-                desk.getId())
-                .orElseThrow(ChangeSetPersister.NotFoundException::new);
-        oldDesk.setDeskName(desk.getDeskName());
-        oldDesk.setZone(desk.getZone());
-        oldDesk.setType(desk.getType());
-        oldDesk.setStatus(desk.getStatus());
-        oldDesk.setIsTemporarilyAvailable(desk.getIsTemporarilyAvailable());
-        oldDesk.setTemporaryAvailableFrom(desk.getTemporaryAvailableFrom());
-        oldDesk.setTemporaryAvailableUntil(desk.getTemporaryAvailableUntil());
 
-        return deskRepository.save(oldDesk);
+    public Desk editDesk(
+            Long id,
+            DeskUpdateDTO updates
+    ) throws ChangeSetPersister.NotFoundException {
+        Desk desk = deskRepository.findById(id)
+                .orElseThrow(ChangeSetPersister.NotFoundException::new);
+
+        if (updates.deskName() != null) {
+            desk.setDeskName(updates.deskName());
+        }
+        if (updates.zone() != null) {
+            desk.setZone(updates.zone());
+        }
+        if (updates.deskType() != null) {
+            desk.setType(updates.deskType());
+        }
+        if (updates.deskStatus() != null) {
+            desk.setStatus(updates.deskStatus());
+        }
+        /*TODO For front dont show the option to set the temporary
+            availability time if isTemporarilyAvailable is false
+        */
+
+        if (updates.isTemporarilyAvailable() != null) {
+            applyTemporaryAvailability(
+                    desk,
+                    updates.isTemporarilyAvailable(),
+                    updates.temporaryAvailableFrom() != null ?
+                            updates.temporaryAvailableFrom() : LocalDateTime.now(),
+                    updates.temporaryAvailableUntil() != null ?
+                            updates.temporaryAvailableUntil() : LocalDateTime.now().plusDays(20)
+            );
+        }
+
+        return deskRepository.save(desk);
     }
 
     public void deleteDesk(
             Long id
-    ) {
-        deskRepository.deleteById(id);
+    ){
+        deskRepository.findById(id).ifPresent(desk -> deskRepository.deleteById(id));
+    }
+
+    public List<Desk> getAllDesks(){
+        return deskRepository.findAll();
     }
 }
