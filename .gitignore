@@ -1,34 +1,68 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# === Java / Spring Boot ===
+backend/target/
+backend/.gradle/
+backend/build/
+backend/out/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# Maven / Gradle
+*.class
+*.jar
+*.war
+*.ear
 *.iml
-*.ipr
+*.log
+*.tmp
+*.bak
+*.swp
+*.idea/
+*.DS_Store
+!gradle-wrapper.jar
+.gradle/
+**/logs/
+**/tmp/
+**/hs_err_pid*
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Spring config
+backend/src/main/resources/application-*.yml
+backend/src/main/resources/application-*.properties
+backend/src/main/resources/*.env
 
-### VS Code ###
+# === Node.js / Vue ===
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.nuxt/
+frontend/.cache/
+frontend/.output/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# === OS / IDE ===
+.DS_Store
+Thumbs.db
+*.log
+*.idea/
 .vscode/
-/node_modules/
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# === Docker / Misc ===
+.env
+docker-compose.override.yml
+*.pid
+
+# === Test / Coverage ===
+**/coverage/
+**/test-output/
+**/reports/
+**/jacoco.exec
+
+# === Misc ===
+*.orig

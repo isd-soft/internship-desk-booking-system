@@ -1,8 +1,8 @@
 package com.project.internship_desk_booking_system.controller;
 
-import com.project.internship_desk_booking_system.DTO.DeskDTO;
-import com.project.internship_desk_booking_system.service.AdminService;
+import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +15,8 @@ public class AdminController {
     private final AdminService adminService;
 
     public AdminController(
-          AdminService adminService
-    ){
+            AdminService adminService
+    ) {
         this.adminService = adminService;
     }
 
@@ -24,18 +24,20 @@ public class AdminController {
     @PostMapping("/addDesk")
     public ResponseEntity<Desk> addDesk(
             @RequestBody @Valid DeskDTO deskDTO
-    ){
+    ) {
         return ResponseEntity
                 .ok(adminService.addDesk(deskDTO));
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/deactivateDesk/{id}")
     public ResponseEntity<Desk> deactivateDesk(
             @PathVariable("id") Long deskId
-    ){
+    ) {
         return ResponseEntity
                 .ok(adminService.deactivateDesk(deskId));
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/edit")
     public ResponseEntity<Desk> editDesk(
