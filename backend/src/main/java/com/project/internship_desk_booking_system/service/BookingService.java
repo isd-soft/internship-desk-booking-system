@@ -1,22 +1,21 @@
 package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
+import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
+import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Book;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +33,8 @@ public class BookingService {
     private static final int MinBookingHours = 1;
     private static final int MaxBookingHours = 8;
 
+    private final BookingMapper bookingMapper;
+    private final EmailService emailService;
 
 
     public BookingResponseDto createBooking(String email, BookingCreateRequest request){
@@ -117,16 +118,20 @@ public class BookingService {
     }
 
 
-    public List<BookingResponseDto> getUserBookings(String email){
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(()->
-                new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_EMAIL_FOUND", "Cannot find user with email " +  email));
-        List<Booking> bookings = bookingRepository.findUserBookings(
-                user.getId(),
-                LocalDateTime.now().minusYears(1),
-                LocalDateTime.now().plusYears(1)
-        );
-        return bookings.stream().map(this::maptoDto).collect(Collectors.toList());
+    public List<BookingResponse> getAllBookings(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "USER_NOT_FOUND",
+                        "Cannot find user"
+                ));
+
+        return user.getBookings()
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
     }
+
 
     public List<BookingResponseDto> getUpcomingBookings(String email){
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(()->
