@@ -1,37 +1,141 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.command.BookingCreateRequest;
+import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.exception.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
+import com.project.internship_desk_booking_system.repository.DeskRepository;
+import com.project.internship_desk_booking_system.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class BookingService {
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final DeskRepository deskRepository;
 
     @Autowired
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, UserRepository userRepository, DeskRepository deskRepository) {
         this.bookingRepository = bookingRepository;
+        this.userRepository = userRepository;
+        this.deskRepository = deskRepository;
+    }
+
+    private static final int MaxBookingDaysInAdvance = 30;
+    private static final int MaxBookingHoursPerWeek = 20;
+    private static final int MinBookingHours = 1;
+    private static final int MaxBookingHours = 8;
+
+
+
+    public BookingResponseDto createBooking(Long user_id, BookingCreateRequest request){
+        User user = userRepository.findById(user_id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        Desk desk = deskRepository.findById(request.getDeskId()).orElseThrow(() -> new EntityNotFoundException("Desk not found"));
+
+        validateBookingTimes(request.getStartTime(), request.getEndTime());
+        checkDeskAvailability(request.getDeskId(), request.getStartTime(), request.getEndTime());
+        checkUserAvailability(user_id, request.getStartTime(), request.getEndTime());
+        //validateWeeklyAvailability(user_id, request.getStartTime(), request.getEndTime());
+
+        Booking booking = Booking.builder()
+                .user(user)
+                .desk(desk)
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .status(BookingStatus.CONFIRMED)
+                .build();
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return maptoDto(savedBooking);
+    }
+
+    public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime){
+        LocalDateTime now = LocalDateTime.now();
+
+        if(startTime.isBefore(now)){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before today's date and time");
+        }
+        if(endTime.isBefore(startTime)){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
+        }
+        long hours = Duration.between(startTime,endTime).toHours();
+
+        if(hours > MaxBookingHours){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking more than 8 Hours");
+        }
+        if(hours < MinBookingHours){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking less than 1 Hour");
+        }
+    }
+
+    public void checkDeskAvailability(Long desk_id, LocalDateTime startTime, LocalDateTime endTime){
+        List<Booking> overLappingBookings = bookingRepository.findOverlappingBookings(
+                desk_id,
+                startTime,
+                endTime
+        );
+
+        if(!overLappingBookings.isEmpty()){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_NOT_AVAILABLE", "Desk is not available for booking due to overlapping time");
+        }
+    }
+    public void checkUserAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime){
+        List<Booking> userBookings = bookingRepository.findUserBookings(
+                user_id,
+                startTime,
+                endTime);
+        if(!userBookings.isEmpty()){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE", "Already have a booking in this time period");
+        }
+    }
+
+    private BookingResponseDto maptoDto(Booking booking){
+        double durationHours = Duration.between(booking.getStartTime(),booking.getEndTime()).toHours();
+
+        return BookingResponseDto.builder()
+                .id(booking.getId())
+                .userId(booking.getUser().getId())
+                .deskId(booking.getDesk().getId())
+                .deskName(booking.getDesk().getDeskName())
+                .startTime(booking.getStartTime())
+                .endTime(booking.getEndTime())
+                .status(booking.getStatus().name())
+                .durationHours(durationHours)
+                .build();
     }
 
 
-    public Booking save(Booking booking) {
-        return bookingRepository.save(booking);
-    }
+    //optional
+/*    private void validateWeeklyAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
+        LocalDateTime weekStart = startTime.toLocalDate().atStartOfDay().with(java.time.DayOfWeek.MONDAY);
 
-    // TODO: DACA O SA AM TIMP (optional)
-    /*//Validation for booking days in advance
-    public void validateBookingDays(Booking booking){
-        LocalDate now = LocalDate.now();
-        if(LocalDate.now().isAfter(now.plusDays(6))){
-            throw new RuntimeException();
+        LocalDateTime weekEnd = weekStart.plusDays(7);
+        List<Booking> weeklyBookings = bookingRepository.findUserBookings(user_id, weekStart, weekEnd);
+        long totalHours = weeklyBookings.stream().
+                mapToLong(b->Duration.between(b.getStartTime(),b.getEndTime()).toHours()).sum();
+        long todaysHours = Duration.between(startTime,endTime).toHours();
+        if(totalHours + todaysHours > MaxBookingHoursPerWeek){
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Already reached maximum amount for this month");
         }
     }*/
-    // TODO: DACA O SA AM TIMP (optional)
-    /*public void validateWeeklyHours(Booking booking, int M){
-        LocalDate startOfWeek = booking.getStartTime().toLocalDate().with(DayOfWeek.MONDAY);
-        LocalDate endOfWeek = startOfWeek.plusDays(6);
+    //optional fr-26
+/*    private void validateAdvanceBookingLimit(LocalDateTime startTime) {
+        LocalDateTime maxAllowedDate = LocalDateTime.now().plusDays(MaxBookingDaysInAdvance);
 
-        List<Booking> weeklyBookings;
+        if (startTime.isAfter(maxAllowedDate)) {
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot create booking for more than 30 days in advance");
+        }
     }*/
+
 }
