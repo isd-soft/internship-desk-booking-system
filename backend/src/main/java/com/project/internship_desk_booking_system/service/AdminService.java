@@ -5,15 +5,17 @@ import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.exception.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -37,7 +39,7 @@ public class AdminService {
             desk.setTemporaryAvailableUntil(null);
         }
     }
-    public Desk addDesk(
+    public DeskDTO addDesk(
             DeskDTO deskDto
     ) {
         Desk desk = new Desk();
@@ -61,24 +63,44 @@ public class AdminService {
                 LocalDateTime.now().plusDays(20)
         );
 
-        return deskRepository
-                .save(desk);
+        deskRepository.save(desk);
+        return new DeskDTO(
+                desk.getId(),
+                desk.getDeskName(),
+                desk.getZone(),
+                desk.getType(),
+                desk.getStatus(),
+                desk.getIsTemporarilyAvailable(),
+                desk.getTemporaryAvailableFrom(),
+                desk.getTemporaryAvailableUntil()
+        );
     }
     //TODO Prevent deactivation of desks that are currently occupied
     @Transactional
-    public Desk deactivateDesk(
+    public DeskDTO deactivateDesk(
             Long id
     ) {
         Desk desk = deskRepository.findById(id)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
 
         desk.setIsTemporarilyAvailable(false);
+        desk.setStatus(DeskStatus.DEACTIVATED);
 
-        return deskRepository.save(desk);
+        deskRepository.save(desk);
+        return new DeskDTO(
+                desk.getId(),
+                desk.getDeskName(),
+                desk.getZone(),
+                desk.getType(),
+                desk.getStatus(),
+                desk.getIsTemporarilyAvailable(),
+                desk.getTemporaryAvailableFrom(),
+                desk.getTemporaryAvailableUntil()
+        );
     }
 
-
-    public Desk editDesk(
+    @Transactional
+    public DeskDTO editDesk(
             Long id,
             DeskUpdateDTO updates
     ) throws ChangeSetPersister.NotFoundException {
@@ -112,7 +134,18 @@ public class AdminService {
             );
         }
 
-        return deskRepository.save(desk);
+        deskRepository.save(desk);
+
+        return new DeskDTO(
+                desk.getId(),
+                desk.getDeskName(),
+                desk.getZone(),
+                desk.getType(),
+                desk.getStatus(),
+                desk.getIsTemporarilyAvailable(),
+                desk.getTemporaryAvailableFrom(),
+                desk.getTemporaryAvailableUntil()
+        );
     }
 
     public void deleteDesk(
@@ -121,7 +154,22 @@ public class AdminService {
         deskRepository.findById(id).ifPresent(desk -> deskRepository.deleteById(id));
     }
 
-    public List<Desk> getAllDesks(){
-        return deskRepository.findAll();
+    public List<DeskDTO> getAllDesks(){
+        List<Desk> desks = deskRepository.findAll();
+        List<DeskDTO> deskDTOList = new ArrayList<>();
+        for(Desk desk : desks){
+            DeskDTO deskDTO = new DeskDTO(
+                    desk.getId(),
+                    desk.getDeskName(),
+                    desk.getZone(),
+                    desk.getType(),
+                    desk.getStatus(),
+                    desk.getIsTemporarilyAvailable(),
+                    desk.getTemporaryAvailableFrom(),
+                    desk.getTemporaryAvailableUntil()
+            );
+            deskDTOList.add(deskDTO);
+        }
+        return deskDTOList;
     }
 }
