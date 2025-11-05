@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,17 +25,23 @@ public class User {
             allocationSize = 1
     )
     private Long id;
+
     @Column(name = "first_name")
     private String firstName;
+
     @Column(name = "last_name")
     private String lastName;
+
     @Column(name = "email")
     private String email;
+
     @Column(name = "password_hash")
     private String passwordHash;
+
     @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Role role;
+
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
@@ -58,6 +65,7 @@ public class User {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
         return Objects.equals(id, user.id);
@@ -68,4 +76,3 @@ public class User {
         return Objects.hashCode(id);
     }
 }
-
