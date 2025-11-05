@@ -50,7 +50,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.editDesk(deskId, updates));
     }
 
-
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
     public ResponseEntity<List<Desk>> getAllDesks(){
