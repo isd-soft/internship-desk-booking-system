@@ -51,13 +51,13 @@ public class AdminController {
     }
 
 
-    //@PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
     public ResponseEntity<List<Desk>> getAllDesks(){
         return ResponseEntity.ok(adminService.getAllDesks());
     }
 
-    //@PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/desk/{id}")
     public ResponseEntity<Void> deleteDesk(
             @PathVariable("id") Long deskId
