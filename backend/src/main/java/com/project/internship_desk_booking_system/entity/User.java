@@ -13,7 +13,6 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User {
 
@@ -42,6 +41,10 @@ public class User {
             orphanRemoval = true
     )
     private List<Favourites> favourites;
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Booking> bookings;
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
         this.firstName = firstName;
@@ -51,6 +54,7 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
+    public User(){}
 
     @Override
     public boolean equals(Object o) {
