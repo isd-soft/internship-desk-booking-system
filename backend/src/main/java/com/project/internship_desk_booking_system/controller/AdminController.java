@@ -46,7 +46,6 @@ public class AdminController {
                 .ok(adminService.editDesk(deskId, updates));
     }
 
-
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
     public ResponseEntity<List<DeskDTO>> getAllDesks(){
