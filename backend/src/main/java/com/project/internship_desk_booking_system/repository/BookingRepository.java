@@ -1,7 +1,9 @@
 package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -75,4 +77,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "AND b.endTime > :now " +
             "ORDER BY b.startTime ASC")
     List<Booking> findAllActiveBookings(@Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query(
+            value = """
+                    DELETE FROM booking WHERE
+                    id = :deskId AND
+                    user_id = :userId""",
+            nativeQuery = true)
+    void deleteBookingByDeskId(
+            @Param("deskId") Long deskId,
+            @Param("userId") Long userId);
 }
