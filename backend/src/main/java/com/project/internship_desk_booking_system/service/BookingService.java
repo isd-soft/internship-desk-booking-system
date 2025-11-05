@@ -1,19 +1,26 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.command.BookingResponse;
+import com.project.internship_desk_booking_system.dto.BookingResponse;
 import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.project.internship_desk_booking_system.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.ErrorResponseException;
+
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class BookingService {
     private final BookingRepository bookingRepository;
-
-    @Autowired
-    public BookingService(BookingRepository bookingRepository) {
-        this.bookingRepository = bookingRepository;
-    }
-
+    private final BookingMapper bookingMapper;
+    private final UserRepository userRepository;
 
     public Booking save(Booking booking) {
         return bookingRepository.save(booking);
@@ -34,4 +41,13 @@ public class BookingService {
 
         List<Booking> weeklyBookings;
     }*/
+
+
+//    public List<BookingResponse> getUserBookings(String email) {
+//        List<Booking> bookings = bookingRepository.findAllByUserEmail(email).orElseThrow((() -> new ExceptionResponse(HttpStatus.NOT_FOUND,"USER_NOT_FOUND","user not found");
+//        return bookings.stream()
+//                .map(bookingMapper::toResponse)
+//                .toList();
+//    }
+
 }
