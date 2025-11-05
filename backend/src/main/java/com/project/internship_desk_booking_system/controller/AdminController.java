@@ -2,9 +2,9 @@ package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,13 +14,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
-@RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
 
+    public AdminController(
+            AdminService adminService
+    ) {
+        this.adminService = adminService;
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/addDesk")
-    public ResponseEntity<DeskDTO> addDesk(
+    public ResponseEntity<Desk> addDesk(
             @RequestBody @Valid DeskDTO deskDTO
     ) {
         return ResponseEntity
@@ -29,7 +34,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/deactivateDesk/{id}")
-    public ResponseEntity<DeskDTO> deactivateDesk(
+    public ResponseEntity<Desk> deactivateDesk(
             @PathVariable("id") Long deskId
     ) {
         return ResponseEntity
@@ -38,18 +43,17 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/edit/desk/{id}")
-    public ResponseEntity<DeskDTO> editDesk(
+    public ResponseEntity<Desk> editDesk(
             @PathVariable("id") Long deskId,
             @RequestBody DeskUpdateDTO updates
     ) throws ChangeSetPersister.NotFoundException {
-        return ResponseEntity
-                .ok(adminService.editDesk(deskId, updates));
+        return ResponseEntity.ok(adminService.editDesk(deskId, updates));
     }
 
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
-    public ResponseEntity<List<DeskDTO>> getAllDesks(){
+    public ResponseEntity<List<Desk>> getAllDesks(){
         return ResponseEntity.ok(adminService.getAllDesks());
     }
 
