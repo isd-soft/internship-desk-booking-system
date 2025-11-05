@@ -4,7 +4,7 @@ CREATE TABLE desk (
                       desk_name VARCHAR(50) NOT NULL UNIQUE,
                       zone VARCHAR(100) NOT NULL,
                       type VARCHAR(20) NOT NULL DEFAULT 'SHARED',
-                      status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+                      status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'`,
                       is_temporarily_available BOOLEAN NOT NULL DEFAULT false,
                       temporary_available_from TIMESTAMP,
                       temporary_available_until TIMESTAMP,

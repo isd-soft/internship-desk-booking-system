@@ -14,7 +14,6 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 public class User {
 
@@ -48,7 +47,11 @@ public class User {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<FavouriteDesks> favourites = new ArrayList<>();
+    private List<Favourites> favourites;
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Booking> bookings;
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
         this.firstName = firstName;
@@ -57,6 +60,8 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
     }
+
+    public User(){}
 
     @Override
     public boolean equals(Object o) {

@@ -71,20 +71,4 @@ public class Desk {
         this.temporaryAvailableUntil = temporaryAvailableUntil;
     }
 
-    public boolean isAvailableForBooking() {
-        if (status != DeskStatus.ACTIVE) {
-            return false;
-        }
-        if (type == DeskType.SHARED) {
-            return true;
-        }
-        if (type == DeskType.ASSIGNED) {
-            return isTemporarilyAvailable
-                    && temporaryAvailableFrom != null
-                    && temporaryAvailableUntil != null
-                    && LocalDateTime.now().isAfter(temporaryAvailableFrom)
-                    && LocalDateTime.now().isBefore(temporaryAvailableUntil);
-        }
-        return false;
-    }
 }

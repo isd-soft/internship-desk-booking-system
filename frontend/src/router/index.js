@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
-
+import Dashboard from "../components/SidePanel.vue"
 const routes = [
   {
     path: "/",
@@ -10,6 +10,11 @@ const routes = [
     path: "/login",
     name: "Login",
     component: LoginPage,
+  },
+    {
+    path: "/dashboard",
+    name: "Dashboard",
+    component: Dashboard,
   },
 ];
 
