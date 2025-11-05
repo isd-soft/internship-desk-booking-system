@@ -4,11 +4,11 @@
 
     public interface EmailService {
 
-        void sendBookingConfirmationEmail(String toEmail, Long bookingId, String location, OffsetDateTime dateTime);
+        void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
-        void sendCancelledBookingEmail(String email, String location, OffsetDateTime dateTime);
+        void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
-        void sendImportantDeskRelatedEmail(String email, String location, OffsetDateTime dateTime);
+        void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
 
     }
