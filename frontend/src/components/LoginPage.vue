@@ -42,8 +42,7 @@
               class="logo-img"
             />
           </div>
-          <h1 class="welcome-text mt-4">Welcome to ISD Desk System
-</h1>
+          <h1 class="welcome-text mt-4">Welcome to ISD Desk System</h1>
           <p class="welcome-subtitle">Please sign in to continue.</p>
         </div>
 
@@ -110,6 +109,13 @@
             </v-btn>
 
             <div class="text-center mt-6">
+              <p class="helper-text">
+                Don't have an account?
+                <a href="/register" class="register-link">Sign up here</a>
+              </p>
+            </div>
+
+            <div class="text-center mt-4">
               <p class="helper-text">
                 <v-icon size="16" class="mr-1">mdi-shield-check</v-icon>
                 Secure authentication via ISD system
@@ -183,7 +189,7 @@ const handleLogout = async () => {
     message: "Logging out...",
     color: "info",
   };
-  
+
   setTimeout(async () => {
     await logout(router);
     isUserAuthenticated.value = false;
@@ -302,7 +308,8 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   33% {
@@ -380,7 +387,8 @@ const handleLogin = async () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.5;
   }
@@ -494,6 +502,19 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   gap: 4px;
+}
+
+.register-link {
+  color: #ff9800;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.register-link:hover {
+  color: #f57c00;
+  text-decoration: underline;
 }
 
 .custom-snackbar {

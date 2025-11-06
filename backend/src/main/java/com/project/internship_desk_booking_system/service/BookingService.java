@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -172,23 +173,15 @@ public class BookingService {
         log.debug("User id: {} is available for booking", user_id);
     }
 
-    public List<BookingResponseDto> getUserBookings(String email) {
-        log.info("Fetching all bookings for user: {}", email);
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getUserBookings(String email) {
 
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
-            log.error("User not found with email: {}", email);
-            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_EMAIL_FOUND", "Cannot find user with email " + email);
-        });
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User does not exist"));
 
-        List<Booking> bookings = bookingRepository.findUserBookings(
-                user.getId(),
-                LocalDateTime.now().minusYears(1),
-                LocalDateTime.now().plusYears(1)
-        );
+        List<Booking> bookings = bookingRepository.findBookingsByUserOrderByStartTimeDesc(user);
 
-        log.info("Found {} bookings for user: {}", bookings.size(), email);
         return bookings.stream().
-                map(bookingMapper::maptoDto)
+                map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
 

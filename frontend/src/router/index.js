@@ -6,8 +6,9 @@ import { isAuthenticated } from "../utils/auth";
 
 const routes = [
   { path: "/", redirect: "/login" },
+
   { path: "/login", name: "Login", component: LoginPage },
-    { path: "/register", name: "Register", component: RegistrationPage },
+  { path: "/register", name: "Register", component: RegistrationPage },
 
   { path: "/dashboard", name: "Dashboard", component: Dashboard },
 ];
@@ -18,23 +19,15 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const authenticated = isAuthenticated();
+  const isAuth = isAuthenticated();
+  const publicPages = ["/login", "/register"];
+  const triesToAccessPublic = publicPages.includes(to.path);
 
-  if (to.path === "/login" || to.path === "/register") {
-    if (authenticated && to.path === "/login") {
-      next("/dashboard");
-    } else {
-      next();
-    }
-    return;
-  }
+  if (!isAuth && !triesToAccessPublic) return next("/login");
 
-  if (!authenticated) {
-    next("/login");
-  } else {
-    next();
-  }
+  if (isAuth && triesToAccessPublic) return next("/dashboard");
+
+  next();
 });
-
 
 export default router;

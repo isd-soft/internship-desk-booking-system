@@ -117,7 +117,9 @@
                 :type="showConfirmPassword ? 'text' : 'password'"
                 prepend-inner-icon="mdi-lock-check-outline"
                 :append-inner-icon="
-                  showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
+                  showConfirmPassword
+                    ? 'mdi-eye-off-outline'
+                    : 'mdi-eye-outline'
                 "
                 @click:append-inner="showConfirmPassword = !showConfirmPassword"
                 variant="outlined"
@@ -258,22 +260,21 @@ const handleRegister = async () => {
       lastName: lastName.value,
       email: email.value,
       password: password.value,
+      confirmPassword: confirmPassword.value,
     };
-    
-    const response = await api.post("/auth/register", payload);
 
-    if (response.data) {
-      snackbar.value = {
-        show: true,
-        message: "Account created successfully! Redirecting to login...",
-        color: "success",
-      };
+    const response = await api.post("auth/register", payload);
 
-      setTimeout(() => {
-        showCard.value = false;
-        setTimeout(() => router.push("/login"), 400);
-      }, 1500);
-    }
+    snackbar.value = {
+      show: true,
+      message: "Account created successfully! Redirecting to login...",
+      color: "success",
+    };
+
+    setTimeout(() => {
+      showCard.value = false;
+      setTimeout(() => router.push("/login"), 400);
+    }, 1500);
   } catch (error) {
     snackbar.value = {
       show: true,
@@ -346,7 +347,8 @@ const handleRegister = async () => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   33% {
@@ -408,7 +410,8 @@ const handleRegister = async () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.5;
   }

@@ -69,7 +69,6 @@ public class EmailServiceImpl implements EmailService {
                     <li><strong>Date:</strong> %s</li>
                     <li><strong>Time:</strong> %s</li>
                 </ul>
-                <p>We look forward to seeing you!</p>
                 <p>If you have any questions, please contact our support team.</p>
                 """.formatted(bookingId, deskName, zone, formattedDate, formattedTime);
 
