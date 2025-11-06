@@ -1,24 +1,8 @@
 <template>
   <v-container
     fluid
-    class="login-container d-flex align-center justify-center pa-0"
+    class="register-container d-flex align-center justify-center pa-0"
   >
-    <transition name="slide-down">
-      <v-btn
-        v-if="isUserAuthenticated"
-        icon
-        variant="flat"
-        class="logout-fab"
-        color="rgba(255, 255, 255, 0.95)"
-        size="large"
-        elevation="4"
-        @click="handleLogout"
-      >
-        <v-icon color="orange-darken-2">mdi-logout</v-icon>
-        <v-tooltip activator="parent" location="left">Logout</v-tooltip>
-      </v-btn>
-    </transition>
-
     <div class="bg-decoration">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
@@ -28,8 +12,8 @@
     <transition name="fade">
       <v-card
         v-if="showCard"
-        class="login-card elevation-12"
-        max-width="480px"
+        class="register-card elevation-12"
+        max-width="520px"
         width="100%"
         rounded="xl"
       >
@@ -42,9 +26,8 @@
               class="logo-img"
             />
           </div>
-          <h1 class="welcome-text mt-4">Welcome to ISD Desk System
-</h1>
-          <p class="welcome-subtitle">Please sign in to continue.</p>
+          <h1 class="welcome-text mt-4">Create Your Account</h1>
+          <p class="welcome-subtitle">Join the ISD Desk System today.</p>
         </div>
 
         <v-card-text class="px-8 pb-8">
@@ -52,27 +35,60 @@
             ref="form"
             v-model="valid"
             lazy-validation
-            @submit.prevent="handleLogin"
+            @submit.prevent="handleRegister"
           >
+            <div class="input-group mb-4">
+              <label class="input-label">First Name</label>
+              <v-text-field
+                v-model="firstName"
+                placeholder="John"
+                prepend-inner-icon="mdi-account-outline"
+                type="text"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                :rules="firstNameRules"
+                color="orange-darken-2"
+                autocomplete="given-name"
+                class="modern-input"
+              />
+            </div>
+
+            <div class="input-group mb-4">
+              <label class="input-label">Last Name</label>
+              <v-text-field
+                v-model="lastName"
+                placeholder="Doe"
+                prepend-inner-icon="mdi-account-outline"
+                type="text"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                :rules="lastNameRules"
+                color="orange-darken-2"
+                autocomplete="family-name"
+                class="modern-input"
+              />
+            </div>
+
             <div class="input-group mb-4">
               <label class="input-label">Email Address</label>
               <v-text-field
-                v-model="username"
+                v-model="email"
                 placeholder="you@example.com"
                 prepend-inner-icon="mdi-email-outline"
                 type="email"
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
-                :rules="usernameRules"
+                :rules="emailRules"
                 color="orange-darken-2"
-                autocomplete="username"
+                autocomplete="email"
                 class="modern-input"
-                @keyup.enter="handleLogin"
               />
             </div>
 
-            <div class="input-group mb-6">
+            <div class="input-group mb-4">
               <label class="input-label">Password</label>
               <v-text-field
                 v-model="password"
@@ -88,31 +104,58 @@
                 rounded="lg"
                 :rules="passwordRules"
                 color="orange-darken-2"
-                autocomplete="current-password"
+                autocomplete="new-password"
                 class="modern-input"
-                @keyup.enter="handleLogin"
+              />
+            </div>
+
+            <div class="input-group mb-6">
+              <label class="input-label">Confirm Password</label>
+              <v-text-field
+                v-model="confirmPassword"
+                placeholder="Confirm your password"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                prepend-inner-icon="mdi-lock-check-outline"
+                :append-inner-icon="
+                  showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
+                "
+                @click:append-inner="showConfirmPassword = !showConfirmPassword"
+                variant="outlined"
+                density="comfortable"
+                rounded="lg"
+                :rules="confirmPasswordRules"
+                color="orange-darken-2"
+                autocomplete="new-password"
+                class="modern-input"
               />
             </div>
 
             <v-btn
               block
               type="button"
-              class="login-btn text-white font-weight-bold"
+              class="register-btn text-white font-weight-bold"
               size="x-large"
               rounded="lg"
               elevation="0"
               :loading="isLoading"
               :disabled="isLoading"
-              @click="handleLogin"
+              @click="handleRegister"
             >
-              <v-icon left class="mr-2">mdi-login</v-icon>
-              Sign In
+              <v-icon left class="mr-2">mdi-account-plus</v-icon>
+              Create Account
             </v-btn>
 
             <div class="text-center mt-6">
               <p class="helper-text">
+                Already have an account?
+                <a href="/login" class="login-link">Sign in here</a>
+              </p>
+            </div>
+
+            <div class="text-center mt-4">
+              <p class="helper-text">
                 <v-icon size="16" class="mr-1">mdi-shield-check</v-icon>
-                Secure authentication via ISD system
+                Your information is secure with us
               </p>
             </div>
           </v-form>
@@ -146,20 +189,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
-import { logout, isAuthenticated } from "../utils/auth";
 
 const router = useRouter();
 const valid = ref(false);
-const username = ref("");
+const firstName = ref("");
+const lastName = ref("");
+const email = ref("");
 const password = ref("");
+const confirmPassword = ref("");
 const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 const form = ref(null);
 const showCard = ref(true);
 const isLoading = ref(false);
-const isUserAuthenticated = ref(false);
 
 const snackbar = ref({
   show: false,
@@ -167,37 +212,40 @@ const snackbar = ref({
   color: "error",
 });
 
-const usernameRules = [
+const firstNameRules = [
+  (v) => !!v || "First name is required",
+  (v) => (v && v.length >= 2) || "First name must be at least 2 characters",
+  (v) => (v && v.length <= 40) || "First name must not exceed 40 characters",
+];
+
+const lastNameRules = [
+  (v) => !!v || "Last name is required",
+  (v) => (v && v.length >= 2) || "Last name must be at least 2 characters",
+  (v) => (v && v.length <= 40) || "Last name must not exceed 40 characters",
+];
+
+const emailRules = [
   (v) => !!v || "Email is required",
   (v) => /.+@.+\..+/.test(v) || "Email format is invalid",
 ];
-const passwordRules = [(v) => !!v || "Password is required"];
 
-onMounted(() => {
-  isUserAuthenticated.value = isAuthenticated();
-});
+const passwordRules = [
+  (v) => !!v || "Password is required",
+  (v) => (v && v.length >= 6) || "Password must be at least 6 characters",
+  (v) => (v && v.length <= 64) || "Password must not exceed 64 characters",
+];
 
-const handleLogout = async () => {
-  snackbar.value = {
-    show: true,
-    message: "Logging out...",
-    color: "info",
-  };
-  
-  setTimeout(async () => {
-    await logout(router);
-    isUserAuthenticated.value = false;
-    username.value = "";
-    password.value = "";
-  }, 500);
-};
+const confirmPasswordRules = [
+  (v) => !!v || "Please confirm your password",
+  (v) => v === password.value || "Passwords do not match",
+];
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   const { valid: isValid } = await form.value.validate();
   if (!isValid) {
     snackbar.value = {
       show: true,
-      message: "Please fill in all required fields.",
+      message: "Please fill in all required fields correctly.",
       color: "error",
     };
     return;
@@ -205,37 +253,33 @@ const handleLogin = async () => {
 
   isLoading.value = true;
   try {
-    const payload = { email: username.value, password: password.value };
-    const response = await api.post("/auth/login", payload);
+    const payload = {
+      firstName: firstName.value,
+      lastName: lastName.value,
+      email: email.value,
+      password: password.value,
+    };
+    
+    const response = await api.post("/auth/register", payload);
 
-    if (response.data?.token) {
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("email", response.data.email);
-      localStorage.setItem("role", response.data.role);
-
+    if (response.data) {
       snackbar.value = {
         show: true,
-        message: "Successfully logged in!",
+        message: "Account created successfully! Redirecting to login...",
         color: "success",
       };
 
       setTimeout(() => {
         showCard.value = false;
-        setTimeout(() => router.push("/dashboard"), 400);
+        setTimeout(() => router.push("/login"), 400);
       }, 1500);
-    } else {
-      snackbar.value = {
-        show: true,
-        message: "Unexpected response from server.",
-        color: "error",
-      };
     }
   } catch (error) {
     snackbar.value = {
       show: true,
       message:
         error.response?.data?.message ||
-        "Invalid email or password. Please try again.",
+        "Registration failed. Please try again.",
       color: "error",
     };
   } finally {
@@ -252,7 +296,7 @@ const handleLogin = async () => {
     sans-serif;
 }
 
-.login-container {
+.register-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #fff5ed 0%, #ffffff 50%, #fff8f0 100%);
   position: relative;
@@ -313,23 +357,7 @@ const handleLogin = async () => {
   }
 }
 
-.logout-fab {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 152, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.logout-fab:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
-  border-color: rgba(255, 152, 0, 0.4);
-}
-
-.login-card {
+.register-card {
   position: relative;
   z-index: 1;
   background: rgba(255, 255, 255, 0.98);
@@ -340,7 +368,7 @@ const handleLogin = async () => {
   animation: slideUp 0.6s ease;
 }
 
-.login-card:hover {
+.register-card:hover {
   box-shadow: 0 24px 72px rgba(255, 152, 0, 0.2);
   transform: translateY(-4px);
 }
@@ -444,7 +472,7 @@ const handleLogin = async () => {
   opacity: 1;
 }
 
-.login-btn {
+.register-btn {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   font-weight: 700;
   height: 56px !important;
@@ -457,7 +485,7 @@ const handleLogin = async () => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.login-btn::before {
+.register-btn::before {
   content: "";
   position: absolute;
   top: 0;
@@ -473,16 +501,16 @@ const handleLogin = async () => {
   transition: left 0.5s;
 }
 
-.login-btn:hover::before {
+.register-btn:hover::before {
   left: 100%;
 }
 
-.login-btn:hover {
+.register-btn:hover {
   box-shadow: 0 8px 28px rgba(255, 152, 0, 0.45);
   transform: translateY(-2px);
 }
 
-.login-btn:active {
+.register-btn:active {
   transform: translateY(0);
 }
 
@@ -494,6 +522,19 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   gap: 4px;
+}
+
+.login-link {
+  color: #ff9800;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.login-link:hover {
+  color: #f57c00;
+  text-decoration: underline;
 }
 
 .custom-snackbar {
@@ -514,17 +555,6 @@ const handleLogin = async () => {
   opacity: 0;
 }
 
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-down-enter-from,
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -537,7 +567,7 @@ const handleLogin = async () => {
 }
 
 @media (max-width: 768px) {
-  .login-card {
+  .register-card {
     margin: 20px;
     max-width: calc(100% - 40px);
   }
@@ -548,11 +578,6 @@ const handleLogin = async () => {
 
   .welcome-text {
     font-size: 24px;
-  }
-
-  .logout-fab {
-    top: 16px;
-    right: 16px;
   }
 
   .circle-1 {
@@ -567,7 +592,7 @@ const handleLogin = async () => {
 }
 
 @media (max-width: 480px) {
-  .login-card {
+  .register-card {
     margin: 16px;
     padding: 0;
   }
@@ -589,7 +614,7 @@ const handleLogin = async () => {
     padding: 24px !important;
   }
 
-  .login-btn {
+  .register-btn {
     height: 52px !important;
     font-size: 15px;
   }

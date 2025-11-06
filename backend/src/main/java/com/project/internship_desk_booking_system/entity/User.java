@@ -53,10 +53,10 @@ public class User {
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
 
-    public User(String firstName, String lastName, String email, Role role, String passwordHash) {
+    public User(String firstName, String lastName, String email, String passwordHash) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.role = role;
+        this.role = Role.USER;
         this.email = email;
         this.passwordHash = passwordHash;
     }
