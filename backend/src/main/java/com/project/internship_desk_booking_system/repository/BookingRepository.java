@@ -78,4 +78,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     void deleteBookingByDeskId(
             @Param("deskId") Long deskId,
             @Param("userId") Long userId);
+
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.desk.id = :deskId " +
+            "AND b.status = 'ACTIVE' " +
+            "AND b.endTime > :now")
+    boolean existsActiveBookingsByDeskId(
+            @Param("deskId") Long deskId,
+            @Param("now") LocalDateTime now
+    );
+
 }
