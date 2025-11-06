@@ -215,34 +215,14 @@ public class BookingService {
             return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user");
         });
 
-        List<Booking> bookings = bookingRepository.findUpcomingBookingsWithin8Hours(
+        List<Booking> bookings = bookingRepository.findUpcomingBookingsByUserId(
                 user.getId(),
-                LocalDateTime.now(),
-                LocalDateTime.now().plusHours(8)
+                LocalDateTime.now()
         );
 
         log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
         return bookings.stream()
                 .map(bookingMapper::maptoDto)
-                .collect(Collectors.toList());
-    }
-    public List<BookingResponse> getUpcomingBookingR(String email) {
-        log.info("Fetching upcoming bookings for user: {}", email);
-
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
-            log.error("User not found with email: {}", email);
-            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user");
-        });
-
-        List<Booking> bookings = bookingRepository.findUpcomingBookingsWithin8Hours(
-                user.getId(),
-                LocalDateTime.now(),
-                LocalDateTime.now().plusHours(8)
-        );
-
-        log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
-        return bookings.stream()
-                .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
