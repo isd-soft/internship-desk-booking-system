@@ -47,29 +47,6 @@ public class UserController {
                 .build();
     }
 
-
-    @PostMapping("/favourite/add/{deskId}")
-    public ResponseEntity<?> addFavourite(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long deskId) {
-
-        String email = principal.getEmail();
-        favouriteDesksService.addFavouriteDesk(email, deskId);
-
-        return ResponseEntity.ok("Desk added to favourites");
-    }
-
-    @DeleteMapping("/favourite/delete/{deskId}")
-    public ResponseEntity<?> removeFavourite(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long deskId) {
-
-        String email = principal.getEmail();
-        favouriteDesksService.removeFavouriteDesk(email, deskId);
-
-        return ResponseEntity.ok("Desk removed from favourites");
-    }
-
     @GetMapping("/desks")
     public ResponseEntity<List<FavouriteDesksDTO>> getAllDesksWithFavourites(
             @AuthenticationPrincipal CustomUserPrincipal principal) {
@@ -80,14 +57,5 @@ public class UserController {
         return ResponseEntity.ok(desks);
     }
 
-    @GetMapping("/favourites")
-    public ResponseEntity<List<FavouriteDesksDTO>> getFavourites(
-            @AuthenticationPrincipal CustomUserPrincipal principal) {
-
-        String email = principal.getEmail();
-        List<FavouriteDesksDTO> favourites = favouriteDesksService.getFavouriteDesksDTO(email);
-
-        return ResponseEntity.ok(favourites);
-    }
 }
 
