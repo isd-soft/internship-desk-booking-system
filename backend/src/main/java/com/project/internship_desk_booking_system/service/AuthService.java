@@ -5,7 +5,7 @@ import com.project.internship_desk_booking_system.command.LoginResponseDto;
 import com.project.internship_desk_booking_system.command.RegisterCommandRequest;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.entity.User;
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.jwt.JwtUtill;
 import com.project.internship_desk_booking_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +49,7 @@ public class AuthService {
     }
 
     public void register(RegisterCommandRequest request) {
-        checkIfUsernameExists(request.getEmail());
+        checkIfEmailExists(request.getEmail());
         User newUser = new User(
                 request.getFirstName(),
                 request.getLastName(),
@@ -60,7 +60,7 @@ public class AuthService {
         userRepository.save(newUser);
     }
 
-    private void checkIfUsernameExists(String email) {
+    private void checkIfEmailExists(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new ExceptionResponse(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS",
                     "User with this email already exists", Map.of("email", email));
