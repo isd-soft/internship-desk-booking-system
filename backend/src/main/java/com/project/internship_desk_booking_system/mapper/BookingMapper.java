@@ -13,6 +13,7 @@ public class BookingMapper {
     public BookingResponse toResponse(Booking booking) {
 
         return new BookingResponse(
+                booking.getId(),
                 booking.getStartTime(),
                 booking.getEndTime(),
                 booking.getStatus(),
