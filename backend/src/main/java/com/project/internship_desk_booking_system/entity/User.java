@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,16 +36,12 @@ public class User {
     @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Role role;
-    @OneToMany(
-            mappedBy = "user",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private List<Favourites> favourites;
+
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
+    private List<FavouriteDesks> favourites = new ArrayList<>();
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
         this.firstName = firstName;
@@ -58,6 +55,7 @@ public class User {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
         return Objects.equals(id, user.id);

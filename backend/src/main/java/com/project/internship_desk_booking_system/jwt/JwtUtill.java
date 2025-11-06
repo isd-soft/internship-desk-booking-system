@@ -44,7 +44,6 @@ public class JwtUtill {
                 .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }
