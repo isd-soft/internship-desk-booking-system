@@ -1,20 +1,32 @@
 
 package com.project.internship_desk_booking_system;
 
+import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.enums.Role;
+import com.project.internship_desk_booking_system.command.BookingResponse;
+import com.project.internship_desk_booking_system.mapper.BookingMapper;
+import com.project.internship_desk_booking_system.mapper.DeskMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
+import com.project.internship_desk_booking_system.repository.UserRepository;
 import com.project.internship_desk_booking_system.service.AdminService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -25,6 +37,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 class AdminServiceTest {
+    private static final LocalDateTime startTime = LocalDateTime.now().plusDays(1);
+    private static final LocalDateTime endTime = LocalDateTime.now().plusDays(1).plusHours(8);
 
     @Mock
     private DeskRepository deskRepository;
@@ -32,17 +46,40 @@ class AdminServiceTest {
     @Mock
     private BookingRepository bookingRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private DeskMapper deskMapper;
+
+    @Mock
+    private BookingMapper bookingMapper;
+
     @InjectMocks
     private AdminService adminService;
 
     private Desk desk;
+    private User user;
+    private Booking booking;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        user = new User("John", "Doe", "john@example.com", Role.USER, "hash");
+        user.setId(1L);
+
         desk = new Desk();
         desk.setId(5L);
         desk.setStatus(DeskStatus.ACTIVE);
+
+        booking = new Booking();
+        booking.setId(1L);
+        booking.setUser(user);
+        booking.setDesk(desk);
+        booking.setStartTime(startTime);
+        booking.setEndTime(endTime);
+        booking.setStatus(BookingStatus.ACTIVE);
     }
 
     @Test
@@ -187,5 +224,192 @@ class AdminServiceTest {
         ExceptionResponse ex = assertThrows(ExceptionResponse.class,
                 () -> adminService.editDesk(desk.getId(), updateDTO));
         assertEquals("INVALID_DATE_RANGE", ex.getCode());
+    }
+
+    @Test
+    void editBooking_success_changeAllFields() {
+        BookingUpdateCommand command = new BookingUpdateCommand(
+                2L,
+                3L,
+                startTime.plusDays(1),
+                endTime.plusDays(1),
+                BookingStatus.CANCELLED
+        );
+
+        User newUser = new User(
+                "Alice",
+                "Smith",
+                "alice@example.com",
+                Role.USER,
+                "hash"
+        );
+        newUser.setId(2L);
+
+        Desk newDesk = new Desk();
+        newDesk.setId(3L);
+
+        when(bookingRepository
+                .findById(booking.getId()))
+                .thenReturn(Optional.of(booking)
+                );
+        when(
+                userRepository.findById(2L))
+                .thenReturn(Optional.of(newUser)
+                );
+        when(
+                deskRepository.findById(3L))
+                .thenReturn(Optional.of(newDesk)
+                );
+        when(
+                bookingMapper.toResponse(booking))
+                .thenReturn(new BookingResponse()
+                );
+
+        BookingResponse response = adminService
+                .editBooking(
+                        booking.getId(),
+                        command
+                );
+
+        assertEquals(
+                newUser,
+                booking.getUser()
+        );
+        assertEquals(
+                newDesk,
+                booking.getDesk()
+        );
+        assertEquals(
+                command.status(),
+                booking.getStatus()
+        );
+        assertEquals(
+                command.startTime(),
+                booking.getStartTime()
+        );
+        assertEquals(
+                command.endTime(),
+                booking.getEndTime()
+        );
+    }
+
+    @Test
+    void editBooking_throws_WhenDeskNotFound() {
+        BookingUpdateCommand command = new BookingUpdateCommand(
+                null,
+                999L,
+                null,
+                null,
+                null
+        );
+
+        when(
+                bookingRepository.findById(booking.getId()))
+                .thenReturn(Optional.of(booking)
+                );
+
+        when(
+                deskRepository.findById(999L))
+                .thenReturn(Optional.empty()
+                );
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                adminService.editBooking(booking.getId(), command));
+
+        assertEquals(
+                "DESK_NOT_FOUND",
+                ex.getCode()
+        );
+    }
+
+    @Test
+    void editBooking_throws_WhenUserNotFound(){
+        BookingUpdateCommand command = new BookingUpdateCommand(
+                999L,
+                null,
+                null,
+                null,
+                null
+        );
+
+        when(
+                bookingRepository.findById(booking.getId()))
+                .thenReturn(Optional.of(booking)
+                );
+
+        when(
+                userRepository.findById(999L))
+                .thenReturn(Optional.empty()
+                );
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                adminService.editBooking(booking.getId(), command));
+
+        assertEquals(
+                "USER_NOT_FOUND",
+                ex.getCode()
+        );
+    }
+
+    @Test
+    void editBooking_throws_WhenBookingNotFound(){
+        BookingUpdateCommand command = new BookingUpdateCommand(
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        when(
+                bookingRepository.findById(anyLong()))
+                .thenReturn(Optional.empty()
+                );
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                adminService.editBooking(999L, command));
+
+        assertEquals(
+                "BOOKING_NOT_FOUND",
+                ex.getCode()
+        );
+    }
+
+    @Test
+    void cancelBooking_success() {
+        when(bookingRepository.findById(booking.getId()))
+                .thenReturn(Optional.of(booking));
+
+        DeskDTO deskDTO = new DeskDTO(
+                desk.getId(),
+                "SomeDesk",
+                "SomeZone",
+                DeskType.SHARED,
+                desk.getStatus(),
+                true,
+                null,
+                null);
+
+        when(deskMapper.toDto(any(Desk.class)))
+                .thenReturn(deskDTO);
+
+        when(bookingMapper.toResponse(any(Booking.class)))
+                .thenAnswer(invocation -> {
+                    Booking b = invocation.getArgument(0);
+                    return new BookingResponse(
+                            b.getId(),
+                            b.getStartTime(),
+                            b.getEndTime(),
+                            b.getStatus(),
+                            deskDTO
+                    );
+                });
+
+        BookingResponse response = adminService.cancelBooking(booking.getId());
+
+        assertEquals(
+                BookingStatus.CANCELLED,
+                response.getStatus()
+        );
     }
 }
