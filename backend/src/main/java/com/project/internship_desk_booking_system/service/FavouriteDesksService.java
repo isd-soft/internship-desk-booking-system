@@ -21,13 +21,14 @@ public class FavouriteDesksService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void addFavouriteDesk(Long userId, Long deskId) {
-        if (favouriteDesksRepository.findByUserIdAndDeskId(userId, deskId).isPresent()) {
+    public void addFavouriteDesk(String email, Long deskId) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (favouriteDesksRepository.findByUserIdAndDeskId(user.getId(), deskId).isPresent()) {
             return;
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Desk desk = deskRepository.findById(deskId)
                 .orElseThrow(() -> new IllegalArgumentException("Desk not found"));
 
@@ -35,16 +36,39 @@ public class FavouriteDesksService {
         favouriteDesksRepository.save(favourite);
     }
 
-    @Transactional
-    public void removeFavouriteDesk(Long userId, Long deskId) {
-        favouriteDesksRepository.deleteByUserIdAndDeskId(userId, deskId);
-    }
-    public List<FavouriteDesksDTO> getAllDesksWithFavourites(Long userId) {
-        List<Desk> allDesks = deskRepository.findAll();
-        List<Desk> favouriteDesks = getFavouriteDesks(userId);
 
-        Set<Long> favouriteIds = favouriteDesks.stream()
-                .map(Desk::getId)
+    @Transactional
+    public void removeFavouriteDesk(String email, Long deskId) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        favouriteDesksRepository.deleteByUserIdAndDeskId(user.getId(), deskId);
+    }
+
+    public List<FavouriteDesksDTO> getFavouriteDesksDTO(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<FavouriteDesks> favourites = favouriteDesksRepository.findByUser(user);
+
+        return favourites.stream()
+                .map(fav -> new FavouriteDesksDTO(
+                        fav.getDesk().getId(),
+                        fav.getDesk().getDeskName(),
+                        fav.getDesk().getZone(),
+                        true))
+                .collect(Collectors.toList());
+    }
+
+    public List<FavouriteDesksDTO> getAllDesksWithFavourites(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<Desk> allDesks = deskRepository.findAll();
+        List<FavouriteDesks> favourites = favouriteDesksRepository.findByUser(user);
+
+        Set<Long> favouriteDeskIds = favourites.stream()
+                .map(fav -> fav.getDesk().getId())
                 .collect(Collectors.toSet());
 
         return allDesks.stream()
@@ -52,33 +76,7 @@ public class FavouriteDesksService {
                         desk.getId(),
                         desk.getDeskName(),
                         desk.getZone(),
-                        favouriteIds.contains(desk.getId())
-                ))
-                .collect(Collectors.toList());
-    }
-
-    public List<FavouriteDesksDTO> getFavouriteDesksDTO(Long userId) {
-        return favouriteDesksRepository.findByUser(
-                        userRepository.findById(userId)
-                                .orElseThrow(() -> new IllegalArgumentException("User not found"))
-                ).stream()
-                .map(FavouriteDesks::getDesk)
-                .sorted(Comparator.comparing(Desk::getDeskName, String.CASE_INSENSITIVE_ORDER))
-                .map(desk -> new FavouriteDesksDTO(
-                        desk.getId(),
-                        desk.getDeskName(),
-                        desk.getZone(),
-                        true
-                ))
-                .collect(Collectors.toList());
-    }
-
-    private List<Desk> getFavouriteDesks(Long userId) {
-        return favouriteDesksRepository.findByUser(
-                        userRepository.findById(userId)
-                                .orElseThrow(() -> new IllegalArgumentException("User not found"))
-                ).stream()
-                .map(FavouriteDesks::getDesk)
+                        favouriteDeskIds.contains(desk.getId())))
                 .collect(Collectors.toList());
     }
 }

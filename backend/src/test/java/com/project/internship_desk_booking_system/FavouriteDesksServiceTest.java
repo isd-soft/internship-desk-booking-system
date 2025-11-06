@@ -80,18 +80,15 @@ class FavouriteDesksServiceTest {
         desk3.setId(3L);
     }
 
-    // -----------------------------
-    // addFavouriteDesk tests
-    // -----------------------------
-
     @Test
     void addFavouriteDesk_ShouldSave_WhenNotAlreadyFavourite() {
-        when(favouriteDesksRepository.findByUserIdAndDeskId(2L, 2L))
-                .thenReturn(Optional.empty());
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user2));
+        String email = "ion.paun@gmail.com";
+
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user2));
+        when(favouriteDesksRepository.findByUserIdAndDeskId(user2.getId(), 2L)).thenReturn(Optional.empty());
         when(deskRepository.findById(2L)).thenReturn(Optional.of(desk2));
 
-        favouriteDesksService.addFavouriteDesk(2L, 2L);
+        favouriteDesksService.addFavouriteDesk(email, 2L);
 
         ArgumentCaptor<FavouriteDesks> captor = ArgumentCaptor.forClass(FavouriteDesks.class);
         verify(favouriteDesksRepository).save(captor.capture());
@@ -103,21 +100,23 @@ class FavouriteDesksServiceTest {
 
     @Test
     void addFavouriteDesk_ShouldNotSave_WhenAlreadyFavourite() {
+        String email = "ion.paun@gmail.com";
         FavouriteDesks existingFav = new FavouriteDesks(user2, desk2);
 
-        when(favouriteDesksRepository.findByUserIdAndDeskId(2L, 2L))
-                .thenReturn(Optional.of(existingFav));
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user2));
+        when(favouriteDesksRepository.findByUserIdAndDeskId(user2.getId(), 2L)).thenReturn(Optional.of(existingFav));
 
-        favouriteDesksService.addFavouriteDesk(2L, 2L);
+        favouriteDesksService.addFavouriteDesk(email, 2L);
 
         verify(favouriteDesksRepository, never()).save(any());
     }
 
     @Test
     void addFavouriteDesk_ShouldThrowException_WhenUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        String email = "unknown@gmail.com";
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> favouriteDesksService.addFavouriteDesk(1L, 2L))
+        assertThatThrownBy(() -> favouriteDesksService.addFavouriteDesk(email, 2L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("User not found");
 
@@ -126,10 +125,12 @@ class FavouriteDesksServiceTest {
 
     @Test
     void addFavouriteDesk_ShouldThrowException_WhenDeskNotFound() {
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user2));
+        String email = "ion.paun@gmail.com";
+
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user2));
         when(deskRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> favouriteDesksService.addFavouriteDesk(2L, 2L))
+        assertThatThrownBy(() -> favouriteDesksService.addFavouriteDesk(email, 2L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Desk not found");
 
@@ -138,19 +139,24 @@ class FavouriteDesksServiceTest {
 
     @Test
     void removeFavouriteDesk_ShouldDeleteCorrectly() {
-        favouriteDesksService.removeFavouriteDesk(1L, 3L);
-        verify(favouriteDesksRepository).deleteByUserIdAndDeskId(1L, 3L);
+        String email = "maria.florea@gmail.com";
+
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user1));
+
+        favouriteDesksService.removeFavouriteDesk(email, 3L);
+
+        verify(favouriteDesksRepository).deleteByUserIdAndDeskId(user1.getId(), 3L);
     }
-    
 
     @Test
     void getFavouriteDesksDTO_ShouldReturnMappedDTOs() {
+        String email = "maria.florea@gmail.com";
         FavouriteDesks fav = new FavouriteDesks(user1, desk3);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user1));
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user1));
         when(favouriteDesksRepository.findByUser(user1)).thenReturn(List.of(fav));
 
-        List<FavouriteDesksDTO> result = favouriteDesksService.getFavouriteDesksDTO(1L);
+        List<FavouriteDesksDTO> result = favouriteDesksService.getFavouriteDesksDTO(email);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getDeskName()).isEqualTo("PLC 201");
@@ -162,13 +168,14 @@ class FavouriteDesksServiceTest {
 
     @Test
     void getAllDesksWithFavourites_ShouldReturnAllDesks_WithCorrectFavouriteFlags() {
+        String email = "maria.florea@gmail.com";
         FavouriteDesks fav = new FavouriteDesks(user1, desk2);
 
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user1));
         when(deskRepository.findAll()).thenReturn(List.of(desk2, desk3));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user1));
         when(favouriteDesksRepository.findByUser(user1)).thenReturn(List.of(fav));
 
-        List<FavouriteDesksDTO> result = favouriteDesksService.getAllDesksWithFavourites(1L);
+        List<FavouriteDesksDTO> result = favouriteDesksService.getAllDesksWithFavourites(email);
 
         assertThat(result).hasSize(2);
 
