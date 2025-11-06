@@ -71,7 +71,7 @@ public class BookingService {
         );
 
         log.info("Booking created successfully with id: {} for user: {}", savedBooking.getId(), email);
-        return maptoDto(savedBooking);
+        return bookingMapper.maptoDto(savedBooking);
     }
 
     public void cancelBooking(String email, Long id) {
@@ -187,7 +187,9 @@ public class BookingService {
         );
 
         log.info("Found {} bookings for user: {}", bookings.size(), email);
-        return bookings.stream().map(this::maptoDto).collect(Collectors.toList());
+        return bookings.stream().
+                map(bookingMapper::maptoDto)
+                .collect(Collectors.toList());
     }
 
     public List<BookingResponseDto> getUpcomingBookings(String email) {
@@ -204,7 +206,9 @@ public class BookingService {
         );
 
         log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
-        return bookings.stream().map(this::maptoDto).collect(Collectors.toList());
+        return bookings.stream()
+                .map(bookingMapper::maptoDto)
+                .collect(Collectors.toList());
     }
 
     public BookingResponseDto getBookingById(String email, Long booking_id) {
@@ -221,21 +225,7 @@ public class BookingService {
         }
 
         log.info("Booking id: {} retrieved successfully for user: {}", booking_id, email);
-        return maptoDto(booking);
+        return bookingMapper.maptoDto(booking);
     }
 
-    private BookingResponseDto maptoDto(Booking booking) {
-        double durationHours = Duration.between(booking.getStartTime(), booking.getEndTime()).toHours();
-
-        return BookingResponseDto.builder()
-                .id(booking.getId())
-                .userId(booking.getUser().getId())
-                .deskId(booking.getDesk().getId())
-                .deskName(booking.getDesk().getDeskName())
-                .startTime(booking.getStartTime())
-                .endTime(booking.getEndTime())
-                .status(booking.getStatus().name())
-                .durationHours(durationHours)
-                .build();
-    }
 }

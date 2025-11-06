@@ -34,7 +34,7 @@ public class AuthService {
             );
             CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
 
-            String token = jwtUtill.generateToken(principal.getId(), principal.getUsername(), principal.getRole());
+            String token = jwtUtill.generateToken(principal.getUsername(), principal.getRole());
             return new LoginResponseDto(principal.getEmail(), principal.getRole(), token);
 
         } catch (org.springframework.security.authentication.DisabledException e) {
