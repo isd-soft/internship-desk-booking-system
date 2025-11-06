@@ -23,5 +23,5 @@ public record DeskDTO(
         LocalDateTime temporaryAvailableFrom,
         @Null
         LocalDateTime temporaryAvailableUntil
-        ) {
+) {
 }
