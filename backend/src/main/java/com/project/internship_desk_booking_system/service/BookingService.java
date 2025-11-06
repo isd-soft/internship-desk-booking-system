@@ -3,10 +3,12 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -64,9 +66,9 @@ public class BookingService {
         Booking savedBooking = bookingRepository.save(booking);
         emailService.sendBookingConfirmationEmail(
                 email,
-                booking.getId(),
-                booking.getDesk().getDeskName(),
-                booking.getDesk().getZone(),
+                savedBooking.getId(),
+                savedBooking.getDesk().getDeskName(),
+                savedBooking.getDesk().getZone(),
                 OffsetDateTime.now()
         );
 

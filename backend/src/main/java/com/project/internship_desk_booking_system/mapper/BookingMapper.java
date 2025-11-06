@@ -30,6 +30,7 @@ public class BookingMapper {
                 .userId(booking.getUser().getId())
                 .deskId(booking.getDesk().getId())
                 .deskName(booking.getDesk().getDeskName())
+                .deskType(booking.getDesk().getType())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .status(booking.getStatus().name())
