@@ -10,7 +10,8 @@ import java.util.Objects;
 @Entity
 @Table(name = "favourite_desks")
 @NoArgsConstructor
-public class Favourites {
+public class FavouriteDesks {
+
     @Id
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -24,7 +25,7 @@ public class Favourites {
     private Long id;
 
     @ManyToOne(
-            fetch = FetchType.LAZY ,
+            fetch = FetchType.LAZY,
             optional = false
     )
     @JoinColumn(
@@ -43,10 +44,7 @@ public class Favourites {
     )
     private Desk desk;
 
-    public Favourites(
-            User user,
-            Desk desk
-    ){
+    public FavouriteDesks(User user, Desk desk) {
         this.user = user;
         this.desk = desk;
     }
@@ -55,7 +53,7 @@ public class Favourites {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Favourites that = (Favourites) o;
+        FavouriteDesks that = (FavouriteDesks) o;
         return Objects.equals(id, that.id);
     }
 

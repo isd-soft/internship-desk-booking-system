@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import jakarta.validation.constraints.NotBlank;
@@ -16,9 +17,11 @@ public record DeskDTO(
         String zone,
         DeskType deskType,
         DeskStatus deskStatus,
-        @Null
+        @JsonAlias({"is_temporary_available"})
         Boolean isTemporarilyAvailable,
         @Null
         LocalDateTime temporaryAvailableFrom,
         @Null
-        LocalDateTime temporaryAvailableUntil) { }
+        LocalDateTime temporaryAvailableUntil,
+        boolean isFavourite) { }
+

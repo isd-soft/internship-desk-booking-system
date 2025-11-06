@@ -1,6 +1,6 @@
 package com.project.internship_desk_booking_system.handlers;
 
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;

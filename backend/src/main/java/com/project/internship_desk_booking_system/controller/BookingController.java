@@ -1,12 +1,13 @@
 package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
+import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.BookingService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,36 +19,30 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/v1/booking")
+@RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
-    @Autowired
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponse>> getAllMyBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(bookingService.getAllBookings(principal.getEmail()));
     }
+
     @PostMapping
     public ResponseEntity<?> createBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest){
+            @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
         try {
             String email = principal.getEmail();
             BookingResponseDto booking = bookingService.createBooking(email, bookingCreateRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(booking);
-        }
-        catch (EntityNotFoundException e) {
+        } catch (EntityNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping
-    public ResponseEntity<?> getUserBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal){
-        try{
-            List<BookingResponseDto> bookings = bookingService.getUserBookings(principal.getEmail());
-            return ResponseEntity.ok(bookings);
-        }catch (EntityNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 
-        }
-    }
+
     @GetMapping("/upcoming")
     public ResponseEntity<?> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
         try {
@@ -59,6 +54,7 @@ public class BookingController {
                     .body(createErrorResponse(e.getMessage()));
         }
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/bookedDesk/{bookingId}")
     public ResponseEntity<?> getBookingById(
