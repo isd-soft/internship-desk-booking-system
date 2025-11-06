@@ -1,6 +1,5 @@
 package com.project.internship_desk_booking_system.service;
 
-import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
@@ -10,6 +9,7 @@ import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.exception.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.crossstore.ChangeSetPersister;
@@ -26,7 +26,6 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class AdminService {
     private final DeskRepository deskRepository;
-    private final BookingRepository bookingRepository;
 
     private void applyTemporaryAvailability(
             Desk desk,
