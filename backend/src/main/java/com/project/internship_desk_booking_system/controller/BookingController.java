@@ -30,7 +30,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getUpcomingBookings(principal.getEmail()));
     }*/
 
-    @PostMapping
+    @PostMapping("/bookings/create")
     public ResponseEntity<?> createBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
         try {
