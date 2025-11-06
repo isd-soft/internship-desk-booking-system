@@ -25,14 +25,19 @@ public class User {
             allocationSize = 1
     )
     private Long id;
+
     @Column(name = "first_name")
     private String firstName;
+
     @Column(name = "last_name")
     private String lastName;
+
     @Column(name = "email")
     private String email;
+
     @Column(name = "password_hash")
     private String passwordHash;
+
     @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -71,4 +76,3 @@ public class User {
         return Objects.hashCode(id);
     }
 }
-

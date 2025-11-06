@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Slf4j
 @Service
@@ -118,7 +119,7 @@ public class AdminService {
         log.info("Deactivating desk with id {}", id);
 
         Desk desk = deskRepository.findById(id)
-                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
+                .orElseThrow(NoSuchElementException::new);
 
         desk.setIsTemporarilyAvailable(false);
         desk.setStatus(DeskStatus.DEACTIVATED);
