@@ -39,9 +39,14 @@ public class User {
 
     @OneToMany(
             mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<FavouriteDesks> favourites;
+    @OneToMany(
+            mappedBy = "user",
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
-    private List<FavouriteDesks> favourites = new ArrayList<>();
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
         this.firstName = firstName;
