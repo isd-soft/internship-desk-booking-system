@@ -8,6 +8,7 @@ import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
@@ -64,6 +65,9 @@ public class BookingService {
                 .build();
 
         Booking savedBooking = bookingRepository.save(booking);
+
+        updateDeskStatus(desk, DeskStatus.valueOf("UNAVAILABLE"));
+
         emailService.sendBookingConfirmationEmail(
                 email,
                 savedBooking.getId(),
@@ -96,6 +100,8 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+        Desk desk = booking.getDesk();
+        updateDeskStatus(desk, DeskStatus.valueOf("SHARED"));
         log.info("Booking id: {} cancelled successfully by user: {}", id, email);
 
         emailService.sendCancelledBookingEmail(
@@ -110,6 +116,13 @@ public class BookingService {
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
         log.info("Booking id: {} deleted successfully", id);
+    }
+
+    private void updateDeskStatus(Desk desk, DeskStatus status) {
+        log.debug("Updating desk id: {} status to {}", desk.getId(), status);
+        desk.setStatus(status);
+        deskRepository.save(desk);
+        log.info("Desk id: {} status updated to {}", desk.getId(), status);
     }
 
     public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
