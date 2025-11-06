@@ -1,5 +1,7 @@
 package com.project.internship_desk_booking_system.controller;
 
+import com.project.internship_desk_booking_system.command.BookingResponse;
+import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
@@ -64,13 +66,24 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("cancel/booking/{id}")
-    public ResponseEntity<BookingDTO> cancelBooking(
-        @PathVariable Long bookingId
+    public ResponseEntity<BookingResponse> cancelBooking(
+        @PathVariable("id") Long bookingId
     ){
         return ResponseEntity
                 .ok(adminService.cancelBooking(bookingId));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @
+    @PatchMapping("edit/booking/{id}")
+    public ResponseEntity<BookingResponse> editBooking(
+        @PathVariable("id") Long bookingId,
+        @RequestBody BookingUpdateCommand bookingUpdateCommand
+    ){
+        return ResponseEntity
+                .ok(adminService
+                        .editBooking(
+                                bookingId,
+                                bookingUpdateCommand
+                        ));
+    }
 }

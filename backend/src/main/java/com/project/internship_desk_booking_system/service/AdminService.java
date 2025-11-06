@@ -1,31 +1,39 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.command.BookingResponse;
+import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
-import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
+import com.project.internship_desk_booking_system.mapper.BookingMapper;
+import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
-import jakarta.transaction.Transactional;
+import com.project.internship_desk_booking_system.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminService {
     private final DeskRepository deskRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingMapper bookingMapper;
+    private final UserRepository userRepository;
 
     private void applyTemporaryAvailability(
             Desk desk,
@@ -68,16 +76,7 @@ public class AdminService {
         );
 
         deskRepository.save(desk);
-        return new DeskDTO(
-                desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
-                desk.getType(),
-                desk.getStatus(),
-                desk.getIsTemporarilyAvailable(),
-                desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
-        );
+        return toDeskDTO(desk);
     }
     //TODO Prevent deactivation of desks that are currently occupied
     @Transactional
@@ -91,16 +90,7 @@ public class AdminService {
         desk.setStatus(DeskStatus.DEACTIVATED);
 
         deskRepository.save(desk);
-        return new DeskDTO(
-                desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
-                desk.getType(),
-                desk.getStatus(),
-                desk.getIsTemporarilyAvailable(),
-                desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
-        );
+        return toDeskDTO(desk);
     }
 
     @Transactional
@@ -140,16 +130,7 @@ public class AdminService {
 
         deskRepository.save(desk);
 
-        return new DeskDTO(
-                desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
-                desk.getType(),
-                desk.getStatus(),
-                desk.getIsTemporarilyAvailable(),
-                desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
-        );
+        return toDeskDTO(desk);
     }
 
     public void deleteDesk(
@@ -162,38 +143,112 @@ public class AdminService {
         List<Desk> desks = deskRepository.findAll();
         List<DeskDTO> deskDTOList = new ArrayList<>();
         for(Desk desk : desks){
-            DeskDTO deskDTO = new DeskDTO(
-                    desk.getId(),
-                    desk.getDeskName(),
-                    desk.getZone(),
-                    desk.getType(),
-                    desk.getStatus(),
-                    desk.getIsTemporarilyAvailable(),
-                    desk.getTemporaryAvailableFrom(),
-                    desk.getTemporaryAvailableUntil()
-            );
+            DeskDTO deskDTO = toDeskDTO(desk);
             deskDTOList.add(deskDTO);
         }
         return deskDTOList;
     }
 
-    @Transactional
-    public BookingDTO cancelBooking(
+   @Transactional
+    public BookingResponse cancelBooking(
         Long bookingId
     ){
-        Booking booking = bookingRepository
-                .findById(bookingId).orElseThrow(() -> new ExceptionResponse(
-                        HttpStatus.NOT_FOUND,
-                        "BOOKING_NOT_FOUND",
-                        "Booking not found"
-                ));
+        Booking booking = findBookingById(bookingId);
         booking.setStatus(BookingStatus.CANCELLED);
 
-        return new BookingDTO(
-                booking.getDesk().getId(),
-                booking.getStartTime(),
-                booking.getEndTime(),
-                booking.getStatus()
+        return bookingMapper.toResponse(booking);
+    }
+
+    @Transactional
+    public BookingResponse editBooking(
+        Long bookingId,
+        BookingUpdateCommand bookingUpdateCommand
+    ){
+        Booking existingBooking = findBookingById(bookingId);
+
+        if(bookingUpdateCommand.userId() != null){
+            changeUser(
+                    bookingUpdateCommand.userId(),
+                    existingBooking);
+        }
+        if(bookingUpdateCommand.deskId() != null){
+            changeDesk(
+                    bookingUpdateCommand.deskId(),
+                    existingBooking);
+        }
+        if(bookingUpdateCommand.startTime() != null){
+            existingBooking.setStartTime(bookingUpdateCommand.startTime());
+        }
+        if(bookingUpdateCommand.endTime() != null){
+            existingBooking.setEndTime(bookingUpdateCommand.endTime());
+        }
+        if(bookingUpdateCommand.status() != null){
+            existingBooking.setStatus(bookingUpdateCommand.status());
+        }
+
+        return  bookingMapper.toResponse(existingBooking);
+    }
+
+    private DeskDTO toDeskDTO(
+            Desk desk
+    ){
+        return new DeskDTO(
+                desk.getId(),
+                desk.getDeskName(),
+                desk.getZone(),
+                desk.getType(),
+                desk.getStatus(),
+                desk.getIsTemporarilyAvailable(),
+                desk.getTemporaryAvailableFrom(),
+                desk.getTemporaryAvailableUntil()
         );
+    }
+
+    private Booking findBookingById(
+            Long bookingId
+    ){
+        return bookingRepository
+                .findById(bookingId)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "BOOKING_NOT_FOUND",
+                        String.format(
+                                "Booking with id:{%d} not found",
+                                bookingId
+                        )
+                ));
+    }
+
+    private void changeUser(
+            Long userId,
+            Booking booking
+    ){
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        String.format(
+                                "User with id: {%d} not found ",
+                                userId)
+                ));
+        booking.setUser(user);
+    }
+
+    private void changeDesk(
+            Long deskId,
+            Booking booking
+    ){
+        Desk desk = deskRepository
+                .findById(deskId)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "DESK_NOT_FOUND",
+                        String.format(
+                                "Desk with id: {%d} not found",
+                                deskId
+                        )
+                ));
+        booking.setDesk(desk);
     }
 }
