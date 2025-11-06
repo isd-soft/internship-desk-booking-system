@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
 import Dashboard from "../components/SidePanel.vue";
+import { isAuthenticated } from "../utils/auth";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -14,14 +15,11 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
+  const authenticated = isAuthenticated();
 
-  const isAuthenticated =
-    token && token !== "null" && token !== "undefined" && token.trim() !== "";
-
-  if (!isAuthenticated && to.path !== "/login") {
+  if (!authenticated && to.path !== "/login") {
     next("/login");
-  } else if (isAuthenticated && to.path === "/login") {
+  } else if (authenticated && to.path === "/login") {
     next("/dashboard");
   } else {
     next();

@@ -4,7 +4,7 @@
       <v-progress-circular
         v-if="loading"
         indeterminate
-        color="orange-darken-2"
+        color="primary"
         class="mx-auto my-4 d-block"
       />
 
@@ -18,16 +18,19 @@
           :key="index"
           class="booking-card"
         >
-          <div class="desk-header">
-            <v-icon size="22" color="orange-darken-3" class="mr-1">
-              mdi-desk
-            </v-icon>
-            <div>
-              <div class="desk-name">{{ booking.desk.deskName }}</div>
-              <div class="desk-zone">
-                {{ booking.desk.zone }} • {{ booking.desk.deskType }}
+          <div class="card-content">
+            <div class="desk-info">
+              <div class="desk-icon">
+                <v-icon size="20" color="white">mdi-desk</v-icon>
+              </div>
+              <div class="desk-details">
+                <div class="desk-name">{{ booking.desk.deskName }}</div>
+                <div class="desk-meta">
+                  {{ booking.desk.zone }} • {{ booking.desk.deskType }}
+                </div>
               </div>
             </div>
+
             <v-chip
               :color="statusColor(booking.status)"
               variant="flat"
@@ -38,25 +41,23 @@
             </v-chip>
           </div>
 
-          <!-- Время -->
-          <div class="booking-time">
-            <v-icon size="18" color="orange-darken-2" class="mr-1">
-              mdi-clock-time-four-outline
-            </v-icon>
-            <span class="time-text">
-              📅 {{ formatDate(booking.startTime) }} •
-              {{ formatTime(booking.startTime) }} –
-              {{ formatTime(booking.endTime) }}
-            </span>
+          <div class="time-info">
+            <div class="time-row">
+              <span class="time-label">Date</span>
+              <span class="time-value">{{ formatDate(booking.startTime) }}</span>
+            </div>
+            <div class="time-row">
+              <span class="time-label">Time</span>
+              <span class="time-value">
+                {{ formatTime(booking.startTime) }} — {{ formatTime(booking.endTime) }}
+              </span>
+            </div>
           </div>
 
-          <div class="availability" v-if="booking.desk.isTemporarilyAvailable">
-            <v-icon size="18" color="green" class="mr-1"
-              >mdi-check-circle</v-icon
-            >
+          <div class="availability-info" v-if="booking.desk.isTemporarilyAvailable">
+            <div class="availability-dot"></div>
             <span class="availability-text">
-              Available until
-              {{ formatTime(booking.desk.temporaryAvailableUntil) }}
+              Available until {{ formatTime(booking.desk.temporaryAvailableUntil) }}
             </span>
           </div>
         </div>
@@ -97,7 +98,11 @@ watch(
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+  return date.toLocaleDateString("en-US", { 
+    day: "numeric", 
+    month: "short",
+    year: "numeric"
+  });
 };
 
 const formatTime = (dateStr) => {
@@ -108,11 +113,11 @@ const formatTime = (dateStr) => {
 const statusColor = (status) => {
   switch (status) {
     case "CONFIRMED":
-      return "green";
+      return "success";
     case "ACTIVE":
-      return "blue";
+      return "primary";
     case "CANCELLED":
-      return "red";
+      return "error";
     default:
       return "grey";
   }
@@ -123,88 +128,156 @@ const statusColor = (status) => {
 .booking-list {
   max-height: 350px;
   overflow-y: auto;
-  background: #fffdf8;
-  border-radius: 14px;
-  padding: 8px;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 12px;
 }
 
 .scrollable-list::-webkit-scrollbar {
   width: 6px;
 }
+
 .scrollable-list::-webkit-scrollbar-thumb {
-  background: #ff9800;
-  border-radius: 4px;
+  background: #cbd5e0;
+  border-radius: 3px;
 }
+
 .scrollable-list::-webkit-scrollbar-thumb:hover {
-  background: #f57c00;
+  background: #a0aec0;
 }
 
 .booking-card {
-  border-radius: 12px;
-  margin: 8px 10px;
-  padding: 14px 16px;
-  background: linear-gradient(145deg, #ffffff, #fff5ea);
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.12);
-  border: 1px solid rgba(255, 152, 0, 0.2);
-  transition: 0.3s ease;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
 }
 
 .booking-card:hover {
-  box-shadow: 0 6px 14px rgba(255, 152, 0, 0.25);
-  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e0;
 }
 
-.desk-header {
+.card-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.desk-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.desk-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.desk-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .desk-name {
-  font-weight: 700;
-  font-size: 16px;
-  color: #2d2d2d;
+  font-weight: 600;
+  font-size: 15px;
+  color: #2d3748;
+  margin-bottom: 4px;
 }
 
-.desk-zone {
+.desk-meta {
   font-size: 13px;
-  color: #777;
-  margin-top: 2px;
+  color: #718096;
 }
 
 .status-chip {
-  font-weight: 700;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.booking-time {
-  display: flex;
-  align-items: center;
-  color: #444;
-  font-size: 14px;
-  margin-top: 8px;
-}
-
-.time-text {
   font-weight: 600;
-  color: #333;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  height: 24px !important;
 }
 
-.availability {
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-label {
+  font-size: 12px;
+  color: #718096;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.time-value {
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.availability-info {
   display: flex;
   align-items: center;
-  margin-top: 6px;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+}
+
+.availability-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.availability-text {
   font-size: 13px;
-  color: #2e7d32;
+  color: #166534;
   font-weight: 500;
 }
 
 .no-bookings {
   text-align: center;
-  color: #9e9e9e;
-  font-weight: 600;
-  padding: 16px 0;
+  color: #a0aec0;
+  font-weight: 500;
+  padding: 24px 0;
+  font-size: 14px;
 }
 </style>

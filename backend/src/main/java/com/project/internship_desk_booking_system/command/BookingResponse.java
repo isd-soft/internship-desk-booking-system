@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingResponse {
+    private Long bookingId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BookingStatus status;
