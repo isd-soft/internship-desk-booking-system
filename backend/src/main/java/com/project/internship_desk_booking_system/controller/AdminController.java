@@ -5,7 +5,6 @@ import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,10 +40,11 @@ public class AdminController {
     public ResponseEntity<DeskDTO> editDesk(
             @PathVariable("id") Long deskId,
             @RequestBody DeskUpdateDTO updates
-    ) throws ChangeSetPersister.NotFoundException {
+    ) {
         return ResponseEntity
                 .ok(adminService.editDesk(deskId, updates));
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
