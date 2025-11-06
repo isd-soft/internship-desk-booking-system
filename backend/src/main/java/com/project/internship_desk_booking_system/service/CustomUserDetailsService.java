@@ -20,7 +20,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmailIgnoreCase(usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return new CustomUserPrincipal(
-                user.getId(),
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.getRole()

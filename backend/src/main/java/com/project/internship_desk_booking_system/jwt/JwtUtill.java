@@ -29,14 +29,13 @@ public class JwtUtill {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Long userId, String email, Role role) {
+    public String generateToken(String email, Role role) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .setSubject(email)
                 .addClaims(Map.of(
-                        "userId", userId,
                         "email", email,
                         "role", role.name()
                 ))
@@ -44,10 +43,6 @@ public class JwtUtill {
                 .setExpiration(exp)
                 .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-    public Long extractUserId(String token) {
-        Object id = parseClaims(token).get("userId");
-        return (id != null) ? Long.valueOf(id.toString()) : null;
     }
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();

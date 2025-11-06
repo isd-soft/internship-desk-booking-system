@@ -49,12 +49,11 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             if (jwtUtil.validateToken(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
-                Long id = jwtUtil.extractUserId(token);
                 String email = jwtUtil.extractEmail(token);
                 Role role = jwtUtil.extractRole(token);
 
                 var auth = new UsernamePasswordAuthenticationToken(
-                        new CustomUserPrincipal(id,email, null, role),
+                        new CustomUserPrincipal(email, null, role),
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
                 );

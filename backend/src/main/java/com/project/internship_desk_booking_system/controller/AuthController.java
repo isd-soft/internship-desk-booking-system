@@ -18,7 +18,6 @@ import java.time.OffsetDateTime;
 public class AuthController {
 
     public final AuthService authService;
-    private final EmailService emailService;
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody @Valid RegisterCommandRequest command) {
