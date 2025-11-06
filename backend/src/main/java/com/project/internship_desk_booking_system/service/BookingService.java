@@ -9,7 +9,6 @@ import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
-import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -66,7 +65,7 @@ public class BookingService {
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        updateDeskStatus(desk, DeskStatus.valueOf("UNAVAILABLE"));
+        updateDeskStatus(desk, DeskStatus.DEACTIVATED);
 
         emailService.sendBookingConfirmationEmail(
                 email,
@@ -101,7 +100,7 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
         Desk desk = booking.getDesk();
-        updateDeskStatus(desk, DeskStatus.valueOf("SHARED"));
+        updateDeskStatus(desk, DeskStatus.ACTIVE);
         log.info("Booking id: {} cancelled successfully by user: {}", id, email);
 
         emailService.sendCancelledBookingEmail(
@@ -223,6 +222,26 @@ public class BookingService {
         log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
         return bookings.stream()
                 .map(bookingMapper::maptoDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookingResponse> getUpcomingBookingsR(String email) {
+        log.info("Fetching upcoming bookings for user: {}", email);
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
+            log.error("User not found with email: {}", email);
+            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user");
+        });
+
+        List<Booking> bookings = bookingRepository.findUpcomingBookingsWithin8Hours(
+                user.getId(),
+                LocalDateTime.now(),
+                LocalDateTime.now().plusHours(8)
+        );
+
+        log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
+        return bookings.stream()
+                .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
