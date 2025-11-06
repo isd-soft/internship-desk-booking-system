@@ -1,11 +1,15 @@
 package com.project.internship_desk_booking_system;
 
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
+import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -55,6 +59,8 @@ class BookingServiceTest {
     private BookingCreateRequest bookingRequest;
     private Booking testBooking;
     private BookingResponseDto bookingResponseDto;
+    private BookingResponse bookingResponse;
+    private DeskDTO deskDTO;
 
     @BeforeEach
     void setUp() {
@@ -96,6 +102,25 @@ class BookingServiceTest {
                 .endTime(endTime)
                 .status(String.valueOf(BookingStatus.CONFIRMED))
                 .build();
+
+        DeskDTO deskDTO = new DeskDTO(
+                1L,
+                "Ser-01",
+                "Service",
+                DeskType.SHARED,
+                DeskStatus.ACTIVE,
+                false,
+                null,
+                null
+        );
+
+        bookingResponse = new BookingResponse();
+        bookingResponse.setBookingId(1L);
+        bookingResponse.setStartTime(startTime);
+        bookingResponse.setEndTime(endTime);
+        bookingResponse.setStatus(BookingStatus.CONFIRMED);
+        bookingResponse.setDesk(deskDTO);
+
     }
 
     @Test
@@ -117,6 +142,57 @@ class BookingServiceTest {
         verify(bookingRepository, times(1)).save(any(Booking.class));
         verify(emailService, times(1)).sendBookingConfirmationEmail(
                 anyString(), anyLong(), anyString(), anyString(), any());
+    }
+
+
+    @Test
+    void getUpcomingBookingsR_Success() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime eightHoursLater = now.plusHours(8);
+
+        List<Booking> bookings = List.of(testBooking);
+
+        when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.of(testUser));
+        when(bookingRepository.findUpcomingBookingsWithin8Hours(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(bookings);
+        when(bookingMapper.toResponse(any(Booking.class))).thenReturn(bookingResponse);
+
+        List<BookingResponse> result = bookingService.getUpcomingBookingsR("test@example.com");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getBookingId());
+        assertEquals(BookingStatus.CONFIRMED, result.get(0).getStatus());
+        assertNotNull(result.get(0).getDesk());
+        assertEquals("Ser-01", result.get(0).getDesk().deskName());
+        verify(bookingRepository, times(1)).findUpcomingBookingsWithin8Hours(
+                eq(testUser.getId()), any(LocalDateTime.class), any(LocalDateTime.class));
+    }
+
+    @Test
+    void getUpcomingBookingsR_UserNotFound_ThrowsException() {
+        when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.empty());
+
+        ExceptionResponse exception = assertThrows(ExceptionResponse.class, () -> {
+            bookingService.getUpcomingBookingsR("nonexistent@example.com");
+        });
+
+        assertEquals("NO_USERID_FOUND", exception.getCode());
+        verify(bookingRepository, never()).findUpcomingBookingsWithin8Hours(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class));
+    }
+
+    @Test
+    void getUpcomingBookingsR_NoBookings_ReturnsEmptyList() {
+        when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.of(testUser));
+        when(bookingRepository.findUpcomingBookingsWithin8Hours(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(new ArrayList<>());
+
+        List<BookingResponse> result = bookingService.getUpcomingBookingsR("test@example.com");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(bookingRepository, times(1)).findUpcomingBookingsWithin8Hours(
+                eq(testUser.getId()), any(LocalDateTime.class), any(LocalDateTime.class));
     }
 
     @Test
