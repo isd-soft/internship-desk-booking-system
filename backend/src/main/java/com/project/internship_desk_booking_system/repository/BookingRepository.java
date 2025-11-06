@@ -13,11 +13,8 @@ import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-
-    //find all bookings made by a user
     List<Booking> findByUser_idAndStatus(int user_id, String status);
 
-    //find all active bookings for a single desk in a time range(for overlapping)
     @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId " +
             "AND b.status = 'ACTIVE' " +
             "AND b.startTime < :endTime " +
@@ -28,7 +25,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endTime") LocalDateTime endTime
     );
 
-    //find users bookings in a time range
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
             "AND b.startTime <= :endTime " +
@@ -38,11 +34,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
-
-    //find all the bookings for a specific desk
     //List<Booking> findBookingsForASpecificDesk(Long deskId, Booking status);
 
-    //find the future bookings for a user
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
             "AND b.startTime = :now " +
@@ -51,7 +44,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("userId") Long userId,
             @Param("now") LocalDateTime now);
 
-    // Find user's bookings in a specific time range
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
             "AND b.startTime >= :startTime " +
@@ -62,7 +54,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endTime") LocalDateTime endTime
     );
 
-    // Find upcoming bookings for a user
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
             "AND b.startTime >= :now " +
@@ -72,7 +63,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
-    // find all active bookings (for admin)
     @Query("SELECT b FROM Booking b WHERE b.status = 'ACTIVE' " +
             "AND b.endTime > :now " +
             "ORDER BY b.startTime ASC")
@@ -88,4 +78,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     void deleteBookingByDeskId(
             @Param("deskId") Long deskId,
             @Param("userId") Long userId);
+
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.desk.id = :deskId " +
+            "AND b.status = 'ACTIVE' " +
+            "AND b.endTime > :now")
+    boolean existsActiveBookingsByDeskId(
+            @Param("deskId") Long deskId,
+            @Param("now") LocalDateTime now
+    );
+
 }

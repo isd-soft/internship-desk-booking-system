@@ -23,6 +23,8 @@ public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
     private final JwtFilter jwtFilter;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthEntryPoint customAuthEntryPoint;
 
     @Bean
     public SecurityFilterChain cORsecurityFilterChain(HttpSecurity http) throws Exception {
@@ -30,14 +32,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "api/v1/auth/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

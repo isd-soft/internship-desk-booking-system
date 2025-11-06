@@ -1,4 +1,4 @@
-package com.project.internship_desk_booking_system.exception;
+package com.project.internship_desk_booking_system.error;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

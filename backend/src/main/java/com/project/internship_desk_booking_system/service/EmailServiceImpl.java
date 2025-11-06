@@ -1,6 +1,6 @@
 package com.project.internship_desk_booking_system.service;
 
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -19,70 +19,8 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Override
-    public void sendBookingConfirmationEmail(String toEmail, Long bookingId, String location, OffsetDateTime dateTime) {
-        String formattedDate = dateTime.toLocalDate().toString();
-        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
 
-        String subject = "Booking Confirmation – ISD";
-        String html = """
-                <p>Hello,</p>
-                <p>Your booking has been <strong>confirmed</strong>!</p>
-                <p><strong>Details:</strong></p>
-                <ul>
-                    <li><strong>Booking ID:</strong> %s</li>
-                    <li><strong>Location:</strong> %s</li>
-                    <li><strong>Date:</strong> %s</li>
-                    <li><strong>Time:</strong> %s</li>
-                </ul>
-                <p>We look forward to seeing you!</p>
-                <p>If you have any questions, please contact our support team.</p>
-                """.formatted(bookingId, location, formattedDate, formattedTime);
 
-        sendHtml(toEmail, subject, wrap(html));
-    }
-
-    @Override
-    public void sendCancelledBookingEmail(String toEmail, String location, OffsetDateTime dateTime) {
-        String formattedDate = dateTime.toLocalDate().toString();
-        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
-
-        String subject = "Booking Cancelled – ISD";
-        String html = """
-                <p>Hello,</p>
-                <p>Your booking has been <strong>cancelled</strong>.</p>
-                <p><strong>Details:</strong></p>
-                <ul>
-                    <li><strong>Location:</strong> %s</li>
-                    <li><strong>Date:</strong> %s</li>
-                    <li><strong>Time:</strong> %s</li>
-                </ul>
-                <p>If this was a mistake, please make a new booking in the system.</p>
-                """.formatted(location, formattedDate, formattedTime);
-
-        sendHtml(toEmail, subject, wrap(html));
-    }
-
-    @Override
-    public void sendImportantDeskRelatedEmail(String toEmail, String location, OffsetDateTime dateTime) {
-        String formattedDate = dateTime.toLocalDate().toString();
-        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
-
-        String subject = "Important Desk Information – ISD";
-        String html = """
-                <p>Hello,</p>
-                <p>There is an important update regarding your assigned desk.</p>
-                <p><strong>Details:</strong></p>
-                <ul>
-                    <li><strong>Location:</strong> %s</li>
-                    <li><strong>Date:</strong> %s</li>
-                    <li><strong>Time:</strong> %s</li>
-                </ul>
-                <p>Please check the ISD Booking System for more information.</p>
-                """.formatted(location, formattedDate, formattedTime);
-
-        sendHtml(toEmail, subject, wrap(html));
-    }
 
     private void sendHtml(String to, String subject, String htmlBody) {
         try {
@@ -112,6 +50,76 @@ public class EmailServiceImpl implements EmailService {
                     )
             );
         }
+    }
+
+    @Override
+    public void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
+        String formattedDate = dateTime.toLocalDate().toString();
+        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
+
+        String subject = "Booking Confirmation – ISD";
+        String html = """
+                <p>Hello,</p>
+                <p>Your booking has been <strong>confirmed</strong>!</p>
+                <p><strong>Details:</strong></p>
+                <ul>
+                    <li><strong>Booking ID:</strong> %s</li>
+                    <li><strong>Desk:</strong> %s</li>
+                    <li><strong>Zone:</strong> %s</li>
+                    <li><strong>Date:</strong> %s</li>
+                    <li><strong>Time:</strong> %s</li>
+                </ul>
+                <p>We look forward to seeing you!</p>
+                <p>If you have any questions, please contact our support team.</p>
+                """.formatted(bookingId, deskName, zone, formattedDate, formattedTime);
+
+        sendHtml(toEmail, subject, wrap(html));
+
+    }
+
+    @Override
+    public void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
+        String formattedDate = dateTime.toLocalDate().toString();
+        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
+
+        String subject = "Booking Cancelled – ISD";
+        String html = """
+                <p>Hello,</p>
+                <p>Your booking has been <strong>cancelled</strong>.</p>
+                <p><strong>Details:</strong></p>
+                <ul>
+                    <li><strong>Desk:</strong> %s</li>
+                    <li><strong>Zone:</strong> %s</li>
+                    <li><strong>Date:</strong> %s</li>
+                    <li><strong>Time:</strong> %s</li>
+                </ul>
+                <p>If this was a mistake, please make a new booking in the system.</p>
+                """.formatted(deskName, zone, formattedDate, formattedTime);
+
+        sendHtml(toEmail, subject, wrap(html));
+    }
+
+    @Override
+    public void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
+        String formattedDate = dateTime.toLocalDate().toString();
+        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
+
+        String subject = "Important Desk Information – ISD";
+        String html = """
+                <p>Hello,</p>
+                <p>There is an important update regarding your assigned desk.</p>
+                <p><strong>Details:</strong></p>
+                <ul>
+                    <li><strong>Desk:</strong> %s</li>
+                    <li><strong>Zone:</strong> %s</li>
+                    <li><strong>Date:</strong> %s</li>
+                    <li><strong>Time:</strong> %s</li>
+                </ul>
+                <p>Please check the ISD Booking System for more information.</p>
+                """.formatted(deskName, zone, formattedDate, formattedTime);
+
+        sendHtml(toEmail, subject, wrap(html));
+
     }
 
     private String wrap(String innerHtml) {

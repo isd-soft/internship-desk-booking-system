@@ -3,7 +3,7 @@ package com.project.internship_desk_booking_system;
 import com.project.internship_desk_booking_system.command.CreateBookingCommand;
 import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
-import com.project.internship_desk_booking_system.exception.ExceptionResponse;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
