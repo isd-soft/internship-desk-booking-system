@@ -24,11 +24,11 @@ import java.util.Map;
 public class BookingController {
     private final BookingService bookingService;
 
-    @PreAuthorize("hasRole('USER')")
+/*    @PreAuthorize("hasRole('USER')")
     @GetMapping("/my")
     public ResponseEntity<List<BookingResponse>> getAllMyBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return ResponseEntity.ok(bookingService.getAllBookings(principal.getEmail()));
-    }
+        return ResponseEntity.ok(bookingService.getUpcomingBookings(principal.getEmail()));
+    }*/
 
     @PostMapping
     public ResponseEntity<?> createBooking(
