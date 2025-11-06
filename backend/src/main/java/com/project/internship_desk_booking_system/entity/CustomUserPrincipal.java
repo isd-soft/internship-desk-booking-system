@@ -13,11 +13,13 @@ import java.util.List;
 @Getter
 @Setter
 public class CustomUserPrincipal implements UserDetails {
+    private final Long id;
     private final String email;
     private final String passwordHash;
     private final Role role;
 
-    public CustomUserPrincipal(String email, String passwordHash, Role role) {
+    public CustomUserPrincipal(Long id, String email, String passwordHash, Role role) {
+        this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
