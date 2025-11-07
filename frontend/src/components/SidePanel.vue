@@ -34,6 +34,10 @@
         <v-icon class="mr-2" size="20">mdi-table</v-icon>
         <span class="btn-text">All Bookings</span>
       </v-btn>
+      <v-btn v-if="isAdmin" block variant="text" class="neo-btn mb-3" elevation="0" size="large" @click="openAllDesks">
+        <v-icon class="mr-2" size="20">mdi-table</v-icon>
+        <span class="btn-text">All Desks</span>
+      </v-btn>
 
       <v-divider class="my-2"></v-divider>
 
@@ -161,17 +165,21 @@
     </v-dialog>
   </v-sheet>
 
-  <div class="content-panel flex-grow-1">
-    <div v-if="showAdminBookings" class="h-100 overflow-auto">
-      <AdminBookings />
-    </div>
-    <div v-else class="placeholder h-100 d-flex align-center justify-center">
-      <div class="text-center">
-        <v-icon size="48" color="grey-lighten-1">mdi-view-dashboard</v-icon>
-        <p class="mt-2">Select an option from the left panel.</p>
+    <div class="content-panel flex-grow-1">
+      <div v-if="showAdminBookings" class="h-100 overflow-auto">
+        <AdminBookings />
+      </div>
+      <div v-else-if="showAdminDesks" class="h-100 overflow-auto">
+        <AdminDesks />
+      </div>
+      <div v-else class="placeholder h-100 d-flex align-center justify-center">
+        <div class="text-center">
+          <v-icon size="48" color="grey-lighten-1">mdi-view-dashboard</v-icon>
+          <p class="mt-2">Select an option from the left panel.</p>
+        </div>
       </div>
     </div>
-  </div>
+
   </div>
 </template>
 
@@ -180,10 +188,12 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../plugins/axios';
 import AdminBookings from './AdminBookings.vue';
+import AdminDesks from "./AdminDesks.vue";
 
 const router = useRouter();
 
 const showAdminBookings = ref(false);
+const showAdminDesks = ref(false);
 const isAdmin = ref((localStorage.getItem('role') || '').toUpperCase() === 'ADMIN');
 
 const items = ref([]);
@@ -243,6 +253,7 @@ const emptySubtitle = computed(() => {
 async function loadData(type) {
   try {
     showAdminBookings.value = false;
+    showAdminDesks.value = false;
     loading.value = true;
     currentType.value = type;
     currentPage.value = 1;
@@ -313,9 +324,18 @@ function bookDesk(item) {
 
 function openAllBookings() {
   showAdminBookings.value = true;
+  showAdminDesks.value = false;
   currentType.value = '';
   items.value = [];
   currentTitle.value = 'All Bookings';
+}
+
+function openAllDesks(){
+  showAdminBookings.value = false;
+  showAdminDesks.value = true;
+  currentType.value = '';
+  items.value = [];
+  currentTitle.value = 'All Desks';
 }
 
 function logout() {
