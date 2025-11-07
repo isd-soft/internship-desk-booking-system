@@ -264,6 +264,35 @@ async function loadData(type) {
       currentTitle.value = 'Upcoming';
       items.value = []; // пока пусто
     }
+    if (type === 'map') {
+  currentTitle.value = 'Office Map';
+  items.value = []; // чтобы не показывал список
+  loading.value = false;
+  return;
+}
+
+if (type === 'desks') {
+  currentTitle.value = 'All Desks';
+
+  const response = await api.get('/desk/all'); // твой endpoint
+  const data = response.data || [];
+
+  items.value = data.map((d, i) => ({
+    id: d.id ?? i,
+    desk: d.deskName,
+    zone: d.zone,
+    type: d.deskType || '—',
+    date: '',
+    time: '',
+    duration: '',
+    status: '',
+    statusColor: 'grey'
+  }));
+
+  loading.value = false;
+  return;
+}
+
 
   } catch (err) {
     console.error(err);

@@ -62,19 +62,6 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/bookings")
-    public ResponseEntity<List<BookingResponseDto>> getUserBookings(
-            @AuthenticationPrincipal CustomUserPrincipal principal
-    ) {
-        log.info("Fetching all bookings for user: {}", principal.getEmail());
-
-        List<BookingResponseDto> bookings = bookingService.getUserBookings(
-                principal.getEmail()
-        );
-
-        return ResponseEntity.ok(bookings);
-    }
-
     @GetMapping("/bookings/upcoming")
     public ResponseEntity<List<BookingResponseDto>> getUpcomingBookings(
             @AuthenticationPrincipal CustomUserPrincipal principal
