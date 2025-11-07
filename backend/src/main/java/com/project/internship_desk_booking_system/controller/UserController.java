@@ -62,6 +62,7 @@ public class UserController {
                 .build();
     }
 
+
     @GetMapping("/bookings/upcoming")
     public ResponseEntity<List<BookingResponseDto>> getUpcomingBookings(
             @AuthenticationPrincipal CustomUserPrincipal principal

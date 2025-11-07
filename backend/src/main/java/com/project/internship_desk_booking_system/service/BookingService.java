@@ -3,7 +3,6 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
-import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
@@ -253,6 +252,14 @@ public class BookingService {
 
         log.info("Booking id: {} retrieved successfully for user: {}", booking_id, email);
         return bookingMapper.maptoDto(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getAllBookings() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
     }
 
 }

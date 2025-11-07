@@ -2,7 +2,7 @@ package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
@@ -73,8 +73,8 @@ public class AdminService {
             desk.setTemporaryAvailableUntil(null);
         }
     }
-    public DeskDTO addDesk(
-            DeskDTO deskDto
+    public DeskDto addDesk(
+            DeskDto deskDto
     ) {
         log.info(
                 "Adding new desk: name={}, zone={}, type={}, status={}",
@@ -113,7 +113,7 @@ public class AdminService {
     }
 
     @Transactional
-    public DeskDTO deactivateDesk(
+    public DeskDto deactivateDesk(
             Long id
     ) {
         log.info("Deactivating desk with id {}", id);
@@ -132,7 +132,7 @@ public class AdminService {
     }
 
     @Transactional
-    public DeskDTO editDesk(
+    public DeskDto editDesk(
             Long id,
             DeskUpdateDTO updates
     ) {
@@ -201,14 +201,14 @@ public class AdminService {
         log.info("Desk {} deleted successfully", id);
     }
 
-    public List<DeskDTO> getAllDesks(){
+    public List<DeskDto> getAllDesks(){
         List<Desk> desks = deskRepository.findAll();
-        List<DeskDTO> deskDTOList = new ArrayList<>();
+        List<DeskDto> deskDtoList = new ArrayList<>();
         for(Desk desk : desks){
-            DeskDTO deskDTO = toDeskDTO(desk);
-            deskDTOList.add(deskDTO);
+            DeskDto deskDTO = toDeskDTO(desk);
+            deskDtoList.add(deskDTO);
         }
-        return deskDTOList;
+        return deskDtoList;
     }
 
    @Transactional
@@ -289,10 +289,10 @@ public class AdminService {
 
     }
 
-    private DeskDTO toDeskDTO(
+    private DeskDto toDeskDTO(
             Desk desk
     ){
-        return new DeskDTO(
+        return new DeskDto(
                 desk.getId(),
                 desk.getDeskName(),
                 desk.getZone(),

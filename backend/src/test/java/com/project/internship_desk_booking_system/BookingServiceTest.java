@@ -3,7 +3,7 @@ package com.project.internship_desk_booking_system;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
@@ -60,7 +60,7 @@ class BookingServiceTest {
     private Booking testBooking;
     private BookingResponseDto bookingResponseDto;
     private BookingResponse bookingResponse;
-    private DeskDTO deskDTO;
+    private DeskDto deskDTO;
 
     @BeforeEach
     void setUp() {
@@ -103,7 +103,7 @@ class BookingServiceTest {
                 .status(String.valueOf(BookingStatus.CONFIRMED))
                 .build();
 
-        DeskDTO deskDTO = new DeskDTO(
+        DeskDto deskDTO = new DeskDto(
                 1L,
                 "Ser-01",
                 "Service",
