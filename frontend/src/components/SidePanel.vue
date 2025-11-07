@@ -13,6 +13,7 @@
     </div>
 
     <div class="actions-section px-6 pb-4">
+      
       <v-btn block variant="text" class="neo-btn mb-3" elevation="0" size="large" @click="loadData('bookings')">
         <v-icon class="mr-2" size="20">mdi-calendar-check</v-icon>
         <span class="btn-text">My Bookings</span>
@@ -163,6 +164,8 @@ import api from '../plugins/axios';
 
 const router = useRouter();
 
+
+
 const items = ref([]);
 const currentTitle = ref('Data');
 const currentType = ref('');
@@ -260,37 +263,29 @@ async function loadData(type) {
 }
 
 
-    if (type === 'upcoming') {
-      currentTitle.value = 'Upcoming';
-      items.value = []; // пока пусто
-    }
-    if (type === 'map') {
-  currentTitle.value = 'Office Map';
-  items.value = []; // чтобы не показывал список
-  loading.value = false;
-  return;
-}
+   if (type === 'upcoming') {
+  currentTitle.value = 'Upcoming';
 
-if (type === 'desks') {
-  currentTitle.value = 'All Desks';
+  const response = await api.get('/booking/upcoming');
+  const now = new Date();
 
-  const response = await api.get('/desk/all'); // твой endpoint
-  const data = response.data || [];
+  const data = (response.data || [])
+    .filter(b => new Date(b.startTime) > now) 
+    .slice()
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-  items.value = data.map((d, i) => ({
-    id: d.id ?? i,
-    desk: d.deskName,
-    zone: d.zone,
-    type: d.deskType || '—',
-    date: '',
-    time: '',
-    duration: '',
-    status: '',
-    statusColor: 'grey'
+  items.value = data.map((b, idx) => ({
+    id: b.id ?? idx,
+    desk: b.desk?.deskName || 'Desk',
+    zone: b.desk?.zone || 'Unknown zone',
+    type: b.desk?.deskType || '—',
+    date: formatDate(b.startTime),
+    time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+    duration: formatDuration(b.startTime, b.endTime),
+    status: b.status,
+    statusColor: statusToColor(b.status),
+    raw: b
   }));
-
-  loading.value = false;
-  return;
 }
 
 
