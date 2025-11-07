@@ -53,10 +53,10 @@ public class User {
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
 
-    public User(String firstName, String lastName, String email, Role role, String passwordHash) {
+    public User(String firstName, String lastName, String email, String passwordHash) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.role = role;
+        this.role = Role.USER;
         this.email = email;
         this.passwordHash = passwordHash;
     }
@@ -65,7 +65,6 @@ public class User {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
         return Objects.equals(id, user.id);

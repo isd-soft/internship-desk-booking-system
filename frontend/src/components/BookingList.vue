@@ -44,20 +44,27 @@
           <div class="time-info">
             <div class="time-row">
               <span class="time-label">Date</span>
-              <span class="time-value">{{ formatDate(booking.startTime) }}</span>
+              <span class="time-value">{{
+                formatDate(booking.startTime)
+              }}</span>
             </div>
             <div class="time-row">
               <span class="time-label">Time</span>
               <span class="time-value">
-                {{ formatTime(booking.startTime) }} — {{ formatTime(booking.endTime) }}
+                {{ formatTime(booking.startTime) }} —
+                {{ formatTime(booking.endTime) }}
               </span>
             </div>
           </div>
 
-          <div class="availability-info" v-if="booking.desk.isTemporarilyAvailable">
+          <div
+            class="availability-info"
+            v-if="booking.desk.isTemporarilyAvailable"
+          >
             <div class="availability-dot"></div>
             <span class="availability-text">
-              Available until {{ formatTime(booking.desk.temporaryAvailableUntil) }}
+              Available until
+              {{ formatTime(booking.desk.temporaryAvailableUntil) }}
             </span>
           </div>
         </div>
@@ -80,7 +87,7 @@ const loading = ref(false);
 const fetchBookings = async () => {
   try {
     loading.value = true;
-    const response = await api.get("/bookings/my");
+    const response = await api.get("/booking/my");
     bookings.value = response.data;
   } catch (err) {
     console.error("Error fetching bookings:", err);
@@ -98,10 +105,10 @@ watch(
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", { 
-    day: "numeric", 
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
     month: "short",
-    year: "numeric"
+    year: "numeric",
   });
 };
 
@@ -259,7 +266,8 @@ const statusColor = (status) => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

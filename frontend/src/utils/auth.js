@@ -1,6 +1,3 @@
-// ❌ УДАЛИ ЭТУ СТРОКУ, если была:
-// import router from "../router";
-
 export const clearAuthData = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
@@ -27,5 +24,7 @@ export const logout = async (router) => {
 
 export const isAuthenticated = () => {
   const token = localStorage.getItem("token");
-  return token && token !== "null" && token !== "undefined" && token.trim() !== "";
+  return (
+    token && token !== "null" && token !== "undefined" && token.trim() !== ""
+  );
 };

@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -26,6 +27,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtill jwtUtill;
+
 
     public LoginResponseDto login(LoginRequestCommand request) {
         try {
@@ -48,16 +50,26 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public void register(RegisterCommandRequest request) {
         checkIfEmailExists(request.getEmail());
+        validatePasswordMatch(request.getPassword(), request.getConfirmPassword());
         User newUser = new User(
                 request.getFirstName(),
                 request.getLastName(),
                 request.getEmail(),
-                request.getRole(),
                 passwordEncoder.encode(request.getPassword())
         );
         userRepository.save(newUser);
+    }
+
+
+    private void validatePasswordMatch(String password, String confirmPassword) {
+        if (!password.equals(confirmPassword)) {
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST,
+                    "PASSWORD_MISMATCH",
+                    "Password and confirm password do not match");
+        }
     }
 
     private void checkIfEmailExists(String email) {
