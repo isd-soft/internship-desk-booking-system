@@ -2,7 +2,7 @@
 package com.project.internship_desk_booking_system;
 
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
@@ -21,12 +21,9 @@ import com.project.internship_desk_booking_system.repository.UserRepository;
 import com.project.internship_desk_booking_system.service.AdminService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -84,7 +81,7 @@ class AdminServiceTest {
 
     @Test
     void addDesk_success() {
-        DeskDTO deskDTO = new DeskDTO(
+        DeskDto deskDTO = new DeskDto(
                 desk.getId(),
                 "Desk-A1",
                 "Zone-1",
@@ -380,7 +377,7 @@ class AdminServiceTest {
         when(bookingRepository.findById(booking.getId()))
                 .thenReturn(Optional.of(booking));
 
-        DeskDTO deskDTO = new DeskDTO(
+        DeskDto deskDTO = new DeskDto(
                 desk.getId(),
                 "SomeDesk",
                 "SomeZone",

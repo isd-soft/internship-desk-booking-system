@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Null;
 
 import java.time.LocalDateTime;
 
-public record DeskDTO(
+public record DeskDto(
         @Null
         Long id,
         @NotBlank

@@ -1,13 +1,13 @@
 package com.project.internship_desk_booking_system.mapper;
 
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.entity.Desk;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DeskMapper {
-    public DeskDTO toDto(Desk desk) {
-        return new DeskDTO(
+    public DeskDto toDto(Desk desk) {
+        return new DeskDto(
                 desk.getId(),
                 desk.getDeskName(),
                 desk.getZone(),

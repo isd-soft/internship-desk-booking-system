@@ -30,6 +30,13 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getUserBookings(principal.getEmail()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all")
+    public ResponseEntity<List<BookingResponse>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+
+
     @PostMapping("/bookings/create")
     public ResponseEntity<?> createBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
