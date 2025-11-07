@@ -1,5 +1,6 @@
 <template>
-  <v-sheet class="user-panel d-flex flex-column" :style="panelStyle">
+  <div class="dashboard-layout d-flex">
+    <v-sheet class="user-panel d-flex flex-column" :style="panelStyle">
     <div class="panel-header pa-6 pb-4">
       <div class="d-flex align-items-center justify-space-between mb-3">
         <div class="head-left">
@@ -27,6 +28,11 @@
       <v-btn block variant="text" class="neo-btn mb-3" elevation="0" size="large" @click="loadData('upcoming')">
         <v-icon class="mr-2" size="20">mdi-clock-outline</v-icon>
         <span class="btn-text">Upcoming</span>
+      </v-btn>
+
+      <v-btn v-if="isAdmin" block variant="text" class="neo-btn mb-3" elevation="0" size="large" @click="openAllBookings">
+        <v-icon class="mr-2" size="20">mdi-table</v-icon>
+        <span class="btn-text">All Bookings</span>
       </v-btn>
 
       <v-divider class="my-2"></v-divider>
@@ -154,14 +160,31 @@
       </v-card>
     </v-dialog>
   </v-sheet>
+
+  <div class="content-panel flex-grow-1">
+    <div v-if="showAdminBookings" class="h-100 overflow-auto">
+      <AdminBookings />
+    </div>
+    <div v-else class="placeholder h-100 d-flex align-center justify-center">
+      <div class="text-center">
+        <v-icon size="48" color="grey-lighten-1">mdi-view-dashboard</v-icon>
+        <p class="mt-2">Select an option from the left panel.</p>
+      </div>
+    </div>
+  </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../plugins/axios';
+import AdminBookings from './AdminBookings.vue';
 
 const router = useRouter();
+
+const showAdminBookings = ref(false);
+const isAdmin = ref((localStorage.getItem('role') || '').toUpperCase() === 'ADMIN');
 
 const items = ref([]);
 const currentTitle = ref('Data');
@@ -219,6 +242,7 @@ const emptySubtitle = computed(() => {
 
 async function loadData(type) {
   try {
+    showAdminBookings.value = false;
     loading.value = true;
     currentType.value = type;
     currentPage.value = 1;
@@ -287,6 +311,13 @@ function bookDesk(item) {
   };
 }
 
+function openAllBookings() {
+  showAdminBookings.value = true;
+  currentType.value = '';
+  items.value = [];
+  currentTitle.value = 'All Bookings';
+}
+
 function logout() {
   localStorage.removeItem('token');
   router.push('/login');
@@ -308,7 +339,6 @@ function formatDuration(startStr, endStr) {
   return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
 }
 </script>
-s
 
 <style scoped>
 :root{
@@ -359,6 +389,11 @@ s
   height:clamp(64px, 5.6vw, 84px);
   object-fit:contain;
 }
+
+/* New dashboard split layout */
+.dashboard-layout{ height:100vh; width:100%; }
+.content-panel{ height:100vh; overflow:auto; background:#ffffff; }
+.placeholder{ color:#6b7280; }
 
 .neo-btn{
   height:clamp(46px, 4.2vh, 52px)!important;
