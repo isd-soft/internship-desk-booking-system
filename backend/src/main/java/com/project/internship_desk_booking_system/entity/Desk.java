@@ -49,6 +49,18 @@ public class Desk {
     @Column(name = "temporary_available_until")
     private LocalDateTime temporaryAvailableUntil;
 
+    @Column(name = "current_x")
+    private Double currentX;
+
+    @Column(name = "current_y")
+    private Double currentY;
+
+    @Column(name = "base_x")
+    private Double baseX;
+
+    @Column(name = "base_y")
+    private Double baseY;
+
     public Desk(String deskName, String zone, DeskType type, DeskStatus status,
                 Boolean isTemporarilyAvailable, LocalDateTime temporaryAvailableFrom,
                 LocalDateTime temporaryAvailableUntil) {

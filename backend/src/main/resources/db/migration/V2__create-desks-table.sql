@@ -8,6 +8,10 @@ CREATE TABLE desk (
                       is_temporarily_available BOOLEAN NOT NULL DEFAULT false,
                       temporary_available_from TIMESTAMP,
                       temporary_available_until TIMESTAMP,
+                      current_x DOUBLE PRECISION,
+                      current_y DOUBLE PRECISION,
+                      base_x DOUBLE PRECISION,
+                      base_y DOUBLE PRECISION,
 
                       CONSTRAINT chk_desk_type CHECK (type IN ('ASSIGNED', 'SHARED', 'UNAVAILABLE')),
                       CONSTRAINT chk_desk_status CHECK (status IN ('ACTIVE', 'DEACTIVATED'))
