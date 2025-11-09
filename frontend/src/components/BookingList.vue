@@ -73,22 +73,20 @@
   </v-expand-transition>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from "vue";
 import api from "../plugins/axios";
 
-const props = defineProps({
-  show: Boolean,
-});
+const props = defineProps<{ show: boolean }>();
 
-const bookings = ref([]);
+const bookings = ref<any[]>([]);
 const loading = ref(false);
 
 const fetchBookings = async () => {
   try {
     loading.value = true;
     const response = await api.get("/booking/my");
-    bookings.value = response.data;
+    bookings.value = response.data ?? [];
   } catch (err) {
     console.error("Error fetching bookings:", err);
   } finally {
@@ -103,7 +101,7 @@ watch(
   }
 );
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString("en-US", {
     day: "numeric",
@@ -111,13 +109,11 @@ const formatDate = (dateStr) => {
     year: "numeric",
   });
 };
-
-const formatTime = (dateStr) => {
+const formatTime = (dateStr: string) => {
   const date = new Date(dateStr);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
-
-const statusColor = (status) => {
+const statusColor = (status: string) => {
   switch (status) {
     case "CONFIRMED":
       return "success";
@@ -139,20 +135,16 @@ const statusColor = (status) => {
   border-radius: 12px;
   padding: 12px;
 }
-
 .scrollable-list::-webkit-scrollbar {
   width: 6px;
 }
-
 .scrollable-list::-webkit-scrollbar-thumb {
   background: #cbd5e0;
   border-radius: 3px;
 }
-
 .scrollable-list::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
 }
-
 .booking-card {
   border-radius: 8px;
   margin-bottom: 12px;
@@ -161,26 +153,22 @@ const statusColor = (status) => {
   border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
 }
-
 .booking-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: #cbd5e0;
 }
-
 .card-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
-
 .desk-info {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: 1;
 }
-
 .desk-icon {
   width: 40px;
   height: 40px;
@@ -191,24 +179,20 @@ const statusColor = (status) => {
   justify-content: center;
   flex-shrink: 0;
 }
-
 .desk-details {
   flex: 1;
   min-width: 0;
 }
-
 .desk-name {
   font-weight: 600;
   font-size: 15px;
   color: #2d3748;
   margin-bottom: 4px;
 }
-
 .desk-meta {
   font-size: 13px;
   color: #718096;
 }
-
 .status-chip {
   font-weight: 600;
   font-size: 11px;
@@ -216,7 +200,6 @@ const statusColor = (status) => {
   letter-spacing: 0.5px;
   height: 24px !important;
 }
-
 .time-info {
   display: flex;
   flex-direction: column;
@@ -226,13 +209,11 @@ const statusColor = (status) => {
   border-radius: 6px;
   margin-bottom: 12px;
 }
-
 .time-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .time-label {
   font-size: 12px;
   color: #718096;
@@ -240,13 +221,11 @@ const statusColor = (status) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
 .time-value {
   font-size: 14px;
   color: #2d3748;
   font-weight: 600;
 }
-
 .availability-info {
   display: flex;
   align-items: center;
@@ -256,7 +235,6 @@ const statusColor = (status) => {
   border-radius: 6px;
   border: 1px solid #bbf7d0;
 }
-
 .availability-dot {
   width: 6px;
   height: 6px;
@@ -264,7 +242,6 @@ const statusColor = (status) => {
   background: #22c55e;
   animation: pulse 2s infinite;
 }
-
 @keyframes pulse {
   0%,
   100% {
@@ -274,13 +251,11 @@ const statusColor = (status) => {
     opacity: 0.5;
   }
 }
-
 .availability-text {
   font-size: 13px;
   color: #166534;
   font-weight: 500;
 }
-
 .no-bookings {
   text-align: center;
   color: #a0aec0;

@@ -9,10 +9,10 @@ export const totalRows = IMAGE_HEIGHT_PX;
 
 export const layout = reactive<any[]>([]);
 
-export const floorImage = '/floorplan/Floor.png';
+export const floorImage = "/floorplan/Floor.png";
 
 let counter = 0;
-let offsetX = 0
+let offsetX = 0;
 let baseWidth = 27;
 let baseHeight = 50;
 let clusterSpacing = 105;
@@ -23,25 +23,26 @@ export function addDesk(
   clusterDesks,
   xCoord,
   startY,
-  reverseFlag=false,
-  makeStatic=false){
-    for (const desk of clusterDesks) {
-      let direction = 1;
+  reverseFlag = false,
+  makeStatic = false
+) {
+  for (const desk of clusterDesks) {
+    let direction = 1;
 
-      if(reverseFlag){
-        direction = -1;
-      }
-
-      counter++;
-      layout.push({
-        x: xCoord - desk.dx,
-        y: startY - desk.dy * direction,
-        w: desk.w,
-        h: desk.h,
-        i: String(counter),
-        static: makeStatic
-      });
+    if (reverseFlag) {
+      direction = -1;
     }
+
+    counter++;
+    layout.push({
+      x: xCoord - desk.dx,
+      y: startY - desk.dy * direction,
+      w: desk.w,
+      h: desk.h,
+      i: String(counter),
+      static: makeStatic,
+    });
+  }
 }
 
 export function makeBottomClusters(
@@ -58,12 +59,14 @@ export function makeBottomClusters(
       { dx: baseWidth, dy: 0, h: baseHeight, w: baseWidth },
       { dx: 0, dy: baseHeight, h: baseHeight, w: baseWidth },
       { dx: baseWidth, dy: baseHeight, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: baseHeight + baseWidth - 1, h: horizontalDeskHeight, w: horizontalDeskWidth },
+      {
+        dx: baseWidth,
+        dy: baseHeight + baseWidth - 1,
+        h: horizontalDeskHeight,
+        w: horizontalDeskWidth,
+      },
     ];
-    addDesk(
-      clusterDesks,
-      xCoord,
-      startY);
+    addDesk(clusterDesks, xCoord, startY);
   }
 }
 
@@ -72,8 +75,8 @@ export function makeTopClusters(
   startY: number,
   totalClusters = 4,
   makeStatic = false
-  ){
-    for (let cluster = 0; cluster < totalClusters; cluster++) {
+) {
+  for (let cluster = 0; cluster < totalClusters; cluster++) {
     const xCoord = startX - offsetX - cluster * clusterSpacing;
 
     const clusterDesks = [
@@ -81,31 +84,34 @@ export function makeTopClusters(
       { dx: baseWidth, dy: 0, h: baseHeight, w: baseWidth },
       { dx: 0, dy: baseHeight, h: baseHeight, w: baseWidth },
       { dx: baseWidth, dy: baseHeight, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: baseHeight + baseWidth -1, h: horizontalDeskHeight, w: horizontalDeskWidth },
+      {
+        dx: baseWidth,
+        dy: baseHeight + baseWidth - 1,
+        h: horizontalDeskHeight,
+        w: horizontalDeskWidth,
+      },
     ];
-    addDesk(
-      clusterDesks,
-      xCoord,
-      startY, 
-      true);
+    addDesk(clusterDesks, xCoord, startY, true);
   }
 }
 
 export function makeLeftClusters(
   startX: number,
   startY: number,
-  totalClusters =1,
+  totalClusters = 1,
   makeStatic = false
-){
-    for (let cluster = 0; cluster < totalClusters; cluster++) {
-      let yCoord = startY - (clusterSpacing - 10) * cluster
-      const clusterDesks = [
-        { dx: 0, dy: 0, h: horizontalDeskHeight, w: horizontalDeskWidth },
-        { dx: 0, dy: horizontalDeskHeight, h: horizontalDeskHeight, w: horizontalDeskWidth },
-      ];
-    addDesk(
-      clusterDesks,
-      startX,
-      yCoord);
+) {
+  for (let cluster = 0; cluster < totalClusters; cluster++) {
+    let yCoord = startY - (clusterSpacing - 10) * cluster;
+    const clusterDesks = [
+      { dx: 0, dy: 0, h: horizontalDeskHeight, w: horizontalDeskWidth },
+      {
+        dx: 0,
+        dy: horizontalDeskHeight,
+        h: horizontalDeskHeight,
+        w: horizontalDeskWidth,
+      },
+    ];
+    addDesk(clusterDesks, startX, yCoord);
   }
 }
