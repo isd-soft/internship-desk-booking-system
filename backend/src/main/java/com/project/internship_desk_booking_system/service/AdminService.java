@@ -12,6 +12,7 @@ import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
+import com.project.internship_desk_booking_system.mapper.DeskMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
@@ -34,6 +35,7 @@ public class AdminService {
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
     private final UserRepository userRepository;
+    private final DeskMapper deskMapper;
 
     private void applyTemporaryAvailability(
             Desk desk,
@@ -104,12 +106,32 @@ public class AdminService {
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(20)
         );
+        desk.setCurrentX(
+                deskDto.currentX() == null ?
+                        null :
+                        deskDto.currentX()
+        );
+        desk.setCurrentY(
+                deskDto.currentY() == null ?
+                        null :
+                        deskDto.currentY()
+        );
+        desk.setBaseX(
+                deskDto.baseX() == null ?
+                        null :
+                        deskDto.baseX()
+        );
+        desk.setBaseY(
+                deskDto.baseY() == null ?
+                        null :
+                        deskDto.baseY()
+        );
 
         deskRepository.save(desk);
 
         log.info("Desk saved successfully with id {}", desk.getId());
 
-        return toDeskDTO(desk);
+        return deskMapper.toDto(desk);
     }
 
     @Transactional
@@ -128,7 +150,7 @@ public class AdminService {
 
         log.info("Desk {} deactivated successfully", id);
 
-        return toDeskDTO(desk);
+        return deskMapper.toDto(desk);
     }
 
     @Transactional
@@ -172,7 +194,7 @@ public class AdminService {
 
         log.info("Desk {} updated successfully", id);
 
-        return toDeskDTO(desk);
+        return deskMapper.toDto(desk);
     }
 
     public void deleteDesk(
@@ -205,7 +227,7 @@ public class AdminService {
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
         for(Desk desk : desks){
-            DeskDto deskDTO = toDeskDTO(desk);
+            DeskDto deskDTO = deskMapper.toDto(desk);
             deskDtoList.add(deskDTO);
         }
         return deskDtoList;
@@ -287,21 +309,6 @@ public class AdminService {
     private boolean hasActiveBookings(Desk desk) {
         return bookingRepository.existsActiveBookingsByDeskId(desk.getId(), LocalDateTime.now());
 
-    }
-
-    private DeskDto toDeskDTO(
-            Desk desk
-    ){
-        return new DeskDto(
-                desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
-                desk.getType(),
-                desk.getStatus(),
-                desk.getIsTemporarilyAvailable(),
-                desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
-        );
     }
 
     private Booking findBookingById(

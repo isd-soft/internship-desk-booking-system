@@ -22,6 +22,10 @@ public record DeskDto(
         @Null
         LocalDateTime temporaryAvailableFrom,
         @Null
-        LocalDateTime temporaryAvailableUntil
+        LocalDateTime temporaryAvailableUntil,
+        Double currentX,
+        Double currentY,
+        Double baseX,
+        Double baseY
 ) {
 }

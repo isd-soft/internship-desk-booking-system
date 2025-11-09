@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.controller;
 
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.service.DeskService;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,17 @@ public class DeskController {
     @GetMapping("unavailable")
     public ResponseEntity<List<DeskDto>> getUnavailable() {
         return ResponseEntity.ok(deskService.getAllUnavailableDesks());
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/coordinates")
+    public ResponseEntity<List<DeskCoordinatesDTO>> getCoordinates() {
+        return ResponseEntity.ok(deskService.getCoordinates());
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/baseCoordinates")
+    public ResponseEntity<List<DeskCoordinatesDTO>> getBaseCoordinates() {
+        return ResponseEntity.ok(deskService.getBaseCoordinates());
     }
 }

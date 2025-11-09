@@ -63,7 +63,7 @@ class AdminServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        user = new User("John", "Doe", "john@example.com", Role.USER, "hash");
+        user = new User("John", "Doe", "john@example.com", "hash");
         user.setId(1L);
 
         desk = new Desk();
@@ -81,25 +81,18 @@ class AdminServiceTest {
 
     @Test
     void addDesk_success() {
-        DeskDto deskDTO = new DeskDto(
-                desk.getId(),
-                "Desk-A1",
-                "Zone-1",
-                DeskType.SHARED,
-                DeskStatus.ACTIVE,
-                false,
-                null,
-                null
-        );
-
+        DeskDto deskDTO = createDeskDTO();
 
         when(deskRepository.save(any(Desk.class)))
                 .thenReturn(desk);
 
+        when(deskMapper.toDto(any(Desk.class)))
+                .thenReturn(deskDTO);
+
         var result = adminService.addDesk(deskDTO);
 
         assertEquals(DeskType.SHARED, result.deskType());
-        assertEquals(DeskStatus.ACTIVE, result.deskStatus());
+        assertEquals(DeskStatus.DEACTIVATED, result.deskStatus());
         assertFalse(result.isTemporarilyAvailable());
 
         verify(deskRepository, times(1))
@@ -133,6 +126,11 @@ class AdminServiceTest {
     void deactivateDesk_success() {
         when(deskRepository.findById(desk.getId()))
                 .thenReturn(Optional.of(desk));
+
+        DeskDto deskDto = createDeskDTO();
+
+        when(deskMapper.toDto(any(Desk.class)))
+                .thenReturn(deskDto);
 
         var result = adminService.deactivateDesk(desk.getId());
 
@@ -237,7 +235,6 @@ class AdminServiceTest {
                 "Alice",
                 "Smith",
                 "alice@example.com",
-                Role.USER,
                 "hash"
         );
         newUser.setId(2L);
@@ -385,6 +382,10 @@ class AdminServiceTest {
                 desk.getStatus(),
                 true,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null);
 
         when(deskMapper.toDto(any(Desk.class)))
@@ -407,6 +408,23 @@ class AdminServiceTest {
         assertEquals(
                 BookingStatus.CANCELLED,
                 response.getStatus()
+        );
+    }
+
+    private DeskDto createDeskDTO(){
+        return new DeskDto(
+                desk.getId(),
+                "Desk-A1",
+                "Zone-1",
+                DeskType.SHARED,
+                DeskStatus.DEACTIVATED,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
     }
 }
