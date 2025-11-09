@@ -51,15 +51,8 @@ public class BookingController {
 
 
     @GetMapping("/upcoming")
-    public ResponseEntity<?> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        try {
-            String email = principal.getEmail();
-            List<BookingResponseDto> bookings = bookingService.getUpcomingBookings(email);
-            return ResponseEntity.ok(bookings);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
-        }
+    public ResponseEntity<List<BookingResponse>> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(bookingService.getUpcomingBookingsR(principal.getEmail()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

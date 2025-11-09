@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
+import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.command.CreateBookingCommand;
 import com.project.internship_desk_booking_system.dto.BookingDTO;
@@ -62,19 +63,6 @@ public class UserController {
                 .build();
     }
 
-
-    @GetMapping("/bookings/upcoming")
-    public ResponseEntity<List<BookingResponseDto>> getUpcomingBookings(
-            @AuthenticationPrincipal CustomUserPrincipal principal
-    ) {
-        log.info("Fetching upcoming bookings for user: {}", principal.getEmail());
-
-        List<BookingResponseDto> bookings = bookingService.getUpcomingBookings(
-                principal.getEmail()
-        );
-
-        return ResponseEntity.ok(bookings);
-    }
 
     @GetMapping("/booking/{bookingId}")
     public ResponseEntity<BookingResponseDto> getBookingById(

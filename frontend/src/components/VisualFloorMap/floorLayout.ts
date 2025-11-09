@@ -19,6 +19,11 @@ let clusterSpacing = 105;
 let horizontalDeskHeight = 26;
 let horizontalDeskWidth = 55;
 
+export function resetLayout() {
+  layout.splice(0, layout.length);
+  counter = 0;
+}
+
 export function addDesk(
   clusterDesks,
   xCoord,
@@ -27,11 +32,7 @@ export function addDesk(
   makeStatic = false
 ) {
   for (const desk of clusterDesks) {
-    let direction = 1;
-
-    if (reverseFlag) {
-      direction = -1;
-    }
+    let direction = reverseFlag ? -1 : 1;
 
     counter++;
     layout.push({

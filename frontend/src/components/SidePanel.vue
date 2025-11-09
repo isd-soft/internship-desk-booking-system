@@ -60,6 +60,7 @@ import ResultsList from "../components/panel/ResultList.vue";
 import EmptyPanel from "../components/panel/EmptyPanel.vue";
 import LoadingPanel from "../components/panel/LoadingPanel.vue";
 import DetailsDialog from "../components/panel/DetailsDialog.vue";
+import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 
 import {
   formatDate,
