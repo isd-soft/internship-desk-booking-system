@@ -57,7 +57,7 @@ public class BookingService {
                 .status(BookingStatus.CONFIRMED)
                 .build();
         Booking savedBooking = bookingRepository.save(booking);
-        emailService.sendBookingConfirmationEmail(email, booking.getId(), booking.getDesk().getDeskName(), booking.getDesk().getZone(), OffsetDateTime.now());
+        emailService.sendBookingConfirmationEmail(email, booking.getId(), booking.getDesk().getDeskName(), booking.getDesk().getZone().getZoneName(), OffsetDateTime.now());
 
         return maptoDto(savedBooking);
     }
@@ -73,7 +73,7 @@ public class BookingService {
         }
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
-        emailService.sendCancelledBookingEmail(email, booking.getId(), booking.getDesk().getDeskName(), booking.getDesk().getZone(), OffsetDateTime.now());
+        emailService.sendCancelledBookingEmail(email, booking.getId(), booking.getDesk().getDeskName(), booking.getDesk().getZone().getZoneName(), OffsetDateTime.now());
     }
 
     public void deleteBooking(Long id) {

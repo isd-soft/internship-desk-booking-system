@@ -4,6 +4,7 @@ import com.project.internship_desk_booking_system.dto.FavouriteDesksDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.FavouriteDesks;
 import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
@@ -57,27 +58,36 @@ class FavouriteDesksServiceTest {
         when(user2.getId()).thenReturn(2L);
         when(user2.getEmail()).thenReturn("ion.paun@gmail.com");
 
-        desk2 = new Desk(
-                "Serv 101",
-                "Serv",
-                DeskType.SHARED,
-                DeskStatus.ACTIVE,
-                true,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(5)
-        );
-        desk2.setId(2L);
+        Zone zoneServ=new Zone();
+        zoneServ.setId(1L);
+        zoneServ.setZoneName("Service");
+        zoneServ.setZoneAbv("SER");
 
-        desk3 = new Desk(
-                "PLC 201",
-                "PLC",
-                DeskType.SHARED,
-                DeskStatus.ACTIVE,
-                true,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(5)
-        );
+        Zone zonePLC = new Zone();
+        zonePLC.setId(2L);
+        zonePLC.setZoneName("PLC");
+        zonePLC.setZoneAbv("PLC");
+
+
+        desk2 = new Desk();
+        desk2.setId(2L);
+        desk2.setDeskName("Serv 101");
+        desk2.setZone(zoneServ);
+        desk2.setType(DeskType.SHARED);
+        desk2.setStatus(DeskStatus.ACTIVE);
+        desk2.setIsTemporarilyAvailable(true);
+        desk2.setTemporaryAvailableFrom(LocalDateTime.now());
+        desk2.setTemporaryAvailableUntil(LocalDateTime.now().plusDays(5));
+
+        desk3 = new Desk();
         desk3.setId(3L);
+        desk3.setDeskName("PLC 201");
+        desk3.setZone(zonePLC);
+        desk3.setType(DeskType.SHARED);
+        desk3.setStatus(DeskStatus.ACTIVE);
+        desk3.setIsTemporarilyAvailable(true);
+        desk3.setTemporaryAvailableFrom(LocalDateTime.now());
+        desk3.setTemporaryAvailableUntil(LocalDateTime.now().plusDays(5));
     }
 
     @Test

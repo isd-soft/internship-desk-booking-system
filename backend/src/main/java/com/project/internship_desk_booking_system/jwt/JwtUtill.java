@@ -29,14 +29,13 @@ public class JwtUtill {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Long userId, String email, Role role) {
+    public String generateToken(String email, Role role) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .setSubject(email)
                 .addClaims(Map.of(
-                        "userId", userId,
                         "email", email,
                         "role", role.name()
                 ))

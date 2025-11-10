@@ -3,14 +3,15 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.dto.DeskDTO;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
+import com.project.internship_desk_booking_system.repository.ZoneRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,7 @@ import java.util.List;
 public class AdminService {
     private final DeskRepository deskRepository;
     private final BookingRepository bookingRepository;
-
-
+    private final ZoneRepository zoneRepository;
 
     private void applyTemporaryAvailability(
             Desk desk,
@@ -72,20 +72,21 @@ public class AdminService {
     ) {
         log.info(
                 "Adding new desk: name={}, zone={}, type={}, status={}",
-                deskDto.deskName(),
-                deskDto.zone(),
-                deskDto.deskType(),
+                deskDto.displayName(),
+                deskDto.zoneId(),
+                deskDto.type(),
                 deskDto.deskStatus()
         );
-
+        Zone zone = zoneRepository.findById(deskDto.zoneId())
+                .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneId()));
         Desk desk = new Desk();
-        desk.setDeskName(deskDto.deskName());
-        desk.setZone(deskDto.zone());
+        desk.setDeskName(deskDto.displayName());
+        desk.setZone(zone);
 
         desk.setType(
-                deskDto.deskType() == null ?
+                deskDto.type() == null ?
                         DeskType.SHARED
-                        : deskDto.deskType()
+                        : deskDto.type()
         );
         desk.setStatus(
                 deskDto.deskStatus() == null ?
@@ -105,13 +106,14 @@ public class AdminService {
 
         return new DeskDTO(
                 desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
+                desk.getZone().getZoneAbv()+desk.getDeskName(),
+                desk.getZone().getId(),
                 desk.getType(),
                 desk.getStatus(),
                 desk.getIsTemporarilyAvailable(),
                 desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
+                desk.getTemporaryAvailableUntil(),
+                false
         );
     }
 
@@ -134,13 +136,14 @@ public class AdminService {
 
         return new DeskDTO(
                 desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
+                desk.getZone().getZoneAbv()+desk.getDeskName(),
+                desk.getZone().getId(),
                 desk.getType(),
                 desk.getStatus(),
                 desk.getIsTemporarilyAvailable(),
                 desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
+                desk.getTemporaryAvailableUntil(),
+                false
         );
     }
 
@@ -158,14 +161,20 @@ public class AdminService {
                         "Desk with id: " + id + " not found"
                 ));
 
-        if (updates.deskName() != null) {
-            desk.setDeskName(updates.deskName());
+        if (updates.displayName() != null) {
+            desk.setDeskName(updates.displayName());
         }
         if (updates.zone() != null) {
-            desk.setZone(updates.zone());
+            Zone zone = zoneRepository.findById(updates.zone())
+                    .orElseThrow(() -> new ExceptionResponse(
+                            HttpStatus.NOT_FOUND,
+                            "ZONE_NOT_FOUND",
+                            "Zone not found: " + updates.zone()
+                    ));
+            desk.setZone(zone);
         }
-        if (updates.deskType() != null) {
-            desk.setType(updates.deskType());
+        if (updates.type() != null) {
+            desk.setType(updates.type());
         }
         if (updates.deskStatus() != null) {
             desk.setStatus(updates.deskStatus());
@@ -187,13 +196,14 @@ public class AdminService {
 
         return new DeskDTO(
                 desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
+                desk.getZone().getZoneAbv()+desk.getDeskName(),
+                desk.getZone().getId(),
                 desk.getType(),
                 desk.getStatus(),
                 desk.getIsTemporarilyAvailable(),
                 desk.getTemporaryAvailableFrom(),
-                desk.getTemporaryAvailableUntil()
+                desk.getTemporaryAvailableUntil(),
+                false
         );
     }
 
@@ -233,16 +243,17 @@ public class AdminService {
         for(Desk desk : desks){
             DeskDTO deskDTO = new DeskDTO(
                     desk.getId(),
-                    desk.getDeskName(),
-                    desk.getZone(),
+                    desk.getZone().getZoneAbv()+desk.getDeskName(),
+                    desk.getZone().getId(),
                     desk.getType(),
                     desk.getStatus(),
                     desk.getIsTemporarilyAvailable(),
                     desk.getTemporaryAvailableFrom(),
-                    desk.getTemporaryAvailableUntil()
+                    desk.getTemporaryAvailableUntil(),
+                    false
             );
             deskDTOList.add(deskDTO);
         }
         return deskDTOList;
     }
-}
+ }

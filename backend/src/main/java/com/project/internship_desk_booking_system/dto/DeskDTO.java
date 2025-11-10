@@ -8,14 +8,15 @@ import jakarta.validation.constraints.Null;
 
 import java.time.LocalDateTime;
 
-public record DeskDTO(
+public record   DeskDTO(
         @Null
         Long id,
         @NotBlank
-        String deskName,
+        String displayName,
         @NotBlank
-        String zone,
-        DeskType deskType,
+        //String zone,
+        Long zoneId,
+        DeskType type,
         DeskStatus deskStatus,
         @JsonAlias({"is_temporary_available"})
         Boolean isTemporarilyAvailable,

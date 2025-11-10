@@ -12,7 +12,8 @@ import java.util.Objects;
 @Setter
 @Entity
 @Table(name = "desk")
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class Desk {
 
     @Id
@@ -27,15 +28,16 @@ public class Desk {
     @Column(name = "desk_name")
     private String deskName;
 
-    @Column(name = "zone")
-    private String zone;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "zone_id", nullable = false, foreignKey = @ForeignKey(name = "fk_desk_zone"))
+    private Zone zone;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     private DeskType type = DeskType.SHARED;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private DeskStatus status = DeskStatus.ACTIVE;
 
     @Column(name = "is_temporarily_available", nullable = false)
@@ -57,18 +59,6 @@ public class Desk {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
-    }
-
-    public Desk(String deskName, String zone, DeskType type, DeskStatus status,
-                Boolean isTemporarilyAvailable, LocalDateTime temporaryAvailableFrom,
-                LocalDateTime temporaryAvailableUntil) {
-        this.deskName = deskName;
-        this.zone = zone;
-        this.type = type;
-        this.status = status;
-        this.isTemporarilyAvailable = isTemporarilyAvailable;
-        this.temporaryAvailableFrom = temporaryAvailableFrom;
-        this.temporaryAvailableUntil = temporaryAvailableUntil;
     }
 
 }

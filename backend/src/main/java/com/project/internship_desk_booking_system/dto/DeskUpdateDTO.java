@@ -9,10 +9,10 @@ import com.project.internship_desk_booking_system.enums.DeskType;
 import java.time.LocalDateTime;
 
 public record DeskUpdateDTO(
-        String deskName,
-        String zone,
+        String displayName,
+        Long zone,
         @JsonProperty("type")
-        DeskType deskType,
+        DeskType type,
         @JsonProperty("status") DeskStatus deskStatus,
         Boolean isTemporarilyAvailable,
         LocalDateTime temporaryAvailableFrom,

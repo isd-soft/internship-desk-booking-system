@@ -41,6 +41,7 @@ public class User {
             mappedBy = "user",
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FavouriteDesks> favourites = new ArrayList<>();
 
     public User(String firstName, String lastName, String email, Role role, String passwordHash) {
