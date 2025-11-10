@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.repository;
 
+import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,11 +15,8 @@ import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    List<Booking> findByUser_idAndStatus(int user_id, String status);
-
 
     @EntityGraph(attributePaths = "desk")
-    List<Booking> findByUserAndStartTimeAfterOrderByStartTimeAsc(User user, LocalDateTime now);
 
     @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId " +
             "AND b.status = 'ACTIVE' " +
@@ -40,11 +38,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endTime") LocalDateTime endTime
     );
 
-
-
     List<Booking> findBookingsByUserOrderByStartTimeDesc(User user);
-
-    //List<Booking> findBookingsForASpecificDesk(Long deskId, Booking status);
 
     @Query("SELECT b FROM Booking b " +
             "WHERE b.user.id = :userId " +
@@ -55,17 +49,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("userId") Long userId,
             @Param("now") LocalDateTime now,
             @Param("hours") LocalDateTime Hours);
-
-
-    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
-            "AND b.status = 'ACTIVE' " +
-            "AND b.startTime >= :startTime " +
-            "AND b.endTime <= :endTime")
-    List<Booking> findUserBookingsInTimeRange(
-            @Param("userId") Long userId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
-    );
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
@@ -99,5 +82,43 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("deskId") Long deskId,
             @Param("now") LocalDateTime now
     );
+
+    long countByStartTimeAfter(LocalDateTime startTime);
+
+    long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+
+    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
+            "d.id, d.deskName, d.zone, COUNT(b)) " +
+            "FROM Booking b JOIN b.desk d " +
+            "GROUP BY d.id, d.deskName, d.zone " +
+            "ORDER BY COUNT(b) DESC")
+    DeskStatsDTO findMostBookedDesk();
+
+    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
+            "d.id, d.deskName, d.zone, COUNT(b)) " +
+            "FROM Booking b JOIN b.desk d " +
+            "GROUP BY d.id, d.deskName, d.zone " +
+            "ORDER BY COUNT(b) ASC")
+    DeskStatsDTO findLeastBookedDesk();
+
+    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
+            "d.id, d.deskName, d.zone, COUNT(b)) " +
+            "FROM Booking b JOIN b.desk d " +
+            "WHERE b.startTime BETWEEN :startDate AND :endDate " +
+            "GROUP BY d.id, d.deskName, d.zone " +
+            "ORDER BY COUNT(b) DESC")
+    DeskStatsDTO findMostBookedDeskInRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
+            "d.id, d.deskName, d.zone, COUNT(b)) " +
+            "FROM Booking b JOIN b.desk d " +
+            "WHERE b.startTime BETWEEN :startDate AND :endDate " +
+            "GROUP BY d.id, d.deskName, d.zone " +
+            "ORDER BY COUNT(b) ASC")
+    DeskStatsDTO findLeastBookedDeskInRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 
 }
