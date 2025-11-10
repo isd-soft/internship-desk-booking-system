@@ -4,6 +4,7 @@ import RegistrationPage from "../components/RegisterPage.vue";
 import Dashboard from "../components/SidePanel.vue";
 import Map from "../components/VisualFloorMap/Map.vue";
 import { isAuthenticated } from "../utils/auth";
+import StatisticsPage from "../components/StatisticsPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -12,7 +13,8 @@ const routes = [
   { path: "/register", name: "Register", component: RegistrationPage },
 
   { path: "/dashboard", name: "Dashboard", component: Dashboard },
-  { path:"/map", name: "Map", component:Map}
+  { path:"/map", name: "Map", component:Map},
+    {path:"/statistics", name: "Statistics", component: StatisticsPage}
 ];
 
 const router = createRouter({
