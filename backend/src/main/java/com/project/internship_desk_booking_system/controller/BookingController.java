@@ -5,7 +5,6 @@ import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.BookingService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,9 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/booking")
@@ -37,16 +34,12 @@ public class BookingController {
     }
 
 
-    @PostMapping("/bookings/create")
-    public ResponseEntity<?> createBooking(
+    @PostMapping("/create")
+    public ResponseEntity<BookingResponseDto> createBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
-        try {
-            String email = principal.getEmail();
-            BookingResponseDto booking = bookingService.createBooking(email, bookingCreateRequest);
-            return ResponseEntity.status(HttpStatus.CREATED).body(booking);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        String email = principal.getEmail();
+        BookingResponseDto booking = bookingService.createBooking(email, bookingCreateRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 
 
@@ -56,52 +49,20 @@ public class BookingController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/bookedDesk/{bookingId}")
-    public ResponseEntity<?> getBookingById(
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<BookingResponseDto> getBookingById(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long bookingId) {
-        try {
-            String email = principal.getEmail();
-            BookingResponseDto booking = bookingService.getBookingById(email, bookingId);
-            return ResponseEntity.ok(booking);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(createErrorResponse(e.getMessage()));
-        }
+        return ResponseEntity.ok().body(bookingService.getBookingById(principal.getEmail(), bookingId));
+
     }
 
-    @DeleteMapping("/bookedDesk/{bookingId}")
-    public ResponseEntity<?> cancelBooking(
+    @DeleteMapping("/{bookingId}")
+    public ResponseEntity<Void> cancelBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long bookingId) {
-        try {
-            String email = principal.getEmail();
-            bookingService.cancelBooking(email, bookingId);
-            return ResponseEntity.ok(createSuccessResponse());
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(createErrorResponse(e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(createErrorResponse(e.getMessage()));
-        }
-    }
-
-    private Map<String, String> createErrorResponse(String message) {
-        Map<String, String> response = new HashMap<>();
-        response.put("error", message);
-        return response;
-    }
-
-    private Map<String, String> createSuccessResponse() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Booking cancelled successfully");
-        return response;
+        String email = principal.getEmail();
+        bookingService.cancelBooking(email, bookingId);
+        return ResponseEntity.ok().build();
     }
 }
