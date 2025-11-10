@@ -1,14 +1,11 @@
 package com.project.internship_desk_booking_system.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @AllArgsConstructor
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class DeskStatsDTO {
     private Long desk_id;
     private String deskName;

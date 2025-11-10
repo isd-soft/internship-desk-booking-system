@@ -87,38 +87,41 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 
-    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
-            "d.id, d.deskName, d.zone, COUNT(b)) " +
-            "FROM Booking b JOIN b.desk d " +
-            "GROUP BY d.id, d.deskName, d.zone " +
-            "ORDER BY COUNT(b) DESC")
+    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
+            "FROM desk d " +
+            "LEFT JOIN booking b ON b.desk_id = d.id " +
+            "GROUP BY d.id, d.desk_name, d.zone " +
+            "ORDER BY booking_count DESC " +
+            "LIMIT 1", nativeQuery = true)
     DeskStatsDTO findMostBookedDesk();
 
-    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
-            "d.id, d.deskName, d.zone, COUNT(b)) " +
-            "FROM Booking b JOIN b.desk d " +
-            "GROUP BY d.id, d.deskName, d.zone " +
-            "ORDER BY COUNT(b) ASC")
+    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
+            "FROM desk d " +
+            "LEFT JOIN booking b ON b.desk_id = d.id " +
+            "GROUP BY d.id, d.desk_name, d.zone " +
+            "ORDER BY booking_count ASC " +
+            "LIMIT 1", nativeQuery = true)
     DeskStatsDTO findLeastBookedDesk();
 
-    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
-            "d.id, d.deskName, d.zone, COUNT(b)) " +
-            "FROM Booking b JOIN b.desk d " +
-            "WHERE b.startTime BETWEEN :startDate AND :endDate " +
-            "GROUP BY d.id, d.deskName, d.zone " +
-            "ORDER BY COUNT(b) DESC")
+    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
+            "FROM desk d " +
+            "LEFT JOIN booking b ON b.desk_id = d.id " +
+            "WHERE b.start_time BETWEEN :startDate AND :endDate " +
+            "GROUP BY d.id, d.desk_name, d.zone " +
+            "ORDER BY booking_count DESC " +
+            "LIMIT 1", nativeQuery = true)
     DeskStatsDTO findMostBookedDeskInRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT new com.project.internship_desk_booking_system.dto.DeskStatsDTO(" +
-            "d.id, d.deskName, d.zone, COUNT(b)) " +
-            "FROM Booking b JOIN b.desk d " +
-            "WHERE b.startTime BETWEEN :startDate AND :endDate " +
-            "GROUP BY d.id, d.deskName, d.zone " +
-            "ORDER BY COUNT(b) ASC")
+    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
+            "FROM desk d " +
+            "LEFT JOIN booking b ON b.desk_id = d.id " +
+            "WHERE b.start_time BETWEEN :startDate AND :endDate " +
+            "GROUP BY d.id, d.desk_name, d.zone " +
+            "ORDER BY booking_count ASC " +
+            "LIMIT 1", nativeQuery = true)
     DeskStatsDTO findLeastBookedDeskInRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
-
 }
