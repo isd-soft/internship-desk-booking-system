@@ -392,7 +392,7 @@ class BookingServiceTest {
                 .thenReturn(bookings);
         when(bookingMapper.maptoDto(any(Booking.class))).thenReturn(bookingResponseDto);
 
-        List<BookingResponseDto> result = bookingService.getUpcomingBookings("test@example.com");
+        List<BookingResponse> result = bookingService.getUpcomingBookingsR("test@example.com");
 
         assertNotNull(result);
         assertEquals(1, result.size());

@@ -9,8 +9,8 @@ public class DeskMapper {
     public DeskDto toDto(Desk desk) {
         return new DeskDto(
                 desk.getId(),
-                desk.getDeskName(),
-                desk.getZone(),
+                desk.getZone().getZoneAbv()+desk.getDeskName(),
+                desk.getZone().getId(),
                 desk.getType(),
                 desk.getStatus(),
                 desk.getIsTemporarilyAvailable(),

@@ -2,21 +2,21 @@ package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
-import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
-import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
-import com.project.internship_desk_booking_system.mapper.DeskMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
+import com.project.internship_desk_booking_system.repository.ZoneRepository;
+import jakarta.transaction.Transactional;
 import com.project.internship_desk_booking_system.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +35,7 @@ import java.util.NoSuchElementException;
 public class AdminService {
     private final DeskRepository deskRepository;
     private final BookingRepository bookingRepository;
+    private final ZoneRepository zoneRepository;
     private final BookingMapper bookingMapper;
     private final UserRepository userRepository;
     private final DeskMapper deskMapper;
@@ -82,20 +83,21 @@ public class AdminService {
     ) {
         log.info(
                 "Adding new desk: name={}, zone={}, type={}, status={}",
-                deskDto.deskName(),
-                deskDto.zone(),
-                deskDto.deskType(),
+                deskDto.displayName(),
+                deskDto.zoneId(),
+                deskDto.type(),
                 deskDto.deskStatus()
         );
-
+        Zone zone = zoneRepository.findById(deskDto.zoneId())
+                .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneId()));
         Desk desk = new Desk();
-        desk.setDeskName(deskDto.deskName());
-        desk.setZone(deskDto.zone());
+        desk.setDeskName(deskDto.displayName());
+        desk.setZone(zone);
 
         desk.setType(
-                deskDto.deskType() == null ?
+                deskDto.type() == null ?
                         DeskType.SHARED
-                        : deskDto.deskType()
+                        : deskDto.type()
         );
         desk.setStatus(
                 deskDto.deskStatus() == null ?
@@ -143,7 +145,7 @@ public class AdminService {
         log.info("Deactivating desk with id {}", id);
 
         Desk desk = deskRepository.findById(id)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
 
         desk.setIsTemporarilyAvailable(false);
         desk.setStatus(DeskStatus.DEACTIVATED);
@@ -169,14 +171,20 @@ public class AdminService {
                         "Desk with id: " + id + " not found"
                 ));
 
-        if (updates.deskName() != null) {
-            desk.setDeskName(updates.deskName());
+        if (updates.displayName() != null) {
+            desk.setDeskName(updates.displayName());
         }
         if (updates.zone() != null) {
-            desk.setZone(updates.zone());
+            Zone zone = zoneRepository.findById(updates.zone())
+                    .orElseThrow(() -> new ExceptionResponse(
+                            HttpStatus.NOT_FOUND,
+                            "ZONE_NOT_FOUND",
+                            "Zone not found: " + updates.zone()
+                    ));
+            desk.setZone(zone);
         }
-        if (updates.deskType() != null) {
-            desk.setType(updates.deskType());
+        if (updates.type() != null) {
+            desk.setType(updates.type());
         }
         if (updates.deskStatus() != null) {
             desk.setStatus(updates.deskStatus());
@@ -241,48 +249,10 @@ public class AdminService {
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
         for(Desk desk : desks){
-            DeskDto deskDTO = deskMapper.toDto(desk);
+            DeskDto deskDTO = toDeskDTO(desk);
             deskDtoList.add(deskDTO);
         }
         return deskDtoList;
-    }
-
-    public List<DeskCoordinatesDTO> getBaseCoordinates(){
-        List<DeskCoordinatesDTO> coordinates = deskRepository.findBaseCoordinates();
-        if(coordinates.isEmpty()){
-            throw new ExceptionResponse(
-                    HttpStatus.NOT_FOUND,
-                    "CURRENT_DESK_COORDINATES_NOT_FOUND",
-                    "Current coordinates not found "
-            );
-        }
-        return coordinates;
-    }
-
-    @Transactional
-    public DeskCoordinatesDTO changeCurrentCoordinates(
-            CoordinatesUpdateCommand coordinatesUpdateCommand
-    ){
-        Desk desk = deskRepository
-                .findById(coordinatesUpdateCommand.deskId())
-                .orElseThrow(() -> new ExceptionResponse(
-                        HttpStatus.NOT_FOUND,
-                        "DESK_NOT_FOUND",
-                        String.format(
-                                "Desk with id %d not found ",
-                                coordinatesUpdateCommand.deskId()
-                        )
-                ));
-        desk.setCurrentX(coordinatesUpdateCommand.currentX());
-        desk.setCurrentY(coordinatesUpdateCommand.currentY());
-
-        deskRepository.save(desk);
-
-        return new DeskCoordinatesDTO(
-          desk.getId(),
-          desk.getCurrentX(),
-          desk.getCurrentY()
-        );
     }
 
    @Transactional
