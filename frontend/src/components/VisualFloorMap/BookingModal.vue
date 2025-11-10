@@ -19,36 +19,33 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const PRESET_HOURS = [2, 4, 8];
-
 const bookingForm = reactive({
-  hours: 2 as number,
-  customHours: 2 as number,
+  duration: 30,
+  customMinutes: 30,
 });
 
+// Синхронизация с существующим бронированием
 watch(
   () => props.existingBooking,
   (booking) => {
     if (booking) {
-      const h = Math.max(0.5, Math.round((booking.duration / 60) * 2) / 2);
-      bookingForm.hours = h;
-      bookingForm.customHours = h;
+      bookingForm.duration = booking.duration;
+      bookingForm.customMinutes = booking.duration;
     } else {
-      bookingForm.hours = 2;
-      bookingForm.customHours = 2;
+      bookingForm.duration = 30;
+      bookingForm.customMinutes = 30;
     }
   },
   { immediate: true }
 );
 
-function setDuration(hours: number) {
-  bookingForm.hours = hours;
-  bookingForm.customHours = hours;
+function setDuration(minutes: number) {
+  bookingForm.duration = minutes;
+  bookingForm.customMinutes = minutes;
 }
 
 function handleConfirm() {
-  const minutes = Math.round(bookingForm.hours * 60);
-  emit("confirm", { duration: minutes });
+  emit("confirm", { duration: bookingForm.duration });
   closeModal();
 }
 
@@ -60,10 +57,9 @@ function closeModal() {
   emit("update:modelValue", false);
 }
 
-function formatHours(h: number): string {
-  const totalMin = Math.round(h * 60);
-  const hours = Math.floor(totalMin / 60);
-  const mins = totalMin % 60;
+function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
   if (hours === 0) return `${mins}min`;
   if (mins === 0) return `${hours}h`;
   return `${hours}h ${mins}min`;
@@ -114,13 +110,16 @@ function formatHours(h: number): string {
           <div class="section-title">Duration</div>
           <div class="duration-grid">
             <button
-              v-for="hours in PRESET_HOURS"
-              :key="hours"
-              @click="setDuration(hours)"
-              :class="['duration-btn', { active: bookingForm.hours === hours }]"
+              v-for="duration in [30, 60, 120]"
+              :key="duration"
+              @click.stop="setDuration(duration)"
+              :class="[
+                'duration-btn',
+                { active: bookingForm.duration === duration },
+              ]"
             >
-              <div class="duration-value">{{ hours }}</div>
-              <div class="duration-unit">h</div>
+              <div class="duration-value">{{ duration }}</div>
+              <div class="duration-unit">min</div>
             </button>
           </div>
         </div>
@@ -129,20 +128,13 @@ function formatHours(h: number): string {
           <div class="section-title">Custom Duration</div>
           <div class="custom-input-wrapper">
             <input
-              v-model.number="bookingForm.customHours"
-              @input="
-                bookingForm.hours = Math.max(
-                  0.5,
-                  Math.round(bookingForm.customHours * 2) / 2
-                )
-              "
+              v-model.number="bookingForm.customMinutes"
+              @input="bookingForm.duration = bookingForm.customMinutes"
               type="number"
-              step="0.5"
-              min="0.5"
               class="custom-input"
-              placeholder="Enter hours"
+              placeholder="Enter minutes"
             />
-            <span class="input-suffix">hours</span>
+            <span class="input-suffix">minutes</span>
           </div>
         </div>
 
@@ -153,7 +145,7 @@ function formatHours(h: number): string {
           <div class="summary-info">
             <div class="summary-label">Total Booking Time</div>
             <div class="summary-duration">
-              {{ formatHours(bookingForm.hours) }}
+              {{ formatDuration(bookingForm.duration) }}
             </div>
           </div>
         </div>
@@ -164,12 +156,12 @@ function formatHours(h: number): string {
           v-if="isBooked"
           variant="text"
           class="cancel-button"
-          @click="handleCancel"
+          @click.stop="handleCancel"
         >
           Cancel Booking
         </v-btn>
         <v-spacer v-if="isBooked" />
-        <v-btn class="confirm-button" size="x-large" @click="handleConfirm">
+        <v-btn class="confirm-button" size="x-large" @click.stop="handleConfirm">
           {{ isBooked ? "Update Booking" : "Confirm Booking" }}
         </v-btn>
       </v-card-actions>

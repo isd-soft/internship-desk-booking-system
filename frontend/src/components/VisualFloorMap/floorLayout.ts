@@ -20,19 +20,23 @@ let horizontalDeskHeight = 26;
 let horizontalDeskWidth = 55;
 
 export function resetLayout() {
-  layout.splice(0, layout.length);
+  layout.length = 0;
   counter = 0;
 }
 
 export function addDesk(
-  clusterDesks,
-  xCoord,
-  startY,
+  clusterDesks: any[],
+  xCoord: number,
+  startY: number,
   reverseFlag = false,
   makeStatic = false
 ) {
   for (const desk of clusterDesks) {
-    let direction = reverseFlag ? -1 : 1;
+    let direction = 1;
+
+    if (reverseFlag) {
+      direction = -1;
+    }
 
     counter++;
     layout.push({
@@ -67,7 +71,7 @@ export function makeBottomClusters(
         w: horizontalDeskWidth,
       },
     ];
-    addDesk(clusterDesks, xCoord, startY);
+    addDesk(clusterDesks, xCoord, startY, false, makeStatic);
   }
 }
 
@@ -92,7 +96,7 @@ export function makeTopClusters(
         w: horizontalDeskWidth,
       },
     ];
-    addDesk(clusterDesks, xCoord, startY, true);
+    addDesk(clusterDesks, xCoord, startY, true, makeStatic);
   }
 }
 
@@ -113,6 +117,6 @@ export function makeLeftClusters(
         w: horizontalDeskWidth,
       },
     ];
-    addDesk(clusterDesks, startX, yCoord);
+    addDesk(clusterDesks, startX, yCoord, false, makeStatic);
   }
 }

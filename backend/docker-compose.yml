@@ -13,9 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
   openldap:
-    image: osixia/openldap:latest
+    image: osixia/openldap:1.5.0
     container_name: openldap
+    restart: always
     environment:
       LDAP_ORGANISATION: "My Company"
       LDAP_DOMAIN: "mycompany.local"
@@ -23,15 +25,26 @@ services:
     ports:
       - "389:389"
       - "636:636"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
 
   phpldapadmin:
-    image: osixia/phpldapadmin:latest
+    image: osixia/phpldapadmin:0.9.0
     container_name: phpldapadmin
+    restart: always
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: "false"
+      PHPLDAPADMIN_TRUST_PROXY: "true"
     ports:
-      - "6443:443"
+      - "8081:80"
     depends_on:
       - openldap
+    volumes:
+      - /var/run/php:/var/run/php
+
 volumes:
   postgres_data:
+  ldap_data:
+  ldap_config:

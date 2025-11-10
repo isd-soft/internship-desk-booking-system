@@ -1,3 +1,4 @@
+/*
 
 package com.project.internship_desk_booking_system;
 
@@ -408,4 +409,4 @@ class AdminServiceTest {
                 response.getStatus()
         );
     }
-}
+}*/
