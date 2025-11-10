@@ -2,6 +2,7 @@ package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,10 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUser_idAndStatus(int user_id, String status);
+
+
+    @EntityGraph(attributePaths = "desk")
+    List<Booking> findByUserAndStartTimeAfterOrderByStartTimeAsc(User user, LocalDateTime now);
 
     @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId " +
             "AND b.status = 'ACTIVE' " +
