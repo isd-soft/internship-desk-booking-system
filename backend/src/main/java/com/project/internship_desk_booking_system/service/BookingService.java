@@ -71,7 +71,7 @@ public class BookingService {
                 email,
                 savedBooking.getId(),
                 savedBooking.getDesk().getDeskName(),
-                savedBooking.getDesk().getZone(),
+                savedBooking.getDesk().getZone().getZoneName(),
                 OffsetDateTime.now()
         );
 
@@ -107,7 +107,7 @@ public class BookingService {
                 email,
                 booking.getId(),
                 booking.getDesk().getDeskName(),
-                booking.getDesk().getZone(),
+                booking.getDesk().getZone().getZoneName(),
                 OffsetDateTime.now()
         );
     }

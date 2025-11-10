@@ -14,7 +14,6 @@ public record DeskDto(
         @NotBlank
         String displayName,
         @NotBlank
-        //String zone,
         Long zoneId,
         DeskType type,
         DeskStatus deskStatus,
