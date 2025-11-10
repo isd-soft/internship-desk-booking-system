@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="admin-bookings">
     <div class="admin-card">
@@ -100,7 +102,12 @@
               </template>
               <v-list density="compact">
                 <v-list-item @click="onView(item)" prepend-icon="mdi-eye" title="View"></v-list-item>
-                <v-list-item @click="onEdit(item)" prepend-icon="mdi-pencil" title="Edit"></v-list-item>
+                <v-list-item
+                    @click="onEdit(item)"
+                    prepend-icon="mdi-pencil"
+                    title="Edit">
+                </v-list-item>
+
                 <v-list-item
                   @click="onCancel(item)"
                   prepend-icon="mdi-cancel"
@@ -123,12 +130,13 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../plugins/axios';
-
+import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
+const selectedBooking = ref(null);
+const showModal = ref(false);
 const router = useRouter();
 const route = useRoute();
 
@@ -171,7 +179,7 @@ const mappedBookings = computed(() => {
     deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
 
     // Related entities
-    userId: b.userId ?? b.user?.id ?? b.user?.userId ?? b.user?.userID ?? null,
+    userId: b.user_id ?? null,
     deskName: b.desk?.deskName || b.deskName || 'N/A',
     zone: b.desk?.zone || b.zone || 'N/A',
     deskType: b.desk?.deskType || b.deskType || 'N/A',
@@ -233,10 +241,24 @@ function formatDuration(startStr, endStr) {
 
 // Row action handlers (stubbed)
 function onView(item) {
-  console.log('[AdminBookings] View booking', item?.id, item);
+  console.log('[AdminBookings] Edit booking', item?.id, item);
+  selectedBooking.value = item;
+  showModal.value = true;
 }
+
 function onEdit(item) {
   console.log('[AdminBookings] Edit booking', item?.id, item);
+  selectedBooking.value = item;
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+}
+function handleSave(updatedData) {
+  console.log("Booking updated:", updatedData);
+  // later you'll call your backend PUT API here
+  showModal.value = false;
 }
 async function onCancel(item) {
   const id = item?.id ?? item?.bookingId;
