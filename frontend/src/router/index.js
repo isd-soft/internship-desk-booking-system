@@ -1,34 +1,26 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
 import RegistrationPage from "../components/RegisterPage.vue";
-import Dashboard from "../components/SidePanel.vue";
-import Map from "../components/VisualFloorMap/Map.vue";
+import Dashboard from "../components/Dashboard.vue";
+import Map from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import { isAuthenticated } from "../utils/auth";
+import StatisticsPage from "../components/StatisticsPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
-
   { path: "/login", name: "Login", component: LoginPage },
   { path: "/register", name: "Register", component: RegistrationPage },
-
-  { path: "/dashboard", name: "Dashboard", component: Dashboard },
-  { path:"/map", name: "Map", component:Map}
+  { path: "/dashboard", name: "Dashboard", component: Dashboard }, // <-- тут лейаут
+  { path: "/map", name: "Map", component: Map },
+    {path:"/statistics", name: "Statistics", component: StatisticsPage}
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach((to, from, next) => {
-  const isAuth = isAuthenticated();
   const publicPages = ["/login", "/register"];
-  const triesToAccessPublic = publicPages.includes(to.path);
-
-  if (!isAuth && !triesToAccessPublic) return next("/login");
-
-  if (isAuth && triesToAccessPublic) return next("/dashboard");
-
+  const isAuth = isAuthenticated();
+  if (!isAuth && !publicPages.includes(to.path)) return next("/login");
   next();
 });
 

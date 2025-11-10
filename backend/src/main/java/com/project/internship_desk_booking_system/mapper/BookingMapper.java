@@ -17,6 +17,7 @@ public class BookingMapper {
 
         return new BookingResponse(
                 booking.getId(),
+                booking.getUser().getId(),
                 booking.getStartTime(),
                 booking.getEndTime(),
                 booking.getStatus(),
