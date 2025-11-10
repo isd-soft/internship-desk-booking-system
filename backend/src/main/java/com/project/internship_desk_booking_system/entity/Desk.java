@@ -3,7 +3,7 @@ package com.project.internship_desk_booking_system.entity;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.*;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -14,7 +14,8 @@ import java.util.Objects;
 @Setter
 @Entity
 @Table(name = "desk")
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class Desk {
 
     @Id
@@ -29,15 +30,19 @@ public class Desk {
     @Column(name = "desk_name")
     private String deskName;
 
-    @Column(name = "zone")
-    private String zone;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "zone_id", nullable = false, foreignKey = @ForeignKey(name = "fk_desk_zone"))
+    private Zone zone;
+
+    @Column(name = "zone", nullable = false, length = 100)
+    private String zoneName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     private DeskType type = DeskType.SHARED;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private DeskStatus status = DeskStatus.ACTIVE;
 
     @Column(name = "is_temporarily_available", nullable = false)
@@ -49,18 +54,6 @@ public class Desk {
     @Column(name = "temporary_available_until")
     private LocalDateTime temporaryAvailableUntil;
 
-    public Desk(String deskName, String zone, DeskType type, DeskStatus status,
-                Boolean isTemporarilyAvailable, LocalDateTime temporaryAvailableFrom,
-                LocalDateTime temporaryAvailableUntil) {
-        this.deskName = deskName;
-        this.zone = zone;
-        this.type = type;
-        this.status = status;
-        this.isTemporarilyAvailable = isTemporarilyAvailable;
-        this.temporaryAvailableFrom = temporaryAvailableFrom;
-        this.temporaryAvailableUntil = temporaryAvailableUntil;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -71,6 +64,12 @@ public class Desk {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+    public void setZone(Zone zone) {
+        this.zone = zone;
+        if (zone != null) {
+            this.zoneName = zone.getZoneName();
+        }
     }
 
 }

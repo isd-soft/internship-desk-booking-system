@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,5 +15,57 @@ import java.util.Optional;
 public interface DeskRepository extends JpaRepository<Desk, Long> {
 
     List<Desk> findByType(DeskType type);
+
+    List<Desk> findByZone(Zone zone);
+
+    List<Desk> findByZoneId(Long zoneId);
+
+    List<Desk> findByIsTemporarilyAvailable(Boolean isTemporarilyAvailable);
+
+    @Query("SELECT d FROM Desk d WHERE d.isTemporarilyAvailable = true " +
+            "AND d.temporaryAvailableFrom <= :dateTime " +
+            "AND d.temporaryAvailableUntil >= :dateTime " +
+            "AND d.status = 'ACTIVE'")
+    List<Desk> findTemporarilyAvailableDesksAt(@Param("dateTime") LocalDateTime dateTime);
+
+    @Query("SELECT d FROM Desk d WHERE d.status = 'ACTIVE' " +
+            "AND (d.type = 'SHARED' " +
+            "OR (d.type = 'ASSIGNED' AND d.isTemporarilyAvailable = true " +
+            "AND d.temporaryAvailableFrom <= :dateTime " +
+            "AND d.temporaryAvailableUntil >= :dateTime))")
+    List<Desk> findAvailableDesksForBookingAt(@Param("dateTime") LocalDateTime dateTime);
+
+    @Query("SELECT d FROM Desk d WHERE LOWER(d.zone.zoneName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(d.zone.zoneAbv) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Desk> findByZoneKeyword(@Param("keyword") String keyword);
+
+    boolean existsByZoneAndDeskName(Zone zone, String deskName);
+
+    boolean existsByZoneIdAndDeskName(Long zoneId, String deskName);
+
+    long countByStatus(DeskStatus status);
+
+    long countByZone(Zone zone);
+
+    long countByZoneId(Long zoneId);
+
+    long countByType(DeskType type);
+
+    @Query("SELECT DISTINCT d.zone FROM Desk d ORDER BY d.zone.zoneName")
+    List<Zone> findAllDistinctZones();
+
+    @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId ORDER BY d.deskName DESC LIMIT 1")
+    Optional<Desk> findLastDeskInZone(@Param("zoneId") Long zoneId);
+
+    @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId ORDER BY d.deskName ASC")
+    List<Desk> findAllByZoneIdOrderByDeskNumber(@Param("zoneId") Long zoneId);
+
+    @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId " +
+            "AND d.status = 'ACTIVE' " +
+            "AND (d.type = 'SHARED' " +
+            "OR (d.type = 'ASSIGNED' AND d.isTemporarilyAvailable = true " +
+            "AND d.temporaryAvailableFrom <= :dateTime " +
+            "AND d.temporaryAvailableUntil >= :dateTime))")
+    List<Desk> findAvailableDesksInZoneAt(@Param("zoneId") Long zoneId, @Param("dateTime") LocalDateTime dateTime);
     List<Desk> findByStatus(DeskStatus status);
 }
