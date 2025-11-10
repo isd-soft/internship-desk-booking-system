@@ -16,4 +16,8 @@ public record DeskUpdateDTO(
         @JsonProperty("status") DeskStatus deskStatus,
         Boolean isTemporarilyAvailable,
         LocalDateTime temporaryAvailableFrom,
-        LocalDateTime temporaryAvailableUntil) { }
+        LocalDateTime temporaryAvailableUntil,
+        Double currentX,
+        Double currentY,
+        Double baseX,
+        Double baseY) { }

@@ -50,15 +50,4 @@ public class DeskService {
         return coordinates;
     }
 
-    public List<DeskCoordinatesDTO> getBaseCoordinates(){
-        List<DeskCoordinatesDTO> coordinates = deskRepository.findBaseCoordinates();
-        if(coordinates.isEmpty()){
-            throw new ExceptionResponse(
-                    HttpStatus.NOT_FOUND,
-                    "CURRENT_DESK_COORDINATES_NOT_FOUND",
-                    "Current coordinates not found "
-            );
-        }
-        return coordinates;
-    }
 }

@@ -31,15 +31,10 @@ public class DeskController {
         return ResponseEntity.ok(deskService.getAllUnavailableDesks());
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/coordinates")
     public ResponseEntity<List<DeskCoordinatesDTO>> getCoordinates() {
         return ResponseEntity.ok(deskService.getCoordinates());
     }
 
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/baseCoordinates")
-    public ResponseEntity<List<DeskCoordinatesDTO>> getBaseCoordinates() {
-        return ResponseEntity.ok(deskService.getBaseCoordinates());
-    }
 }

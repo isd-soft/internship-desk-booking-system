@@ -17,17 +17,15 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
     List<Desk> findByType(DeskType type);
     List<Desk> findByStatus(DeskStatus status);
 
-    @Query(value = """
-            SELECT id, current_x, current_y
-            FROM desk
-            """,
-            nativeQuery = true)
+    @Query("""
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.currentX, d.currentY)
+    FROM Desk d
+    """)
     List<DeskCoordinatesDTO> findCurrentCoordinates();
 
-    @Query(value = """
-            SELECT id, base_x, base_y
-            FROM desk
-            """,
-            nativeQuery = true)
+    @Query("""
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.baseX, d.baseY)
+    FROM Desk d
+    """)
     List<DeskCoordinatesDTO> findBaseCoordinates();
 }

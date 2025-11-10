@@ -2,6 +2,8 @@ package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
+import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
@@ -189,6 +191,18 @@ public class AdminService {
                             updates.temporaryAvailableUntil() : LocalDateTime.now().plusDays(20)
             );
         }
+        if(updates.currentX() != null){
+            desk.setCurrentX(updates.currentX());
+        }
+        if(updates.currentY() != null){
+            desk.setCurrentY(updates.currentY());
+        }
+        if(updates.baseX() != null){
+            desk.setBaseX(updates.baseX());
+        }
+        if(updates.baseY() != null){
+            desk.setBaseY(updates.baseY());
+        }
 
         deskRepository.save(desk);
 
@@ -231,6 +245,44 @@ public class AdminService {
             deskDtoList.add(deskDTO);
         }
         return deskDtoList;
+    }
+
+    public List<DeskCoordinatesDTO> getBaseCoordinates(){
+        List<DeskCoordinatesDTO> coordinates = deskRepository.findBaseCoordinates();
+        if(coordinates.isEmpty()){
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "CURRENT_DESK_COORDINATES_NOT_FOUND",
+                    "Current coordinates not found "
+            );
+        }
+        return coordinates;
+    }
+
+    @Transactional
+    public DeskCoordinatesDTO changeCurrentCoordinates(
+            CoordinatesUpdateCommand coordinatesUpdateCommand
+    ){
+        Desk desk = deskRepository
+                .findById(coordinatesUpdateCommand.deskId())
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "DESK_NOT_FOUND",
+                        String.format(
+                                "Desk with id %d not found ",
+                                coordinatesUpdateCommand.deskId()
+                        )
+                ));
+        desk.setCurrentX(coordinatesUpdateCommand.currentX());
+        desk.setCurrentY(coordinatesUpdateCommand.currentY());
+
+        deskRepository.save(desk);
+
+        return new DeskCoordinatesDTO(
+          desk.getId(),
+          desk.getCurrentX(),
+          desk.getCurrentY()
+        );
     }
 
    @Transactional
