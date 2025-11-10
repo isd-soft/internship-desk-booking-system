@@ -28,9 +28,12 @@ public class Desk {
     @Column(name = "desk_name")
     private String deskName;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "zone_id", nullable = false, foreignKey = @ForeignKey(name = "fk_desk_zone"))
     private Zone zone;
+
+    @Column(name = "zone", nullable = false, length = 100)
+    private String zoneName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
@@ -59,6 +62,12 @@ public class Desk {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+    public void setZone(Zone zone) {
+        this.zone = zone;
+        if (zone != null) {
+            this.zoneName = zone.getZoneName();
+        }
     }
 
 }

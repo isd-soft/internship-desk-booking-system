@@ -66,7 +66,7 @@ public class AdminService {
             desk.setTemporaryAvailableUntil(null);
         }
     }
-
+@Transactional
     public DeskDTO addDesk(
             DeskDTO deskDto
     ) {
