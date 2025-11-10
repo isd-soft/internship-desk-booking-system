@@ -1,266 +1,185 @@
-<template>
-  <v-expand-transition>
-    <div v-if="show" class="booking-list">
-      <v-progress-circular
-        v-if="loading"
-        indeterminate
-        color="primary"
-        class="mx-auto my-4 d-block"
-      />
-
-      <div v-else-if="bookings.length === 0" class="no-bookings">
-        No bookings yet
-      </div>
-
-      <div v-else class="scrollable-list">
-        <div
-          v-for="(booking, index) in bookings"
-          :key="index"
-          class="booking-card"
-        >
-          <div class="card-content">
-            <div class="desk-info">
-              <div class="desk-icon">
-                <v-icon size="20" color="white">mdi-desk</v-icon>
-              </div>
-              <div class="desk-details">
-                <div class="desk-name">{{ booking.desk.deskName }}</div>
-                <div class="desk-meta">
-                  {{ booking.desk.zone }} • {{ booking.desk.deskType }}
-                </div>
-              </div>
-            </div>
-
-            <v-chip
-              :color="statusColor(booking.status)"
-              variant="flat"
-              size="small"
-              class="status-chip"
-            >
-              {{ booking.status }}
-            </v-chip>
-          </div>
-
-          <div class="time-info">
-            <div class="time-row">
-              <span class="time-label">Date</span>
-              <span class="time-value">{{
-                formatDate(booking.startTime)
-              }}</span>
-            </div>
-            <div class="time-row">
-              <span class="time-label">Time</span>
-              <span class="time-value">
-                {{ formatTime(booking.startTime) }} —
-                {{ formatTime(booking.endTime) }}
-              </span>
-            </div>
-          </div>
-
-          <div
-            class="availability-info"
-            v-if="booking.desk.isTemporarilyAvailable"
-          >
-            <div class="availability-dot"></div>
-            <span class="availability-text">
-              Available until
-              {{ formatTime(booking.desk.temporaryAvailableUntil) }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </v-expand-transition>
-</template>
-
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import api from "../plugins/axios";
+import { ref } from "vue";
+import {
+  layout,
+  colNum,
+  rowHeight,
+  totalRows,
+  IMAGE_WIDTH_PX,
+  makeBottomClusters,
+  makeTopClusters,
+  makeLeftClusters,
+} from "../components/VisualFloorMap/floorLayout";
+makeBottomClusters(888, 555, 4);
+makeBottomClusters(400, 555, 2);
 
-const props = defineProps<{ show: boolean }>();
+makeTopClusters(888, 30, 4);
+makeTopClusters(400, 30, 1);
 
-const bookings = ref<any[]>([]);
-const loading = ref(false);
+makeLeftClusters(178, 555, 2);
+makeLeftClusters(271, 173, 2);
 
-const fetchBookings = async () => {
-  try {
-    loading.value = true;
-    const response = await api.get("/booking/my");
-    bookings.value = response.data ?? [];
-  } catch (err) {
-    console.error("Error fetching bookings:", err);
-  } finally {
-    loading.value = false;
+const showBookingModal = ref(false);
+const selectedDesk = ref<any>(null);
+const bookedDesks = ref<Set<string>>(new Set());
+
+function handleDeskClick(item: any) {
+  if (item.static) return;
+  console.log("Clicked desk:", item.i);
+  selectedDesk.value = item;
+  showBookingModal.value = true;
+}
+
+function handleConfirmBooking(data: { duration: number }) {
+  console.log("Booking confirmed:", selectedDesk.value?.i, data.duration);
+  if (selectedDesk.value) {
+    bookedDesks.value.add(selectedDesk.value.i);
   }
-};
+}
 
-watch(
-  () => props.show,
-  (val) => {
-    if (val) fetchBookings();
+function handleCancelBooking() {
+  console.log("Booking cancelled:", selectedDesk.value?.i);
+  if (selectedDesk.value) {
+    bookedDesks.value.delete(selectedDesk.value.i);
   }
-);
+  showBookingModal.value = false;
+}
 
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-const formatTime = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
-const statusColor = (status: string) => {
-  switch (status) {
-    case "CONFIRMED":
-      return "success";
-    case "ACTIVE":
-      return "primary";
-    case "CANCELLED":
-      return "error";
-    default:
-      return "grey";
+function isDeskBooked(deskId: string): boolean {
+  return bookedDesks.value.has(deskId);
+}
+
+function getExistingBooking(deskId: string) {
+  if (isDeskBooked(deskId)) {
+    return { duration: 60 };
   }
-};
+  return undefined;
+}
 </script>
 
+<template>
+  <div class="floorplan-container no-anim">
+    <GridLayout
+      v-model:layout="layout"
+      :col-num="colNum"
+      :row-height="rowHeight"
+      :width="IMAGE_WIDTH_PX"
+      :max-rows="totalRows"
+      :margin="[0, 0]"
+      :responsive="false"
+      :vertical-compact="false"
+      prevent-collision
+      :use-css-transforms="true"
+      :is-draggable="false"
+      :is-resizable="false"
+      style="position: relative"
+    >
+      <template #item="{ item }">
+        <div
+          class="desk"
+          :class="{ static: item.static }"
+          @click="handleDeskClick(item)"
+        >
+          <!-- КВАДРАТНЫЙ ВНУТРЕННИЙ БЛОК -->
+          <div class="desk-inner">
+            <span class="text">{{ item.i }}</span>
+          </div>
+        </div>
+      </template>
+    </GridLayout>
+
+    <BookingModal
+      v-model="showBookingModal"
+      :desk="selectedDesk"
+      :is-booked="selectedDesk ? isDeskBooked(selectedDesk.i) : false"
+      :existing-booking="selectedDesk ? getExistingBooking(selectedDesk.i) : undefined"
+      @confirm="handleConfirmBooking"
+      @cancel="handleCancelBooking"
+    />
+  </div>
+</template>
+
 <style scoped>
-.booking-list {
-  max-height: 350px;
-  overflow-y: auto;
-  background: #fafafa;
-  border-radius: 12px;
-  padding: 12px;
+.floorplan-container {
+  width: 987px;
+  height: 643px;
+  margin: 20px auto;
+  position: relative;
+  overflow: hidden;
+  background: url("/floorplan/Floor.png") center/contain no-repeat;
+  background-color: #f0f0f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
-.scrollable-list::-webkit-scrollbar {
-  width: 6px;
+
+/* без анимаций при рендере */
+.no-anim :deep(.vgl-item) {
+  transition: none !important;
 }
-.scrollable-list::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 3px;
+
+/* статические элементы */
+:deep(.vgl-item--static) {
+  border: none !important;
+  background-color: #333 !important;
 }
-.scrollable-list::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
+
+/* обычные ячейки сетки (рамка/тени) */
+:deep(.vgl-item:not(.vgl-item--static)) {
+  border: 2px solid #d1d5db;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border-radius: 10px;
+  position: relative;
+  overflow: visible;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.booking-card {
-  border-radius: 8px;
-  margin-bottom: 12px;
-  padding: 16px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
+
+/* контейнер ячейки */
+.desk {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
-.booking-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e0;
+
+/* КВАДРАТНАЯ ВНУТРЕННЯЯ ПЛИТКА */
+.desk-inner {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;        /* делает блок квадратным */
+  border-radius: 10px;
 }
-.card-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.desk-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-.desk-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+/* контент по центру внутри квадрата */
+.desk-inner .text {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  font-size: 19px;
+  color: #1e293b;
+  font-weight: 800;
+  user-select: none;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
-.desk-details {
-  flex: 1;
-  min-width: 0;
+
+/* ховер на ячейку */
+:deep(.vgl-item:not(.vgl-item--static):hover) {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2),
+              0 3px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
-.desk-name {
-  font-weight: 600;
-  font-size: 15px;
-  color: #2d3748;
-  margin-bottom: 4px;
+
+:deep(.vgl-item:not(.vgl-item--static):hover) .text {
+  color: #1e40af;
+  text-shadow: 0 2px 3px rgba(59, 130, 246, 0.1);
 }
-.desk-meta {
-  font-size: 13px;
-  color: #718096;
-}
-.status-chip {
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  height: 24px !important;
-}
-.time-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: #f7fafc;
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-.time-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.time-label {
-  font-size: 12px;
-  color: #718096;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.time-value {
-  font-size: 14px;
-  color: #2d3748;
-  font-weight: 600;
-}
-.availability-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f0fdf4;
-  border-radius: 6px;
-  border: 1px solid #bbf7d0;
-}
-.availability-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-.availability-text {
-  font-size: 13px;
-  color: #166534;
-  font-weight: 500;
-}
-.no-bookings {
-  text-align: center;
-  color: #a0aec0;
-  font-weight: 500;
-  padding: 24px 0;
-  font-size: 14px;
+
+:deep(.vgl-item:not(.vgl-item--static):active) {
+  transform: translateY(0) scale(0.97);
+  transition: transform 0.1s ease;
 }
 </style>

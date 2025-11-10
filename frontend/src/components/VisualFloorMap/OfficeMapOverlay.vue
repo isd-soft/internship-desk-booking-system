@@ -37,6 +37,38 @@ function handleDeskClick(item: any) {
 function handleConfirmBooking(data: { duration: number }) {
   console.log("Booking confirmed:", selectedDesk.value?.i, data.duration);
 
+  // TODO: API call здесь
+  // Пример структуры API запроса:
+  /*
+  const bookingData = {
+    deskId: selectedDesk.value?.i,
+    duration: data.duration,
+    startTime: new Date().toISOString(),
+  };
+  
+  try {
+    const response = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookingData),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (selectedDesk.value) {
+        bookedDesks.value.add(selectedDesk.value.i);
+      }
+    } else {
+      console.error('Booking failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('API error:', error);
+  }
+  */
+
+  // Временно добавляем локально (удалить после добавления API)
   if (selectedDesk.value) {
     bookedDesks.value.add(selectedDesk.value.i);
   }
@@ -45,10 +77,37 @@ function handleConfirmBooking(data: { duration: number }) {
 function handleCancelBooking() {
   console.log("Booking cancelled:", selectedDesk.value?.i);
 
+  // TODO: API call здесь
+  // Пример структуры API запроса:
+  /*
+  const deskId = selectedDesk.value?.i;
+  
+  try {
+    const response = await fetch(`/api/bookings/${deskId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      if (selectedDesk.value) {
+        bookedDesks.value.delete(selectedDesk.value.i);
+      }
+    } else {
+      console.error('Cancel failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('API error:', error);
+  }
+  */
+
+  // Временно удаляем локально (удалить после добавления API)
   if (selectedDesk.value) {
     bookedDesks.value.delete(selectedDesk.value.i);
   }
-
+  
+  // Закрываем модалку после отмены
   showBookingModal.value = false;
 }
 
