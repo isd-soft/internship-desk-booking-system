@@ -10,10 +10,14 @@ import java.time.LocalDateTime;
 
 public record DeskUpdateDTO(
         String displayName,
-        Long zone,
+        Long zoneId,
         @JsonProperty("type")
         DeskType type,
         @JsonProperty("status") DeskStatus deskStatus,
         Boolean isTemporarilyAvailable,
         LocalDateTime temporaryAvailableFrom,
-        LocalDateTime temporaryAvailableUntil) { }
+        LocalDateTime temporaryAvailableUntil,
+        Double currentX,
+        Double currentY,
+        Double baseX,
+        Double baseY) { }
