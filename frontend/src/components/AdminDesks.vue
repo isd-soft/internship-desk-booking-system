@@ -72,7 +72,7 @@ const headers = [
 
 const mappedDesks = computed(() => {
   return (desks.value || []).map((d) => ({
-    id: d.id ?? d.deskId ?? '—',
+    id: d.id ?? d.deskId ?? d.deskID ?? d.desk_id ?? '—',
     name: d.deskName ?? d.name ?? 'N/A',
     zone: d.zone ?? d.location ?? 'N/A',
     type: d.deskType ?? d.type ?? 'N/A',
@@ -97,8 +97,9 @@ const fetchDesks = async () => {
 function statusToColor(s) {
   if (!s) return 'primary';
   const val = String(s).toUpperCase();
-  if (val.includes('AVAIL')) return 'success';
-  if (val.includes('UNAVAIL') || val.includes('BLOCK')) return 'error';
+  if (val === 'UNAVAILABLE') return 'error';
+  if (val === 'AVAILABLE') return 'success';
+
   return 'primary';
 }
 

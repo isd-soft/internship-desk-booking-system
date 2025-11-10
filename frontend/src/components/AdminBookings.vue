@@ -88,7 +88,8 @@ const loading = ref(false);
 const error = ref(null);
 
 const headers = [
-  { title: 'ID', key: 'id', width: 80, align: 'start' },
+  { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
+  { title: 'Desk ID', key: 'deskId', width: 100 },
   { title: 'User ID', key: 'userId', width: 100 },
   { title: 'Desk', key: 'deskName', minWidth: 220 },
   { title: 'Start', key: 'startTime', width: 150 },
@@ -99,14 +100,22 @@ const headers = [
 
 const mappedBookings = computed(() => {
   return (bookings.value || []).map((b) => ({
-    id: b.id ?? '—',
-    userId: b.userId ?? b.user?.id ?? b.user?.userId ?? null,
-    deskName: b.desk?.deskName || 'N/A',
-    zone: b.desk?.zone || 'N/A',
-    deskType: b.desk?.deskType || 'N/A',
+    // IDs
+    id: b.id ?? b.bookingId ?? b.bookingID ?? b.booking_id ?? '—',
+    deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
+
+    // Related entities
+    userId: b.userId ?? b.user?.id ?? b.user?.userId ?? b.user?.userID ?? null,
+    deskName: b.desk?.deskName || b.deskName || 'N/A',
+    zone: b.desk?.zone || b.zone || 'N/A',
+    deskType: b.desk?.deskType || b.deskType || 'N/A',
+
+    // Timing
     startTime: b.startTime,
     endTime: b.endTime,
     duration: null,
+
+    // Status
     status: b.status || '—',
   }));
 });
@@ -128,9 +137,9 @@ const fetchBookings = async () => {
 function statusToColor(s) {
   if (!s) return 'primary';
   const val = String(s).toUpperCase();
-  if (val.includes('CONFIRM')) return 'success';
-  if (val.includes('CANCEL')) return 'error';
-  if (val.includes('PEND')) return 'warning';
+  if (val === 'CONFIRMED') return 'success';
+  if (val === 'CANCELLED') return 'error';
+  if (val ===  'ACTIVE') return 'warning';
   return 'primary';
 }
 
