@@ -177,7 +177,6 @@ const mappedBookings = computed(() => {
     // IDs
     id: b.id ?? b.bookingId ?? '—',
     deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
-
     // Related entities
     userId: b.user_id ?? null,
     deskName: b.desk?.deskName || b.deskName || 'N/A',
@@ -293,7 +292,6 @@ onMounted(() => {
   }
   fetchBookings();
 });
-
 // Refetch when filter changes and sync to URL query
 watch(statusFilter, (val) => {
   const nextQuery = { ...route.query, status: val === 'ALL' ? undefined : val };
