@@ -25,7 +25,7 @@ public class DeskController {
     }
 
     @PreAuthorize("hasRole('USER')")
-    @GetMapping("unavailable")
+    @GetMapping("/unavailable")
     public ResponseEntity<List<DeskDto>> getUnavailable() {
         return ResponseEntity.ok(deskService.getAllUnavailableDesks());
     }

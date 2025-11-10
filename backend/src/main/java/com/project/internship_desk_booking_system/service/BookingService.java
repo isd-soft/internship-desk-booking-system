@@ -189,33 +189,26 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(String email) {
 
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User does not exist"));
+        log.info("Fetching bookings for user: {}", email);
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
+            log.warn("User not found for email: {}", email);
+            return new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User does not exist");
+        });
 
         List<Booking> bookings = bookingRepository.findBookingsByUserOrderByStartTimeDesc(user);
 
-        return bookings.stream().
-                map(bookingMapper::toResponse)
+        log.info("Found {} bookings for user: {}", bookings.size(), email);
+
+        List<BookingResponse> responses = bookings.stream()
+                .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
+
+        log.debug("Mapped {} bookings to response DTOs for user: {}", responses.size(), email);
+
+        return responses;
     }
 
-    public List<BookingResponseDto> getUpcomingBookings(String email) {
-        log.info("Fetching upcoming bookings for user: {}", email);
-
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
-            log.error("User not found with email: {}", email);
-            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user");
-        });
-
-        List<Booking> bookings = bookingRepository.findUpcomingBookingsByUserId(
-                user.getId(),
-                LocalDateTime.now()
-        );
-
-        log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
-        return bookings.stream()
-                .map(bookingMapper::maptoDto)
-                .collect(Collectors.toList());
-    }
 
     public List<BookingResponse> getUpcomingBookingsR(String email) {
         log.info("Fetching upcoming bookings for user: {}", email);
