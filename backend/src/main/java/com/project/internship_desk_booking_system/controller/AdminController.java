@@ -1,6 +1,8 @@
 package com.project.internship_desk_booking_system.controller;
 
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.command.BookingResponse;
+import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
@@ -19,8 +21,8 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/addDesk")
-    public ResponseEntity<DeskDTO> addDesk(
-            @RequestBody @Valid DeskDTO deskDTO
+    public ResponseEntity<DeskDto> addDesk(
+            @RequestBody @Valid DeskDto deskDTO
     ) {
         return ResponseEntity
                 .ok(adminService.addDesk(deskDTO));
@@ -28,7 +30,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/deactivateDesk/{id}")
-    public ResponseEntity<DeskDTO> deactivateDesk(
+    public ResponseEntity<DeskDto> deactivateDesk(
             @PathVariable("id") Long deskId
     ) {
         return ResponseEntity
@@ -37,7 +39,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/edit/desk/{id}")
-    public ResponseEntity<DeskDTO> editDesk(
+    public ResponseEntity<DeskDto> editDesk(
             @PathVariable("id") Long deskId,
             @RequestBody DeskUpdateDTO updates
     ) {
@@ -48,7 +50,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
-    public ResponseEntity<List<DeskDTO>> getAllDesks(){
+    public ResponseEntity<List<DeskDto>> getAllDesks(){
         return ResponseEntity.ok(adminService.getAllDesks());
     }
 
@@ -59,5 +61,28 @@ public class AdminController {
     ) {
         adminService.deleteDesk(deskId);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("cancel/booking/{id}")
+    public ResponseEntity<BookingResponse> cancelBooking(
+        @PathVariable("id") Long bookingId
+    ){
+        return ResponseEntity
+                .ok(adminService.cancelBooking(bookingId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("edit/booking/{id}")
+    public ResponseEntity<BookingResponse> editBooking(
+        @PathVariable("id") Long bookingId,
+        @RequestBody BookingUpdateCommand bookingUpdateCommand
+    ){
+        return ResponseEntity
+                .ok(adminService
+                        .editBooking(
+                                bookingId,
+                                bookingUpdateCommand
+                        ));
     }
 }

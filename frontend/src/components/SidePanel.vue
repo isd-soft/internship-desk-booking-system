@@ -1,347 +1,256 @@
 <template>
-  <v-sheet
-    class="user-panel pa-6 d-flex flex-column justify-space-between"
-    width="340"
-  >
-    <div>
-      <div class="section-header mb-6">
-        <h3 class="text-h6 font-weight-bold">Quick Actions</h3>
-        <div class="header-accent"></div>
-      </div>
+  <v-sheet class="user-panel d-flex flex-column" :style="panelStyle">
+    <PanelHeader />
 
-      <v-btn
-        block
-        color="primary"
-        variant="elevated"
-        prepend-icon="mdi-star"
-        class="mb-3 action-btn"
-        @click="loadData('favourites')"
-        elevation="0"
-      >
-        <span class="btn-text">Favorites</span>
-      </v-btn>
-
-      <v-btn
-        block
-        color="teal"
-        variant="elevated"
-        prepend-icon="mdi-seat"
-        class="mb-3 action-btn"
-        @click="loadData('bookings')"
-        elevation="0"
-      >
-        <span class="btn-text">My Bookings</span>
-      </v-btn>
-
-      <v-btn
-        block
-        color="success"
-        variant="elevated"
-        prepend-icon="mdi-calendar-clock"
-        class="mb-3 action-btn"
-        @click="loadData('upcoming')"
-        elevation="0"
-      >
-        <span class="btn-text">Upcoming</span>
-      </v-btn>
-
-      <v-btn
-        block
-        variant="tonal"
-        prepend-icon="mdi-refresh"
-        class="action-btn refresh-btn"
-        @click="refreshData"
-        elevation="0"
-      >
-        <span class="btn-text">Refresh</span>
-      </v-btn>
-    </div>
+    <ActionsSection
+      :currentType="currentType"
+      :itemsCount="items.length"
+      @load="loadData"
+      @logout="logout"
+    />
 
     <v-slide-y-transition>
-      <div v-if="items.length > 0" class="results-container mt-6">
-        <div class="results-header">
-          <v-icon size="20" class="mr-2">mdi-view-list</v-icon>
-          <span class="results-title">{{ currentTitle }}</span>
-          <v-chip size="small" class="ml-auto" color="primary" variant="tonal">
-            {{ items.length }}
-          </v-chip>
-        </div>
-
-        <v-slide-y-transition group>
-          <div v-for="(item, i) in items" :key="i" class="data-item">
-            <div class="item-icon">
-              <v-icon size="20" color="primary">mdi-calendar-check</v-icon>
-            </div>
-            <div class="item-content">
-              <div class="item-title">{{ item.title }}</div>
-              <div class="item-desc">{{ item.desc }}</div>
-            </div>
-          </div>
-        </v-slide-y-transition>
-      </div>
+      <ResultsList
+        v-if="items.length > 0"
+        :title="currentTitle"
+        :items="items"
+        :page="currentPage"
+        :perPage="itemsPerPage"
+        :currentType="currentType"
+        @page="(p) => (currentPage = p)"
+        @details="openDetails"
+      />
     </v-slide-y-transition>
+
+    <EmptyPanel
+      v-if="items.length === 0 && !loading"
+      :title="emptyTitle"
+      :subtitle="emptySubtitle"
+    />
+
+    <LoadingPanel v-if="loading" :title="currentTitle" />
 
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      timeout="2500"
-      rounded="pill"
+      timeout="2200"
+      rounded="lg"
       elevation="8"
       location="top"
+      class="snackbar"
     >
       <div class="d-flex align-center">
-        <v-icon class="mr-2">
-          {{
-            snackbar.color === "success"
-              ? "mdi-check-circle"
-              : "mdi-alert-circle"
-          }}
-        </v-icon>
-        {{ snackbar.message }}
+        <v-icon class="mr-3" size="20">mdi-alert-circle</v-icon>
+        <span class="snackbar-text">{{ snackbar.message }}</span>
       </div>
     </v-snackbar>
+
+    <DetailsDialog v-model="details.open" :item="details.item" />
   </v-sheet>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 import api from "../plugins/axios";
 
-const items = ref([]);
+import PanelHeader from "../components/panel/PanelHeader.vue";
+import ActionsSection from "../components/panel/ActionSections.vue";
+import ResultsList from "../components/panel/ResultList.vue";
+import EmptyPanel from "../components/panel/EmptyPanel.vue";
+import LoadingPanel from "../components/panel/LoadingPanel.vue";
+import DetailsDialog from "../components/panel/DetailsDialog.vue";
+import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
+
+import {
+  formatDate,
+  formatTime,
+  formatDuration,
+  statusToColor,
+} from "../utils/format";
+
+const router = useRouter();
+
+const items = ref<any[]>([]);
 const currentTitle = ref("Data");
+const currentType = ref<string>("");
+const loading = ref(false);
+const currentPage = ref(1);
+
+const winW = ref(window.innerWidth);
+const itemsPerPage = ref(3);
+
+const updateLayout = () => {
+  winW.value = window.innerWidth;
+  itemsPerPage.value = winW.value < 900 ? 2 : 3;
+};
+
+onMounted(() => {
+  updateLayout();
+  window.addEventListener("resize", updateLayout);
+});
+onBeforeUnmount(() => window.removeEventListener("resize", updateLayout));
+
+const panelStyle = computed(() => {
+  const vwWidth = Math.round(window.innerWidth * 0.34);
+  const w = Math.min(Math.max(vwWidth, 360), 640);
+  return `width:${w}px;max-width:100vw;`;
+});
+
 const snackbar = ref({
   show: false,
   message: "",
-  color: "error",
+  color: "error" as "error" | "info" | "success" | "primary" | "warning",
+});
+const details = ref<{ open: boolean; item: any | null }>({
+  open: false,
+  item: null,
 });
 
-async function loadData(type) {
+const emptyTitle = computed(() => {
+  if (currentType.value === "bookings") return "No Bookings Yet";
+  if (currentType.value === "favourites") return "No Favorites Yet";
+  if (currentType.value === "upcoming") return "No Upcoming Events";
+  return "Get Started";
+});
+
+const emptySubtitle = computed(() => {
+  if (currentType.value === "bookings")
+    return "You have not made any bookings yet.";
+  if (currentType.value === "favourites")
+    return "Save desks to your favorites to see them here.";
+  if (currentType.value === "upcoming") return "Nothing scheduled soon.";
+  return "Select an action above to view your data.";
+});
+
+async function loadData(type: "bookings" | "favourites" | "upcoming") {
   try {
+    loading.value = true;
+    currentType.value = type;
+    currentPage.value = 1;
+
     if (type === "bookings") {
       currentTitle.value = "My Bookings";
-
-      console.log("Fetching bookings from /api/v1/bookings/my ...");
       const response = await api.get("/booking/my");
-      console.log("Bookings response:", response.data);
+      const data = (response.data || [])
+        .slice()
+        .sort(
+          (a: any, b: any) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
 
-      items.value = response.data.map((b) => ({
-        title: `${b.desk?.deskName || "Desk"} — ${
-          b.desk?.zone || "Unknown zone"
-        }`,
-        desc: `${formatDate(b.startTime)} • ${formatTime(
-          b.startTime
-        )} - ${formatTime(b.endTime)} • ${b.status}`,
+      items.value = data.map((b: any, idx: number) => ({
+        id: b.id ?? idx,
+        desk: b.desk?.deskName || "Desk",
+        zone: b.desk?.zone || "Unknown zone",
+        type: b.desk?.deskType || "—",
+        date: formatDate(b.startTime),
+        time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+        duration: formatDuration(b.startTime, b.endTime),
+        status: b.status,
+        statusColor: statusToColor(b.status),
+        raw: b,
       }));
-
-      snackbar.value = {
-        show: true,
-        message: "Bookings loaded successfully",
-        color: "success",
-      };
-    } else if (type === "favourites") {
-      currentTitle.value = "Favorites";
-      items.value = [
-        { title: "Desk A12", desc: "Near window, IT Dept" },
-        { title: "Desk B05", desc: "By the wall, Design Dept" },
-      ];
-    } else if (type === "upcoming") {
-      currentTitle.value = "Upcoming";
-      items.value = [
-        { title: "Desk D21", desc: "Monday 08:00 - 17:00" },
-        { title: "Team Room", desc: "Tuesday 10:00 - 12:00" },
-      ];
     }
-  } catch (error) {
-    console.error("Error fetching data:", error.response?.data || error);
+
+    if (type === "favourites") {
+      currentTitle.value = "Favorites";
+      const response = await api.get("/favourite/favourites");
+      const data = response.data || [];
+
+      items.value = data.map((d: any, idx: number) => ({
+        id: d.deskId ?? idx,
+        desk: d.deskName || "Desk",
+        zone: d.zone || "Unknown zone",
+        favourite: d.isFavourite,
+        status: "",
+        statusColor: "primary",
+        date: "",
+        time: "",
+        duration: "",
+        raw: d,
+      }));
+    }
+
+    if (type === "upcoming") {
+      currentTitle.value = "Upcoming";
+      const now = new Date();
+      const response = await api.get("/booking/upcoming");
+      const data = (response.data || [])
+        .filter((b: any) => new Date(b.startTime) > now)
+        .slice()
+        .sort(
+          (a: any, b: any) =>
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+
+      items.value = data.map((b: any, idx: number) => ({
+        id: b.id ?? idx,
+        desk: b.desk?.deskName || "Desk",
+        zone: b.desk?.zone || "Unknown zone",
+        type: b.desk?.deskType || "—",
+        date: formatDate(b.startTime),
+        time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+        duration: formatDuration(b.startTime, b.endTime),
+        status: b.status,
+        statusColor: statusToColor(b.status),
+        raw: b,
+      }));
+    }
+  } catch (err) {
+    console.error(err);
+    items.value = [];
     snackbar.value = {
       show: true,
       message: "Failed to load data",
       color: "error",
     };
+  } finally {
+    loading.value = false;
   }
 }
 
-function refreshData() {
-  items.value = [];
-  currentTitle.value = "Data";
+function openDetails(item: any) {
+  details.value.item = item;
+  details.value.open = true;
 }
 
-function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }); // Nov 7
-}
-
-function formatTime(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); // 00:51
+function logout() {
+  localStorage.removeItem("token");
+  router.push("/login");
 }
 </script>
 
 <style scoped>
+:root {
+  --card-bg: #ffffff;
+  --card-border: rgba(255, 138, 0, 0.16);
+  --panel-sep: rgba(255, 170, 64, 0.16);
+  --soft: #fff7f0;
+  --surface: #fffaf4;
+  --text-1: #0f172a;
+  --text-2: #5f5b53;
+  --accent: #ff8a00;
+  --danger-soft: #ffe9ea;
+  --danger-line: rgba(210, 80, 80, 0.22);
+}
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
 .user-panel {
-  background: linear-gradient(to bottom, #fafbfc 0%, #f5f7fa 100%);
-  border-left: 1px solid #e5e7eb;
+  background: var(--surface);
+  border-left: 1px solid var(--panel-sep);
   height: 100vh;
-  overflow-y: auto;
-}
-
-.section-header {
-  position: relative;
-  padding-bottom: 8px;
-}
-
-.section-header h3 {
-  color: #1f2937;
-  font-size: 1.1rem;
-  letter-spacing: -0.02em;
-}
-
-.header-accent {
-  height: 3px;
-  width: 40px;
-  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
-  border-radius: 2px;
-  margin-top: 4px;
-}
-
-.action-btn {
-  height: 52px !important;
-  border-radius: 14px !important;
-  text-transform: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
-}
-
-.action-btn:active {
-  transform: translateY(0px);
-}
-
-.btn-text {
-  font-weight: 600;
-}
-
-.refresh-btn {
-  background: white !important;
-  border: 1.5px solid #e5e7eb;
-}
-
-.results-container {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  max-height: 45%;
-  overflow-y: auto;
-  border: 1px solid #e5e7eb;
-}
-
-.results-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f3f4f6;
-}
-
-.results-title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.data-item {
-  display: flex;
-  gap: 12px;
-  padding: 14px;
-  margin-bottom: 10px;
-  background: linear-gradient(135deg, #fafbfc 0%, #f9fafb 100%);
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   overflow: hidden;
 }
-
-.data-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: linear-gradient(180deg, #1976d2 0%, #42a5f5 100%);
-  border-radius: 0 2px 2px 0;
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
+.snackbar-text {
+  font-size: 0.9rem;
+  font-weight: 750;
 }
-
-.data-item:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e1;
-}
-
-.data-item:hover::before {
-  transform: scaleY(1);
-}
-
-.item-icon {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border-radius: 10px;
-  border: 1px solid #90caf9;
-}
-
-.item-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.item-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #111827;
-  margin-bottom: 6px;
-  line-height: 1.3;
-}
-
-.item-desc {
-  font-size: 0.875rem;
-  color: #4b5563;
-  line-height: 1.5;
-  font-weight: 600;
-}
-
-.results-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.results-container::-webkit-scrollbar-track {
-  background: #f3f4f6;
-  border-radius: 10px;
-}
-
-.results-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.results-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+@media (max-width: 900px) {
+  .user-panel {
+    width: 100% !important;
+  }
 }
 </style>

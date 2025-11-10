@@ -24,4 +24,8 @@ public class BookingCreateRequest {
     @NotNull(message = "End time is required")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endTime;
+
+    @NotNull(message = "Desk type is required")
+    private String deskType;
+
 }

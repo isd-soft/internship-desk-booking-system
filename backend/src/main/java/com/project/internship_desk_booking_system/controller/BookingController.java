@@ -27,10 +27,17 @@ public class BookingController {
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/my")
     public ResponseEntity<List<BookingResponse>> getAllMyBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return ResponseEntity.ok(bookingService.getAllBookings(principal.getEmail()));
+        return ResponseEntity.ok(bookingService.getUserBookings(principal.getEmail()));
     }
 
-    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all")
+    public ResponseEntity<List<BookingResponse>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+
+
+    @PostMapping("/bookings/create")
     public ResponseEntity<?> createBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
         try {
@@ -44,15 +51,8 @@ public class BookingController {
 
 
     @GetMapping("/upcoming")
-    public ResponseEntity<?> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        try {
-            String email = principal.getEmail();
-            List<BookingResponseDto> bookings = bookingService.getUpcomingBookings(email);
-            return ResponseEntity.ok(bookings);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(createErrorResponse(e.getMessage()));
-        }
+    public ResponseEntity<List<BookingResponse>> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(bookingService.getUpcomingBookingsR(principal.getEmail()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

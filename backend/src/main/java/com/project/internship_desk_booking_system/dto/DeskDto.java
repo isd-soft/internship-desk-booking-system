@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Null;
 
 import java.time.LocalDateTime;
 
-public record   DeskDTO(
+public record DeskDto(
         @Null
         Long id,
         @NotBlank
@@ -23,6 +23,6 @@ public record   DeskDTO(
         @Null
         LocalDateTime temporaryAvailableFrom,
         @Null
-        LocalDateTime temporaryAvailableUntil,
-        boolean isFavourite) { }
-
+        LocalDateTime temporaryAvailableUntil
+) {
+}

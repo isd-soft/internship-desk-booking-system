@@ -1,6 +1,6 @@
 package com.project.internship_desk_booking_system.command;
 
-import com.project.internship_desk_booking_system.dto.DeskDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingResponse {
+    private Long user_id;
+    private Long bookingId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BookingStatus status;
-    private DeskDTO desk;
+    private DeskDto desk;
 }

@@ -1,31 +1,27 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
-import Dashboard from "../components/SidePanel.vue";
+import RegistrationPage from "../components/RegisterPage.vue";
+import Dashboard from "../components/Dashboard.vue";
+import Map from "../components/VisualFloorMap/OfficeMapOverlay.vue";
+import { isAuthenticated } from "../utils/auth";
+import StatisticsPage from "../components/StatisticsPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "Login", component: LoginPage },
-  { path: "/dashboard", name: "Dashboard", component: Dashboard },
+  { path: "/register", name: "Register", component: RegistrationPage },
+  { path: "/dashboard", name: "Dashboard", component: Dashboard }, // <-- тут лейаут
+  { path: "/map", name: "Map", component: Map },
+    {path:"/statistics", name: "Statistics", component: StatisticsPage}
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
-
-  const isAuthenticated =
-    token && token !== "null" && token !== "undefined" && token.trim() !== "";
-
-  if (!isAuthenticated && to.path !== "/login") {
-    next("/login");
-  } else if (isAuthenticated && to.path === "/login") {
-    next("/dashboard");
-  } else {
-    next();
-  }
+  const publicPages = ["/login", "/register"];
+  const isAuth = isAuthenticated();
+  if (!isAuth && !publicPages.includes(to.path)) return next("/login");
+  next();
 });
 
 export default router;

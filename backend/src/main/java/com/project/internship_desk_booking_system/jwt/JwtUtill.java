@@ -44,10 +44,6 @@ public class JwtUtill {
                 .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-    public Long extractUserId(String token) {
-        Object id = parseClaims(token).get("userId");
-        return (id != null) ? Long.valueOf(id.toString()) : null;
-    }
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }

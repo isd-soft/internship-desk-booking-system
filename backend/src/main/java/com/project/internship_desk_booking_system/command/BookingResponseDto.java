@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.command;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,7 @@ public class BookingResponseDto {
     private Long id;
     private Long userId;
     private Long deskId;
+    private DeskType deskType;
     private String deskName;
     @JsonFormat(pattern = "dd-MM-yyyy'T'HH:mm:ss")
     private LocalDateTime startTime;

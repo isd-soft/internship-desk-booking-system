@@ -14,8 +14,6 @@ import java.util.Optional;
 
 public interface DeskRepository extends JpaRepository<Desk, Long> {
 
-    List<Desk> findByStatus(DeskStatus status);
-
     List<Desk> findByType(DeskType type);
 
     List<Desk> findByZone(Zone zone);
@@ -69,4 +67,5 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             "AND d.temporaryAvailableFrom <= :dateTime " +
             "AND d.temporaryAvailableUntil >= :dateTime))")
     List<Desk> findAvailableDesksInZoneAt(@Param("zoneId") Long zoneId, @Param("dateTime") LocalDateTime dateTime);
+    List<Desk> findByStatus(DeskStatus status);
 }

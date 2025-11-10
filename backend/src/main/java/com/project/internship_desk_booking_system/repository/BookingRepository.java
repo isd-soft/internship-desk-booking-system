@@ -2,6 +2,7 @@ package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,10 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUser_idAndStatus(int user_id, String status);
+
+
+    @EntityGraph(attributePaths = "desk")
+    List<Booking> findByUserAndStartTimeAfterOrderByStartTimeAsc(User user, LocalDateTime now);
 
     @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId " +
             "AND b.status = 'ACTIVE' " +
@@ -34,15 +39,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+
+
+    List<Booking> findBookingsByUserOrderByStartTimeDesc(User user);
+
     //List<Booking> findBookingsForASpecificDesk(Long deskId, Booking status);
 
-    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
+    @Query("SELECT b FROM Booking b " +
+            "WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
-            "AND b.startTime = :now " +
+            "AND b.startTime BETWEEN :now AND :hours " +
             "ORDER BY b.startTime ASC")
-    List<Booking> findFutureBookings(
+    List<Booking> findUpcomingBookingsWithin8Hours(
             @Param("userId") Long userId,
-            @Param("now") LocalDateTime now);
+            @Param("now") LocalDateTime now,
+            @Param("hours") LocalDateTime Hours);
+
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status = 'ACTIVE' " +
