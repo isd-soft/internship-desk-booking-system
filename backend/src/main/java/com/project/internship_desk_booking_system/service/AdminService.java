@@ -176,12 +176,12 @@ public class AdminService {
         if (updates.displayName() != null) {
             desk.setDeskName(updates.displayName());
         }
-        if (updates.zone() != null) {
-            Zone zone = zoneRepository.findById(updates.zone())
+        if (updates.zoneId() != null) {
+            Zone zone = zoneRepository.findById(updates.zoneId())
                     .orElseThrow(() -> new ExceptionResponse(
                             HttpStatus.NOT_FOUND,
                             "ZONE_NOT_FOUND",
-                            "Zone not found: " + updates.zone()
+                            "Zone not found: " + updates.zoneId()
                     ));
             desk.setZone(zone);
         }

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 public record DeskUpdateDTO(
         String displayName,
-        Long zone,
+        Long zoneId,
         @JsonProperty("type")
         DeskType type,
         @JsonProperty("status") DeskStatus deskStatus,
