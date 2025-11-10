@@ -6,7 +6,23 @@
           <h2 class="title">All Bookings</h2>
           <span class="sub">{{ bookings.length }} items</span>
         </div>
-        <v-chip size="small" color="orange-darken-2" variant="flat" class="count-chip">{{ bookings.length }}</v-chip>
+        <div class="header-actions">
+          <v-select
+            v-model="statusFilter"
+            :items="STATUS_OPTIONS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            style="max-width: 180px"
+            :disabled="loading"
+            :clearable="false"
+            hide-details
+            label="Filter by status"
+            class="mr-3"
+          />
+          <v-chip size="small" color="orange-darken-2" variant="flat" class="count-chip">{{ bookings.length }}</v-chip>
+        </div>
       </div>
 
       <v-alert
@@ -77,7 +93,7 @@
                   color="grey-darken-1"
                   aria-label="Row actions"
                   :loading="cancellingId === item.id"
-                  :disabled="cancellingId === item.id || String(item.status).toUpperCase() === 'CANCELLED'"
+                  :disabled="cancellingId === item.id"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
@@ -109,13 +125,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../plugins/axios';
+
+const router = useRouter();
+const route = useRoute();
 
 const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const cancellingId = ref(null);
+
+// Status filter UI options and state
+const STATUS_OPTIONS = [
+  { title: 'All', value: 'ALL' },
+  { title: 'Active', value: 'ACTIVE' },
+  { title: 'Cancelled', value: 'CANCELLED' },
+  { title: 'Confirmed', value: 'CONFIRMED' },
+];
+const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
 
 const headers = [
   { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
@@ -130,7 +159,13 @@ const headers = [
 ];
 
 const mappedBookings = computed(() => {
-  return (bookings.value || []).map((b) => ({
+  const items = bookings.value || [];
+  const filter = String(statusFilter.value || 'ALL').toUpperCase();
+  const filtered = filter === 'ALL'
+    ? items
+    : items.filter((b) => String(b?.status ?? '').toUpperCase() === filter);
+
+  return filtered.map((b) => ({
     // IDs
     id: b.id ?? b.bookingId ?? '—',
     deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
@@ -155,7 +190,12 @@ const fetchBookings = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await api.get('/booking/all');
+    const params = {};
+    if (statusFilter.value && statusFilter.value !== 'ALL') {
+      params.status = statusFilter.value;
+    }
+    console.log('[AdminBookings] Fetching with params:', params);
+    const response = await api.get('/booking/all', { params });
     bookings.value = response.data;
   } catch (err) {
     console.error('Error fetching bookings:', err);
@@ -209,14 +249,9 @@ async function onCancel(item) {
 
   try {
     cancellingId.value = id;
-    // Use the backend cancel endpoint. Adjust method if your backend expects POST/PUT/DELETE
     const response = await api.patch(`/admin/cancel/booking/${id}`);
     console.log('[AdminBookings] Cancel booking confirmed', id, response?.data);
 
-    // Optional quick feedback
-    // window.alert?.(`Booking #${id} cancelled.`);
-
-    // Refresh the list to reflect new status
     await fetchBookings();
   } catch (err) {
     console.error('[AdminBookings] Cancel booking failed', id, err);
@@ -227,6 +262,20 @@ async function onCancel(item) {
 }
 
 onMounted(() => {
+  const initial = String(route.query?.status || 'ALL').toUpperCase();
+  if (!['ALL', 'ACTIVE', 'CANCELLED','CONFIRMED'].includes(initial)) {
+    router.replace({ query: { ...route.query, status: undefined } });
+    statusFilter.value = 'ALL';
+  } else {
+    statusFilter.value = initial;
+  }
+  fetchBookings();
+});
+
+// Refetch when filter changes and sync to URL query
+watch(statusFilter, (val) => {
+  const nextQuery = { ...route.query, status: val === 'ALL' ? undefined : val };
+  router.replace({ query: nextQuery });
   fetchBookings();
 });
 </script>
@@ -253,6 +302,7 @@ onMounted(() => {
   border-bottom: 1px solid rgba(255, 170, 64, 0.16);
 }
 .title-wrap { display: flex; align-items: baseline; gap: 10px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
 .title { font-size: clamp(1.08rem, .98rem + .3vw, 1.2rem); font-weight: 900; color: #111827; margin: 0; }
 .sub { font-size: clamp(.9rem,.86rem + .15vw,1rem); font-weight: 750; color: #6b7280; }
 .count-chip { font-weight: 800; font-size: .78rem; color: #fff !important; }
