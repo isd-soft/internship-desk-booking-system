@@ -66,6 +66,35 @@
             </v-chip>
           </template>
 
+          <template #item.actions="{ item }">
+            <v-menu :close-on-content-click="true" location="bottom end">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon
+                  variant="text"
+                  size="small"
+                  color="grey-darken-1"
+                  aria-label="Row actions"
+                  :loading="cancellingId === item.id"
+                  :disabled="cancellingId === item.id || String(item.status).toUpperCase() === 'CANCELLED'"
+                >
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item @click="onView(item)" prepend-icon="mdi-eye" title="View"></v-list-item>
+                <v-list-item @click="onEdit(item)" prepend-icon="mdi-pencil" title="Edit"></v-list-item>
+                <v-list-item
+                  @click="onCancel(item)"
+                  prepend-icon="mdi-cancel"
+                  title="Cancel booking"
+                  :disabled="cancellingId === item.id || String(item.status).toUpperCase() === 'CANCELLED'"
+                ></v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
+
           <template #no-data>
             <div class="empty-state">
               <v-icon size="40" color="grey-lighten-1" class="mb-2">mdi-folder-open</v-icon>
@@ -86,6 +115,7 @@ import api from '../plugins/axios';
 const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);
+const cancellingId = ref(null);
 
 const headers = [
   { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
@@ -96,12 +126,13 @@ const headers = [
   { title: 'End', key: 'endTime', width: 150 },
   { title: 'Duration', key: 'duration', width: 110 },
   { title: 'Status', key: 'status', width: 120 },
+  { title: '', key: 'actions', width: 56, align: 'end', sortable: false },
 ];
 
 const mappedBookings = computed(() => {
   return (bookings.value || []).map((b) => ({
     // IDs
-    id: b.id ?? b.bookingId ?? b.bookingID ?? b.booking_id ?? '—',
+    id: b.id ?? b.bookingId ?? '—',
     deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
 
     // Related entities
@@ -158,6 +189,41 @@ function formatDuration(startStr, endStr) {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
+}
+
+// Row action handlers (stubbed)
+function onView(item) {
+  console.log('[AdminBookings] View booking', item?.id, item);
+}
+function onEdit(item) {
+  console.log('[AdminBookings] Edit booking', item?.id, item);
+}
+async function onCancel(item) {
+  const id = item?.id ?? item?.bookingId;
+  if (!id) {
+    console.warn('[AdminBookings] Cancel: missing id', item);
+    return;
+  }
+  const ok = confirm(`Cancel booking #${id}?`);
+  if (!ok) return;
+
+  try {
+    cancellingId.value = id;
+    // Use the backend cancel endpoint. Adjust method if your backend expects POST/PUT/DELETE
+    const response = await api.patch(`/admin/cancel/booking/${id}`);
+    console.log('[AdminBookings] Cancel booking confirmed', id, response?.data);
+
+    // Optional quick feedback
+    // window.alert?.(`Booking #${id} cancelled.`);
+
+    // Refresh the list to reflect new status
+    await fetchBookings();
+  } catch (err) {
+    console.error('[AdminBookings] Cancel booking failed', id, err);
+    error.value = err.response?.data?.message || err.message || `Failed to cancel booking #${id}`;
+  } finally {
+    cancellingId.value = null;
+  }
 }
 
 onMounted(() => {

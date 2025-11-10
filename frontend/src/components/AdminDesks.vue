@@ -72,7 +72,8 @@ const headers = [
 
 const mappedDesks = computed(() => {
   return (desks.value || []).map((d) => ({
-    id: d.id ?? d.deskId ?? d.deskID ?? d.desk_id ?? '—',
+    // Try common desk id keys coming from various backends
+    id: d.id ?? d.deskId ?? '—',
     name: d.deskName ?? d.name ?? 'N/A',
     zone: d.zone ?? d.location ?? 'N/A',
     type: d.deskType ?? d.type ?? 'N/A',
