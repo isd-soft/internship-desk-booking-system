@@ -49,7 +49,8 @@ public class SecurityConfig {
     public AuthenticationManager ldapAuthenticationManager(LdapContextSource contextSource) {
         LdapBindAuthenticationManagerFactory factory = new LdapBindAuthenticationManagerFactory(contextSource);
 
-        factory.setUserDnPatterns("cn={0},cn=developer");
+        factory.setUserSearchBase("cn=developer");
+        factory.setUserSearchFilter("(mail={0})");
 
         return factory.createAuthenticationManager();
     }
