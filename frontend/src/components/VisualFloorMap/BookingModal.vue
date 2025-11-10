@@ -24,7 +24,6 @@ const bookingForm = reactive({
   customMinutes: 30,
 });
 
-// Синхронизация с существующим бронированием
 watch(
   () => props.existingBooking,
   (booking) => {
@@ -161,7 +160,11 @@ function formatDuration(minutes: number): string {
           Cancel Booking
         </v-btn>
         <v-spacer v-if="isBooked" />
-        <v-btn class="confirm-button" size="x-large" @click.stop="handleConfirm">
+        <v-btn
+          class="confirm-button"
+          size="x-large"
+          @click.stop="handleConfirm"
+        >
           {{ isBooked ? "Update Booking" : "Confirm Booking" }}
         </v-btn>
       </v-card-actions>

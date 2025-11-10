@@ -6,10 +6,9 @@ import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue"
 <template>
   <div class="layout">
     <SidePanel />
-   <div class="d-none d-md-block" style="height: 100%; width: 100%;">
-  <OfficeMapOverlay />
-</div>
-
+    <div class="map-holder">
+      <OfficeMapOverlay />
+    </div>
   </div>
 </template>
 
