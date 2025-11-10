@@ -85,12 +85,13 @@ class AdminServiceTest {
         DeskDto deskDTO = new DeskDto(
                 desk.getId(),
                 "Desk-A1",
-                "Zone-1",
+                1L,
                 DeskType.SHARED,
                 DeskStatus.ACTIVE,
                 false,
                 null,
-                null
+                null,
+                        false
         );
 
 
@@ -99,7 +100,7 @@ class AdminServiceTest {
 
         var result = adminService.addDesk(deskDTO);
 
-        assertEquals(DeskType.SHARED, result.deskType());
+        assertEquals(DeskType.SHARED, result.type());
         assertEquals(DeskStatus.ACTIVE, result.deskStatus());
         assertFalse(result.isTemporarilyAvailable());
 
@@ -117,7 +118,7 @@ class AdminServiceTest {
                 null,
                 null,
                 null
-        );
+                    );
 
         when(deskRepository.findById(desk.getId()))
                 .thenReturn(Optional.of(desk));
