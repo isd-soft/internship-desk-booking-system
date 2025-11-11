@@ -17,6 +17,9 @@ export const deskCoordinates = ref<Array<{ id: number; x: number; y: number }>>(
 const DEFAULT_WIDTH = 27;
 const DEFAULT_HEIGHT = 50;
 
+const HORIZONTAL_DESK_WIDTH = 55;
+const HORIZONTAL_DESK_HEIGHT = 26;
+
 export function resetLayout() {
   layout.length = 0;
 }
@@ -39,25 +42,21 @@ export const loadDesksFromBackend = async () => {
         typeof desk.x === 'number' &&
         typeof desk.y === 'number'
       ) {
+        let current_width = DEFAULT_WIDTH;
+        let current_height = DEFAULT_HEIGHT;
+
         if(horizontalDesks.includes(desk.id)){
-          layout.push({
-            x: Math.round(desk.x),
-            y: Math.round(desk.y),
-            w: 55,
-            h: 26,
-            i: String(desk.id),
-            static: false,
-          });
-        } else{
-          layout.push({
-            x: Math.round(desk.x),
-            y: Math.round(desk.y),
-            w: DEFAULT_WIDTH,
-            h: DEFAULT_HEIGHT,
-            i: String(desk.id),
-            static: false,
-          });
+          current_width = HORIZONTAL_DESK_WIDTH;
+          current_height = HORIZONTAL_DESK_HEIGHT;
         }
+        layout.push({
+          x: Math.round(desk.x),
+          y: Math.round(desk.y),
+          w: current_width,
+          h: current_height,
+          i: String(desk.id),
+          static: false,
+        });
       }
     });
 
