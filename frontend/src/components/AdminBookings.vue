@@ -101,7 +101,11 @@
                 </v-btn>
               </template>
               <v-list density="compact">
-                <v-list-item @click="onView(item)" prepend-icon="mdi-eye" title="View"></v-list-item>
+                <v-list-item
+                    @click="onView(item)"
+                    prepend-icon="mdi-eye"
+                    title="View">
+                </v-list-item>
                 <v-list-item
                     @click="onEdit(item)"
                     prepend-icon="mdi-pencil"
@@ -117,7 +121,6 @@
               </v-list>
             </v-menu>
           </template>
-
           <template #no-data>
             <div class="empty-state">
               <v-icon size="40" color="grey-lighten-1" class="mb-2">mdi-folder-open</v-icon>
@@ -126,6 +129,12 @@
             </div>
           </template>
         </v-data-table>
+        <BookingEditModal
+            :show="showModal"
+            :booking="selectedBooking"
+            @close="closeModal"
+            @save="handleSave"
+        />
       </template>
     </div>
   </div>
@@ -246,11 +255,19 @@ function onView(item) {
 }
 
 function onEdit(item) {
-  console.log('[AdminBookings] Edit booking', item?.id, item);
-  selectedBooking.value = item;
+  console.log('[AdminBookings] Edit booking', item);
+
+  selectedBooking.value = {
+    id: item.id,
+    deskId: item.deskId,
+    startDate: item.startTime,  // Your backend uses startTime
+    endDate: item.endTime,      // Your backend uses endTime
+    status: item.status
+  };
+
+  console.log('[AdminBookings] selectedBooking:', selectedBooking.value);
   showModal.value = true;
 }
-
 function closeModal() {
   showModal.value = false;
 }
