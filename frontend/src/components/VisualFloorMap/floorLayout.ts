@@ -13,6 +13,7 @@ export const floorImage = "/floorplan/Floor.png";
 export const layout = reactive<any[]>([]);
 
 export const deskCoordinates = ref<Array<{ id: number; x: number; y: number }>>([]);
+export const horizontalDesks = [5,10,15,20,25,30,31,32,33,34,39,44,49,54,59,60,61,62,63];
 
 const DEFAULT_WIDTH = 27;
 const DEFAULT_HEIGHT = 50;
@@ -31,7 +32,7 @@ export const loadDesksFromBackend = async () => {
     const data = Array.isArray(response.data) ? response.data : [];
     deskCoordinates.value = data;
 
-    const horizontalDesks = [5,10,15,20,25,30,31,32,33,34,39,44,49,54,59,60,61,62,63];
+
 
     resetLayout();
 
@@ -56,6 +57,7 @@ export const loadDesksFromBackend = async () => {
           h: current_height,
           i: String(desk.id),
           static: false,
+          deskName: desk.deskName,
         });
       }
     });
