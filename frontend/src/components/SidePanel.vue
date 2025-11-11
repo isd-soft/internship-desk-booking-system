@@ -60,7 +60,6 @@ import ResultsList from "../components/panel/ResultList.vue";
 import EmptyPanel from "../components/panel/EmptyPanel.vue";
 import LoadingPanel from "../components/panel/LoadingPanel.vue";
 import DetailsDialog from "../components/panel/DetailsDialog.vue";
-import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 
 import {
   formatDate,
@@ -155,7 +154,7 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
 
     if (type === "favourites") {
       currentTitle.value = "Favorites";
-      const response = await api.get("/favourite/favourites");
+      const response = await api.get("/favourites");
       const data = response.data || [];
 
       items.value = data.map((d: any, idx: number) => ({

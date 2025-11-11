@@ -6,18 +6,8 @@ import {
   rowHeight,
   totalRows,
   IMAGE_WIDTH_PX,
-  makeBottomClusters,
-  makeTopClusters,
-  makeLeftClusters,
+
 } from "../components/VisualFloorMap/floorLayout";
-makeBottomClusters(888, 555, 4);
-makeBottomClusters(400, 555, 2);
-
-makeTopClusters(888, 30, 4);
-makeTopClusters(400, 30, 1);
-
-makeLeftClusters(178, 555, 2);
-makeLeftClusters(271, 173, 2);
 
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
@@ -80,7 +70,6 @@ function getExistingBooking(deskId: string) {
           :class="{ static: item.static }"
           @click="handleDeskClick(item)"
         >
-          <!-- КВАДРАТНЫЙ ВНУТРЕННИЙ БЛОК -->
           <div class="desk-inner">
             <span class="text">{{ item.i }}</span>
           </div>
@@ -111,18 +100,15 @@ function getExistingBooking(deskId: string) {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-/* без анимаций при рендере */
 .no-anim :deep(.vgl-item) {
   transition: none !important;
 }
 
-/* статические элементы */
 :deep(.vgl-item--static) {
   border: none !important;
   background-color: #333 !important;
 }
 
-/* обычные ячейки сетки (рамка/тени) */
 :deep(.vgl-item:not(.vgl-item--static)) {
   border: 2px solid #d1d5db;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
@@ -134,22 +120,19 @@ function getExistingBooking(deskId: string) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* контейнер ячейки */
 .desk {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* КВАДРАТНАЯ ВНУТРЕННЯЯ ПЛИТКА */
 .desk-inner {
   position: relative;
   width: 100%;
-  padding-top: 100%;        /* делает блок квадратным */
+  padding-top: 100%;        
   border-radius: 10px;
 }
 
-/* контент по центру внутри квадрата */
 .desk-inner .text {
   position: absolute;
   inset: 0;
@@ -164,7 +147,6 @@ function getExistingBooking(deskId: string) {
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
-/* ховер на ячейку */
 :deep(.vgl-item:not(.vgl-item--static):hover) {
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);

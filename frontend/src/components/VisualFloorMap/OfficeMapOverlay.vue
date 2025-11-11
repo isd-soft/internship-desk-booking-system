@@ -11,111 +11,49 @@ import {
   horizontalDesks
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
+import { useFavouritesStore } from "@/stores/favourites";
 
-onMounted(()=>{
+const favStore = useFavouritesStore();
+
+onMounted(async () => {
   resetLayout();
   loadDesksFromBackend();
+  await favStore.ensureLoaded(); 
 });
 
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
 const bookedDesks = ref<Set<string>>(new Set());
 
+function isDeskFavourite(id: string | number) {
+  return favStore.isFav(Number(id));
+}
+
+
 function handleDeskClick(item: any) {
   if (item.static) return;
-  console.log("Clicked desk:", item.i);
   selectedDesk.value = item;
   showBookingModal.value = true;
 }
 
 function handleConfirmBooking(data: { duration: number }) {
-  console.log("Booking confirmed:", selectedDesk.value?.i, data.duration);
-
-  // TODO: API call здесь
-  // Пример структуры API запроса:
-  /*
-  const bookingData = {
-    deskId: selectedDesk.value?.i,
-    duration: data.duration,
-    startTime: new Date().toISOString(),
-  };
-  
-  try {
-    const response = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(bookingData),
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      if (selectedDesk.value) {
-        bookedDesks.value.add(selectedDesk.value.i);
-      }
-    } else {
-      console.error('Booking failed:', await response.text());
-    }
-  } catch (error) {
-    console.error('API error:', error);
-  }
-  */
-
-  // Временно добавляем локально (удалить после добавления API)
-  if (selectedDesk.value) {
-    bookedDesks.value.add(selectedDesk.value.i);
-  }
+  if (selectedDesk.value) bookedDesks.value.add(selectedDesk.value.i);
 }
 
 function handleCancelBooking() {
-  console.log("Booking cancelled:", selectedDesk.value?.i);
-
-  // TODO: API call здесь
-  // Пример структуры API запроса:
-  /*
-  const deskId = selectedDesk.value?.i;
-  
-  try {
-    const response = await fetch(`/api/bookings/${deskId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (response.ok) {
-      if (selectedDesk.value) {
-        bookedDesks.value.delete(selectedDesk.value.i);
-      }
-    } else {
-      console.error('Cancel failed:', await response.text());
-    }
-  } catch (error) {
-    console.error('API error:', error);
-  }
-  */
-
-  // Временно удаляем локально (удалить после добавления API)
-  if (selectedDesk.value) {
-    bookedDesks.value.delete(selectedDesk.value.i);
-  }
-  
-  // Закрываем модалку после отмены
+  if (selectedDesk.value) bookedDesks.value.delete(selectedDesk.value.i);
   showBookingModal.value = false;
 }
 
-function isDeskBooked(deskId: string): boolean {
-  return bookedDesks.value.has(deskId);
+function isDeskBooked(id: string) {
+  return bookedDesks.value.has(id);
 }
 
-function getExistingBooking(deskId: string) {
-  if (isDeskBooked(deskId)) {
-    return { duration: 60 };
-  }
-  return undefined;
+function getExistingBooking(id: string) {
+  return isDeskBooked(id) ? { duration: 60 } : undefined;
 }
 </script>
+
 
 <template>
   <div class="floorplan-container no-anim">
@@ -134,18 +72,20 @@ function getExistingBooking(deskId: string) {
       :is-resizable="false"
       style="position: relative"
     >
-      <template #item="{ item }">
-        <div
-          class="desk"
-          :class="{
-            static: item.static,
-            vertical: !horizontalDesks.includes(Number(item.i))
-          }"
-          @click="handleDeskClick(item)"
-        >
-          <span class="text">{{ item.deskName || item.i }}</span>
-        </div>
-      </template>
+<template #item="{ item }">
+  <div
+    class="desk"
+    :class="{
+      static: item.static,
+      favourite: isDeskFavourite(item.i),
+      vertical: !horizontalDesks.includes(Number(item.i))
+    }"
+    @click="handleDeskClick(item)"
+  >
+    <span class="text">{{ item.deskName || item.i }}</span>
+  </div>
+</template>
+
     </GridLayout>
 
     <BookingModal
@@ -242,4 +182,18 @@ function getExistingBooking(deskId: string) {
   transform: translateY(0) scale(0.97);
   transition: transform 0.1s ease;
 }
+.desk.favourite {
+  border-color: #ef4444 !important;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.55) !important;
+}
+.desk.favourite::after {
+  content: "❤";
+  color: #dc2626;
+  font-size: 14px;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}
+
 </style>
