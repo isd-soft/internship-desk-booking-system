@@ -26,11 +26,11 @@ public class StatisticsService {
         LocalDateTime now = LocalDateTime.now();
 
         LocalDateTime weekStart = now.minusWeeks(1);
-        long weeklyBookings = bookingRepository.countByStartTimeAfter(weekStart);
+        long weeklyBookings = bookingRepository.countBookingByStartTimeAfter(weekStart);
         long weeklyUsers = userRepository.countUsersWithBookingsAfter(weekStart);
 
         LocalDateTime monthStart = now.minusMonths(1);
-        long monthlyBookings = bookingRepository.countByStartTimeAfter(monthStart);
+        long monthlyBookings = bookingRepository.countBookingByStartTimeAfter(monthStart);
         long monthlyUsers = userRepository.countUsersWithBookingsAfter(monthStart);
 
         DeskStatsDTO mostBookedDesk = bookingRepository.findMostBookedDesk();

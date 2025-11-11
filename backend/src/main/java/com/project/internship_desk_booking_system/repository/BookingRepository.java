@@ -87,7 +87,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
-    long countByStartTimeAfter(LocalDateTime startTime);
+    long countBookingByStartTimeAfter(LocalDateTime startTime);
 
     long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 
