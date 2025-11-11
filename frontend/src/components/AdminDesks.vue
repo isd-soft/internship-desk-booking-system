@@ -72,12 +72,12 @@ const headers = [
 
 const mappedDesks = computed(() => {
   return (desks.value || []).map((d) => ({
-    // Try common desk id keys coming from various backends
-    id: d.id ?? d.deskId ?? '—',
-    name: d.deskName ?? d.name ?? 'N/A',
-    zone: d.zone ?? d.location ?? 'N/A',
-    type: d.deskType ?? d.type ?? 'N/A',
-    status: d.status ?? (d.isTemporarilyAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'),
+Fixee    id: d.id ?? '—',
+    name: d.displayName ?? 'N/A',
+    zone: d.zoneId ?? 'N/A',
+    type: d.type ?? 'N/A',
+    status: d.deskStatus ?? 'N/A',
+    isTemporarilyAvailable: d.isTemporarilyAvailable ?? true,
   }));
 });
 
