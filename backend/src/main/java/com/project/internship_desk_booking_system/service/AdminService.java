@@ -290,6 +290,7 @@ public class AdminService {
 
         return new DeskCoordinatesDTO(
                 desk.getId(),
+                desk.getDeskName(),
                 desk.getCurrentX(),
                 desk.getCurrentY()
         );

@@ -71,13 +71,13 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
     List<Desk> findByStatus(DeskStatus status);
 
     @Query("""
-    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.currentX, d.currentY)
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.currentX, d.currentY)
     FROM Desk d
     """)
     List<DeskCoordinatesDTO> findCurrentCoordinates();
 
     @Query("""
-    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.baseX, d.baseY)
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.baseX, d.baseY)
     FROM Desk d
     """)
     List<DeskCoordinatesDTO> findBaseCoordinates();

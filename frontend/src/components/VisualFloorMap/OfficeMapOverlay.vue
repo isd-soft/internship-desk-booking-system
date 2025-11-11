@@ -7,7 +7,8 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
-  resetLayout
+  resetLayout,
+  horizontalDesks
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 import { useFavouritesStore } from "@/stores/favourites";
@@ -76,13 +77,15 @@ function getExistingBooking(id: string) {
     class="desk"
     :class="{
       static: item.static,
-      favourite: isDeskFavourite(item.i), 
+      favourite: isDeskFavourite(item.i),
+      vertical: !horizontalDesks.includes(Number(item.i))
     }"
     @click="handleDeskClick(item)"
   >
-    <span class="text">{{ item.i }}</span>
+    <span class="text">{{ item.deskName || item.i }}</span>
   </div>
 </template>
+
     </GridLayout>
 
     <BookingModal
@@ -138,6 +141,16 @@ function getExistingBooking(id: string) {
   justify-content: center;
   position: relative;
 }
+.desk.vertical .text{
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 8px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.3px;
+  font-weight: 800;
+  white-space: nowrap;
+}
 
 :deep(.vgl-item:not(.vgl-item--static):hover) {
   border-color: #3b82f6;
@@ -148,7 +161,7 @@ function getExistingBooking(id: string) {
 }
 
 .text {
-  font-size: 19px;
+  font-size: 8px;
   pointer-events: none;
   color: #1e293b;
   font-weight: 800;

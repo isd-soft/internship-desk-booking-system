@@ -5,14 +5,30 @@ import Dashboard from "../components/Dashboard.vue";
 import Map from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import { isAuthenticated } from "../utils/auth";
 import StatisticsPage from "../components/StatisticsPage.vue";
+import AdminDesks from "../components/AdminDesks.vue";
+import AdminBookings from "../components/AdminBookings.vue";
+import AdminDashboard from "../components/AdminDashboard.vue";
+import SettingsPage from "../components/SettingsPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "Login", component: LoginPage },
   { path: "/register", name: "Register", component: RegistrationPage },
-  { path: "/dashboard", name: "Dashboard", component: Dashboard }, 
+  { path: "/dashboard", name: "Dashboard", component: Dashboard },
+    {
+        path: "/admin-dashboard",
+        component: AdminDashboard,
+        meta: {requiresAdmin: true},
+        children: [
+            {path: "bookings", name: "AdminBookings", component: AdminBookings},
+            {path: "desks", name: "AdminDesks", component: AdminDesks},
+            {path: "statistics", name: "Statistics", component: StatisticsPage},
+            {path: "settings", name: "Settings", component: SettingsPage},
+            {path: "map", name: "Map", component: Map},
+
+        ],
+    },
   { path: "/map", name: "Map", component: Map },
-    {path:"/statistics", name: "Statistics", component: StatisticsPage}
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });
