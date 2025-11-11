@@ -99,7 +99,7 @@ function handleCancelBooking() {
   if (selectedDesk.value) {
     bookedDesks.value.delete(selectedDesk.value.i);
   }
-  
+
   // Закрываем модалку после отмены
   showBookingModal.value = false;
 }
@@ -189,6 +189,7 @@ function getExistingBooking(deskId: string) {
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  aspect-ratio: 1 / 1;
 }
 
 .desk {
@@ -201,10 +202,10 @@ function getExistingBooking(deskId: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static):hover) {
-  border-color: #3b82f6;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2),
-    0 3px 8px rgba(59, 130, 246, 0.15);
+  border-color: #64748b;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  box-shadow: 0 6px 16px rgba(100, 116, 139, 0.25),
+    0 3px 8px rgba(100, 116, 139, 0.15);
   transform: translateY(-2px);
 }
 
@@ -222,8 +223,8 @@ function getExistingBooking(deskId: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static):hover) .text {
-  color: #1e40af;
-  text-shadow: 0 2px 3px rgba(59, 130, 246, 0.1);
+  color: #334155;
+  text-shadow: 0 2px 3px rgba(100, 116, 139, 0.1);
 }
 
 :deep(.vgl-item:not(.vgl-item--static):active) {

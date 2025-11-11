@@ -17,7 +17,7 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class AuthController {
 
-    public final AuthService authService;
+    private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody @Valid RegisterCommandRequest command) {
