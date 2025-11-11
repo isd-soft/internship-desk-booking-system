@@ -1,12 +1,14 @@
 <script setup>
 import SidePanel from "../components/SidePanel.vue";
 import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
+import DatePicker from "../components/DatePicker.vue";
 </script>
 
 <template>
   <div class="layout">
     <SidePanel />
     <div class="map-holder">
+      <DatePicker/>
       <OfficeMapOverlay />
     </div>
   </div>
