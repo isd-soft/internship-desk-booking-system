@@ -1,4 +1,5 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
+import api from "../../plugins/axios";
 
 export const IMAGE_WIDTH_PX = 987;
 export const IMAGE_HEIGHT_PX = 643;
@@ -7,116 +8,63 @@ export const colNum = IMAGE_WIDTH_PX;
 export const rowHeight = 1;
 export const totalRows = IMAGE_HEIGHT_PX;
 
-export const layout = reactive<any[]>([]);
-
 export const floorImage = "/floorplan/Floor.png";
 
-let counter = 0;
-let offsetX = 0;
-let baseWidth = 27;
-let baseHeight = 50;
-let clusterSpacing = 105;
-let horizontalDeskHeight = 26;
-let horizontalDeskWidth = 55;
+export const layout = reactive<any[]>([]);
+
+export const deskCoordinates = ref<Array<{ id: number; x: number; y: number }>>([]);
+
+const DEFAULT_WIDTH = 27;
+const DEFAULT_HEIGHT = 50;
+
+const HORIZONTAL_DESK_WIDTH = 55;
+const HORIZONTAL_DESK_HEIGHT = 26;
 
 export function resetLayout() {
   layout.length = 0;
-  counter = 0;
 }
 
-export function addDesk(
-  clusterDesks: any[],
-  xCoord: number,
-  startY: number,
-  reverseFlag = false,
-  makeStatic = false
-) {
-  for (const desk of clusterDesks) {
-    let direction = 1;
+export const loadDesksFromBackend = async () => {
+  try {
+    const response = await api.get("/desk/coordinates");
 
-    if (reverseFlag) {
-      direction = -1;
-    }
+    const data = Array.isArray(response.data) ? response.data : [];
+    deskCoordinates.value = data;
 
-    counter++;
-    layout.push({
-      x: xCoord - desk.dx,
-      y: startY - desk.dy * direction,
-      w: desk.w,
-      h: desk.h,
-      i: String(counter),
-      static: makeStatic,
+    const horizontalDesks = [5,10,15,20,25,30,31,32,33,34,39,44,49,54,59,60,61,62,63];
+
+    resetLayout();
+
+    data.forEach((desk: any) => {
+      if (
+        desk &&
+        typeof desk.id === 'number' &&
+        typeof desk.x === 'number' &&
+        typeof desk.y === 'number'
+      ) {
+        let current_width = DEFAULT_WIDTH;
+        let current_height = DEFAULT_HEIGHT;
+
+        if(horizontalDesks.includes(desk.id)){
+          current_width = HORIZONTAL_DESK_WIDTH;
+          current_height = HORIZONTAL_DESK_HEIGHT;
+        }
+        layout.push({
+          x: Math.round(desk.x),
+          y: Math.round(desk.y),
+          w: current_width,
+          h: current_height,
+          i: String(desk.id),
+          static: false,
+        });
+      }
     });
+
+    console.log('Desks loaded:', layout.length);
+  } catch (error: any) {
+    console.error('Error getting desks', error.message);
+
+    deskCoordinates.value = [];
+    resetLayout();
   }
-}
-
-export function makeBottomClusters(
-  startX: number,
-  startY: number,
-  totalClusters = 4,
-  makeStatic = false
-) {
-  for (let cluster = 0; cluster < totalClusters; cluster++) {
-    const xCoord = startX - offsetX - cluster * clusterSpacing;
-
-    const clusterDesks = [
-      { dx: 0, dy: 0, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: 0, h: baseHeight, w: baseWidth },
-      { dx: 0, dy: baseHeight, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: baseHeight, h: baseHeight, w: baseWidth },
-      {
-        dx: baseWidth,
-        dy: baseHeight + baseWidth - 1,
-        h: horizontalDeskHeight,
-        w: horizontalDeskWidth,
-      },
-    ];
-    addDesk(clusterDesks, xCoord, startY, false, makeStatic);
-  }
-}
-
-export function makeTopClusters(
-  startX: number,
-  startY: number,
-  totalClusters = 4,
-  makeStatic = false
-) {
-  for (let cluster = 0; cluster < totalClusters; cluster++) {
-    const xCoord = startX - offsetX - cluster * clusterSpacing;
-
-    const clusterDesks = [
-      { dx: 0, dy: 0, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: 0, h: baseHeight, w: baseWidth },
-      { dx: 0, dy: baseHeight, h: baseHeight, w: baseWidth },
-      { dx: baseWidth, dy: baseHeight, h: baseHeight, w: baseWidth },
-      {
-        dx: baseWidth,
-        dy: baseHeight + baseWidth - 1,
-        h: horizontalDeskHeight,
-        w: horizontalDeskWidth,
-      },
-    ];
-    addDesk(clusterDesks, xCoord, startY, true, makeStatic);
-  }
-}
-
-export function makeLeftClusters(
-  startX: number,
-  startY: number,
-  totalClusters = 1,
-  makeStatic = false
-) {
-  for (let cluster = 0; cluster < totalClusters; cluster++) {
-    let yCoord = startY - (clusterSpacing - 10) * cluster;
-    const clusterDesks = [
-      { dx: 0, dy: 0, h: horizontalDeskHeight, w: horizontalDeskWidth },
-      {
-        dx: 0,
-        dy: horizontalDeskHeight,
-        h: horizontalDeskHeight,
-        w: horizontalDeskWidth,
-      },
-    ];
-    addDesk(clusterDesks, startX, yCoord, false, makeStatic);
-  }
-}
+};
