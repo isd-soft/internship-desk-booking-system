@@ -16,7 +16,10 @@ public class DeskMapper {
                 desk.getIsTemporarilyAvailable(),
                 desk.getTemporaryAvailableFrom(),
                 desk.getTemporaryAvailableUntil(),
-                false
+                desk.getCurrentX(),
+                desk.getCurrentY(),
+                desk.getBaseX(),
+                desk.getBaseY()
         );
     }
 }

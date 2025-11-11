@@ -73,13 +73,13 @@ public class BookingService {
 
         updateDeskStatus(desk, DeskStatus.DEACTIVATED);
 
-//        emailService.sendBookingConfirmationEmail(
-//                email,
-//                savedBooking.getId(),
-//                savedBooking.getDesk().getDeskName(),
-//                savedBooking.getDesk().getZone(),
-//                OffsetDateTime.now()
-//        );
+        emailService.sendBookingConfirmationEmail(
+                email,
+                savedBooking.getId(),
+                savedBooking.getDesk().getDeskName(),
+                savedBooking.getDesk().getZone().getZoneName(),
+                OffsetDateTime.now()
+        );
 
         log.info("Booking created successfully with id: {} for user: {}", savedBooking.getId(), email);
         return bookingMapper.maptoDto(savedBooking);
@@ -109,13 +109,13 @@ public class BookingService {
         updateDeskStatus(desk, DeskStatus.ACTIVE);
         log.info("Booking id: {} cancelled successfully by user: {}", id, email);
 
-//        emailService.sendCancelledBookingEmail(
-//                email,
-//                booking.getId(),
-//                booking.getDesk().getDeskName(),
-//                booking.getDesk().getZone(),
-//                OffsetDateTime.now()
-//        );
+        emailService.sendCancelledBookingEmail(
+                email,
+                booking.getId(),
+                booking.getDesk().getDeskName(),
+                booking.getDesk().getZone().getZoneName(),
+                OffsetDateTime.now()
+        );
     }
 
     public void deleteBooking(Long id) {
