@@ -34,9 +34,6 @@ public class Desk {
     @JoinColumn(name = "zone_id", nullable = false, foreignKey = @ForeignKey(name = "fk_desk_zone"))
     private Zone zone;
 
-    @Column(name = "zone", nullable = false, length = 100)
-    private String zoneName;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private DeskType type = DeskType.SHARED;

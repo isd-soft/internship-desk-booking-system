@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue";
+import { reactive, watch, ref, computed } from "vue";
+import { useFavouritesStore } from "@/stores/favourites";
 
 interface Props {
   modelValue: boolean;
   desk: any;
   isBooked: boolean;
-  existingBooking?: {
-    duration: number;
-  };
+  existingBooking?: { duration: number };
 }
-
 interface Emits {
   (e: "update:modelValue", value: boolean): void;
   (e: "confirm", data: { duration: number }): void;
@@ -19,28 +17,42 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const bookingForm = reactive({
-  duration: 30,
-  customMinutes: 30,
+const bookingForm = reactive({ duration: 240 });
+const isProcessing = ref(false);
+
+const favStore = useFavouritesStore();
+
+const deskId = computed<number | null>(() => {
+  const n = Number(props.desk?.i);
+  return Number.isFinite(n) ? n : null;
 });
 
+const isFavourite = computed(() => favStore.isFav(deskId.value));
+
 watch(
-  () => props.existingBooking,
-  (booking) => {
-    if (booking) {
-      bookingForm.duration = booking.duration;
-      bookingForm.customMinutes = booking.duration;
-    } else {
-      bookingForm.duration = 30;
-      bookingForm.customMinutes = 30;
-    }
+  () => props.modelValue,
+  async (open) => {
+    if (!open) return;
+
+    await favStore.ensureLoaded();
   },
   { immediate: true }
 );
 
+
 function setDuration(minutes: number) {
   bookingForm.duration = minutes;
-  bookingForm.customMinutes = minutes;
+}
+
+function closeModal() {
+  emit("update:modelValue", false);
+}
+
+async function toggleFavourite() {
+  if (!deskId.value) return;
+  isProcessing.value = true;
+  await favStore.toggle(deskId.value);
+  isProcessing.value = false;
 }
 
 function handleConfirm() {
@@ -50,18 +62,13 @@ function handleConfirm() {
 
 function handleCancel() {
   emit("cancel");
+  closeModal();
 }
 
-function closeModal() {
-  emit("update:modelValue", false);
-}
-
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}min`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}min`;
+function formatDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
 }
 </script>
 
@@ -73,104 +80,58 @@ function formatDuration(minutes: number): string {
     transition="dialog-bottom-transition"
     persistent
   >
-    <v-card class="booking-card" elevation="0">
+    <v-card class="booking-card">
       <v-card-title class="card-header">
         <div class="header-content">
           <div class="header-info">
             <div class="workspace-label">WORKSPACE</div>
             <div class="desk-title">Desk {{ desk?.i }}</div>
           </div>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="closeModal"
-            class="close-button"
-          >
+          <v-btn icon variant="text" size="small" @click="closeModal">
             <v-icon size="20">mdi-close</v-icon>
           </v-btn>
         </div>
       </v-card-title>
 
       <v-card-text class="card-body">
-        <v-alert
-          v-if="isBooked"
-          class="status-alert"
-          variant="tonal"
-          density="compact"
-        >
-          <div class="alert-content">
-            <v-icon size="18">mdi-check-circle</v-icon>
-            <span>Currently Reserved</span>
-          </div>
-        </v-alert>
 
         <div class="section">
           <div class="section-title">Duration</div>
           <div class="duration-grid">
             <button
-              v-for="duration in [30, 60, 120]"
+              v-for="duration in [240, 360, 540]"
               :key="duration"
               @click.stop="setDuration(duration)"
-              :class="[
-                'duration-btn',
-                { active: bookingForm.duration === duration },
-              ]"
+              :class="['duration-btn', { active: bookingForm.duration === duration }]"
             >
-              <div class="duration-value">{{ duration }}</div>
-              <div class="duration-unit">min</div>
+              <div class="duration-value">{{ duration / 60 }}</div>
+              <div class="duration-unit">hours</div>
             </button>
           </div>
         </div>
 
-        <div class="section">
-          <div class="section-title">Custom Duration</div>
-          <div class="custom-input-wrapper">
-            <input
-              v-model.number="bookingForm.customMinutes"
-              @input="bookingForm.duration = bookingForm.customMinutes"
-              type="number"
-              class="custom-input"
-              placeholder="Enter minutes"
-            />
-            <span class="input-suffix">minutes</span>
-          </div>
-        </div>
+        <button
+          @click.stop="toggleFavourite"
+          :disabled="isProcessing || !deskId"
+          :class="['favourite-button', { active: isFavourite }]"
+        >
+          <v-icon size="20">
+            {{ isFavourite ? 'mdi-heart' : 'mdi-heart-outline' }}
+          </v-icon>
+          <span>{{ isFavourite ? 'Remove from Favourites' : 'Add to Favourites' }}</span>
+        </button>
 
-        <div class="summary-box">
-          <div class="summary-icon">
-            <v-icon size="24" color="white">mdi-clock-outline</v-icon>
-          </div>
-          <div class="summary-info">
-            <div class="summary-label">Total Booking Time</div>
-            <div class="summary-duration">
-              {{ formatDuration(bookingForm.duration) }}
-            </div>
-          </div>
-        </div>
       </v-card-text>
 
       <v-card-actions class="card-actions">
-        <v-btn
-          v-if="isBooked"
-          variant="text"
-          class="cancel-button"
-          @click.stop="handleCancel"
-        >
-          Cancel Booking
-        </v-btn>
-        <v-spacer v-if="isBooked" />
-        <v-btn
-          class="confirm-button"
-          size="x-large"
-          @click.stop="handleConfirm"
-        >
+        <v-btn class="confirm-button" size="x-large" @click.stop="handleConfirm">
           {{ isBooked ? "Update Booking" : "Confirm Booking" }}
         </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
@@ -320,48 +281,86 @@ function formatDuration(minutes: number): string {
   letter-spacing: 0.2px;
 }
 
-.custom-input-wrapper {
+.slider-container {
   position: relative;
+}
+
+.slider-labels {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.custom-input {
-  width: 100%;
-  padding: 16px 90px 16px 16px;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  font-size: 15px;
+.slider-label {
+  font-size: 11px;
   font-weight: 600;
-  color: #171717;
-  background: #ffffff;
-  transition: all 0.3s ease;
-  outline: none;
-}
-
-.custom-input:hover {
-  border-color: #a3a3a3;
-  background: #fafafa;
-}
-
-.custom-input:focus {
-  border-color: #171717;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
-.custom-input::placeholder {
   color: #a3a3a3;
-  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
-.input-suffix {
-  position: absolute;
-  right: 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #737373;
-  pointer-events: none;
+.duration-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e5e5e5;
+  border-radius: 10px;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+.duration-slider:hover {
+  background: #d4d4d4;
+}
+
+.duration-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #171717;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.duration-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.duration-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: #171717;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.duration-slider::-moz-range-thumb:active {
+  transform: scale(1.05);
+}
+
+.slider-value {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+  margin-top: 12px;
+  letter-spacing: 0.3px;
 }
 
 .summary-box {
@@ -372,6 +371,7 @@ function formatDuration(minutes: number): string {
   align-items: center;
   gap: 16px;
   margin-top: 28px;
+  margin-bottom: 16px;
 }
 
 .summary-icon {
@@ -403,6 +403,52 @@ function formatDuration(minutes: number): string {
   color: #ffffff;
   letter-spacing: -0.5px;
   line-height: 1;
+}
+
+.favourite-button {
+  width: 100%;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 600;
+  color: #171717;
+  letter-spacing: 0.2px;
+  outline: none;
+}
+
+.favourite-button:hover:not(:disabled) {
+  border-color: #a3a3a3;
+  background: #fafafa;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.favourite-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.favourite-button.active {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.favourite-button.active:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.favourite-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .card-actions {

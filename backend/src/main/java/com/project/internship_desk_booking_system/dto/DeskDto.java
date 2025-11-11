@@ -13,8 +13,7 @@ public record DeskDto(
         Long id,
         @NotBlank
         String displayName,
-        @NotBlank
-        Long zoneId,
+        ZoneDto zoneDto,
         DeskType type,
         DeskStatus deskStatus,
         @JsonAlias({"is_temporary_available"})

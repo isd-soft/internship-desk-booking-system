@@ -1,17 +1,10 @@
 package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
-import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
-import com.project.internship_desk_booking_system.command.CreateBookingCommand;
-import com.project.internship_desk_booking_system.dto.BookingDTO;
-import com.project.internship_desk_booking_system.dto.FavouriteDesksDTO;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
-import com.project.internship_desk_booking_system.repository.DeskRepository;
-import com.project.internship_desk_booking_system.repository.UserRepository;
 import com.project.internship_desk_booking_system.service.BookingService;
 import com.project.internship_desk_booking_system.service.FavouriteDesksService;
-import com.project.internship_desk_booking_system.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -79,17 +71,6 @@ public class UserController {
         return ResponseEntity.ok(booking);
     }
 
-    @GetMapping("/desks")
-    public ResponseEntity<List<FavouriteDesksDTO>> getAllDesksWithFavourites(
-            @AuthenticationPrincipal CustomUserPrincipal principal
-    ) {
-        log.info("Fetching all desks with favourites for user: {}", principal.getEmail());
 
-        List<FavouriteDesksDTO> desks = favouriteDesksService.getAllDesksWithFavourites(
-                principal.getEmail()
-        );
-
-        return ResponseEntity.ok(desks);
-    }
 }
 

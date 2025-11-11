@@ -10,7 +10,7 @@ const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "Login", component: LoginPage },
   { path: "/register", name: "Register", component: RegistrationPage },
-  { path: "/dashboard", name: "Dashboard", component: Dashboard }, // <-- тут лейаут
+  { path: "/dashboard", name: "Dashboard", component: Dashboard }, 
   { path: "/map", name: "Map", component: Map },
     {path:"/statistics", name: "Statistics", component: StatisticsPage}
 ];

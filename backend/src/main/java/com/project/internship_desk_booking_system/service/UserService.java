@@ -26,7 +26,6 @@ import java.util.List;
 @Slf4j
 public class UserService {
     private final BookingRepository bookingRepository;
-    private final DeskRepository deskRepository;
     private final UserRepository userRepository;
 
 

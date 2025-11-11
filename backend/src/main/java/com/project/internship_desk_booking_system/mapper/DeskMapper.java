@@ -2,15 +2,18 @@ package com.project.internship_desk_booking_system.mapper;
 
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.entity.Desk;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class DeskMapper {
+    private final ZoneMapper zoneMapper;
     public DeskDto toDto(Desk desk) {
         return new DeskDto(
                 desk.getId(),
-                desk.getZone().getZoneAbv()+desk.getDeskName(),
-                desk.getZone().getId(),
+                desk.getDeskName(),
+                zoneMapper.toDto(desk.getZone()),
                 desk.getType(),
                 desk.getStatus(),
                 desk.getIsTemporarilyAvailable(),
