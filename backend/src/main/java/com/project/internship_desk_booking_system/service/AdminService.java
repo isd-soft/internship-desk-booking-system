@@ -305,7 +305,7 @@ public class AdminService {
     ){
         return new DeskDto(
                 desk.getId(),
-                desk.getDeskName(),
+                desk.getZone().getZoneAbv()+"-"+desk.getDeskName(),
                 desk.getZone().getId(),
                 desk.getType(),
                 desk.getStatus(),
