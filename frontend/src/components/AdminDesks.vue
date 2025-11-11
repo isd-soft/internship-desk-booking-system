@@ -72,7 +72,7 @@ const headers = [
 
 const mappedDesks = computed(() => {
   return (desks.value || []).map((d) => ({
-Fixee    id: d.id ?? '—',
+    id: d.id ?? '—',
     name: d.displayName ?? 'N/A',
     zone: d.zoneId ?? 'N/A',
     type: d.type ?? 'N/A',
