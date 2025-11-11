@@ -5,8 +5,8 @@ interface Props {
   show: boolean;
   booking?: {
     deskId: number;
-    startDate: string;
-    endDate: string;
+    startTime: string;
+    endTime: string;
     status: string;
   };
 }
@@ -15,8 +15,8 @@ interface Emits {
   (e: "close"): void;
   (e: "save", data: {
     deskId: number;
-    startDate: string;
-    endDate: string;
+    startTime: string;
+    endTime: string;
     status: string;
   }): void;
 }
@@ -26,8 +26,8 @@ const emit = defineEmits<Emits>();
 
 const bookingForm = reactive({
   deskId: 0,
-  startDate: "",
-  endDate: "",
+  startTime: "",
+  endTime: "",
   status: "ACTIVE",
 });
 
@@ -35,7 +35,6 @@ const statusOptions = [
   { value: "ACTIVE", label: "Active" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
-  { value: "PENDING", label: "Pending" },
 ];
 
 // Sync with existing booking
@@ -44,13 +43,13 @@ watch(
     (booking) => {
       if (booking) {
         bookingForm.deskId = booking.deskId;
-        bookingForm.startDate = booking.startDate;
-        bookingForm.endDate = booking.endDate;
+        bookingForm.startTime = booking.startTime;
+        bookingForm.endTime = booking.endTime;
         bookingForm.status = booking.status;
       } else {
         bookingForm.deskId = 0;
-        bookingForm.startDate = "";
-        bookingForm.endDate = "";
+        bookingForm.startTime = "";
+        bookingForm.endTime = "";
         bookingForm.status = "ACTIVE";
       }
     },
@@ -60,8 +59,8 @@ watch(
 function handleSave() {
   emit("save", {
     deskId: bookingForm.deskId,
-    startDate: bookingForm.startDate,
-    endDate: bookingForm.endDate,
+    startTime: bookingForm.startTime,
+    endTime: bookingForm.endTime,
     status: bookingForm.status,
   });
 }
@@ -124,7 +123,7 @@ function formatDateTime(dateStr: string): string {
         <div class="section">
           <div class="section-title">Start Date & Time</div>
           <input
-              v-model="bookingForm.startDate"
+              v-model="bookingForm.startTime"
               type="datetime-local"
               class="custom-input"
           />
@@ -133,7 +132,7 @@ function formatDateTime(dateStr: string): string {
         <div class="section">
           <div class="section-title">End Date & Time</div>
           <input
-              v-model="bookingForm.endDate"
+              v-model="bookingForm.endTime"
               type="datetime-local"
               class="custom-input"
           />

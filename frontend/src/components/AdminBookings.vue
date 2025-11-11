@@ -179,29 +179,24 @@ const mappedBookings = computed(() => {
   const items = bookings.value || [];
   const filter = String(statusFilter.value || 'ALL').toUpperCase();
   const filtered = filter === 'ALL'
-    ? items
-    : items.filter((b) => String(b?.status ?? '').toUpperCase() === filter);
+      ? items
+      : items.filter((b) => String(b?.status ?? '').toUpperCase() === filter);
 
   return filtered.map((b) => ({
     // IDs
-    id: b.id ?? b.bookingId ?? '—',
-    deskId: b.desk?.id ?? b.deskId ?? b.desk?.deskId ?? b.desk?.deskID ?? b.desk_id ?? null,
-    // Related entities
+    id: b.bookingId ?? '—',
+    deskId: b.desk?.id ?? null,
     userId: b.user_id ?? null,
-    deskName: b.desk?.deskName || b.deskName || 'N/A',
-    zone: b.desk?.zone || b.zone || 'N/A',
-    deskType: b.desk?.deskType || b.deskType || 'N/A',
-
-    // Timing
+    deskName: b.desk?.displayName ?? 'N/A',
+    zone: b.desk?.zoneId ?? 'N/A',
+    deskType: b.desk?.type ?? 'N/A',
+    deskStatus: b.desk?.deskStatus ?? 'N/A',
     startTime: b.startTime,
     endTime: b.endTime,
     duration: null,
-
-    // Status
-    status: b.status || '—',
+    status: b.status ?? '—',
   }));
 });
-
 const fetchBookings = async () => {
   try {
     loading.value = true;
@@ -228,6 +223,12 @@ function statusToColor(s) {
   if (val === 'CANCELLED') return 'error';
   if (val ===  'ACTIVE') return 'warning';
   return 'primary';
+}
+
+function toDatetimeLocalValue(dateStr) {
+  const date = new Date(dateStr);
+  const pad = n => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatDate(dateStr) {
@@ -259,9 +260,10 @@ function onEdit(item) {
 
   selectedBooking.value = {
     id: item.id,
+    userId: item.userId,
     deskId: item.deskId,
-    startDate: item.startTime,  // Your backend uses startTime
-    endDate: item.endTime,      // Your backend uses endTime
+    startTime: toDatetimeLocalValue(item.startTime),
+    endTime: toDatetimeLocalValue(item.endTime),
     status: item.status
   };
 
@@ -271,10 +273,34 @@ function onEdit(item) {
 function closeModal() {
   showModal.value = false;
 }
-function handleSave(updatedData) {
-  console.log("Booking updated:", updatedData);
-  // later you'll call your backend PUT API here
-  showModal.value = false;
+async function handleSave(updatedData) {
+  try {
+    console.log("Updating booking:", updatedData);
+
+    const bookingUpdateCommand = {
+      userId: selectedBooking.value.userId,
+      deskId: updatedData.deskId,
+      startTime: updatedData.startTime,
+      endTime: updatedData.endTime,
+      status: updatedData.status
+    };
+
+    console.log("Sending to backend:", bookingUpdateCommand);
+
+    const response = await api.patch(
+        `/admin/edit/booking/${selectedBooking.value.id}`,
+        bookingUpdateCommand
+    );
+
+    console.log("Booking updated successfully:", response.data);
+
+    await fetchBookings();
+    showModal.value = false;
+
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    console.error("Error details:", error.response?.data);
+  }
 }
 async function onCancel(item) {
   const id = item?.id ?? item?.bookingId;
