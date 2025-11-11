@@ -36,7 +36,7 @@ public class BookingService {
     private final EmailService emailService;
 
     private static final int MIN_BOOKING_HOURS = 1;
-    private static final int MAX_BOOKING_HOURS = 8;
+    private static final int MAX_BOOKING_HOURS = 9;
 
     public BookingResponseDto createBooking(String email, BookingCreateRequest request) {
         log.info("Creating booking for user: {} for desk: {}", email, request.getDeskId());
@@ -71,7 +71,7 @@ public class BookingService {
                 email,
                 savedBooking.getId(),
                 savedBooking.getDesk().getDeskName(),
-                savedBooking.getDesk().getZone().getZoneName(),
+                savedBooking.getDesk().getZoneName(),
                 OffsetDateTime.now()
         );
 
