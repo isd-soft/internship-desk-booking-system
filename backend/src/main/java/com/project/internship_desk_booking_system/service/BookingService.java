@@ -71,7 +71,7 @@ public class BookingService {
                 email,
                 savedBooking.getId(),
                 savedBooking.getDesk().getDeskName(),
-                savedBooking.getDesk().getZoneName(),
+                savedBooking.getDesk().getZone().getZoneName(),
                 OffsetDateTime.now()
         );
 

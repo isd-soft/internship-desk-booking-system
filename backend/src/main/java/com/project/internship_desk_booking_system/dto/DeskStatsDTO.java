@@ -1,14 +1,23 @@
 package com.project.internship_desk_booking_system.dto;
 
+import com.project.internship_desk_booking_system.entity.Zone;
 import lombok.*;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigInteger;
 
 @Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class DeskStatsDTO {
-    private Long desk_id;
     private String deskName;
-    private String zone;
     private Long bookingCount;
+
+    public DeskStatsDTO() {}
+
+    public DeskStatsDTO(String deskName, Number bookingCount) {
+        this.deskName = deskName;
+        this.bookingCount = bookingCount == null ? 0L : bookingCount.longValue();
+    }
 }
