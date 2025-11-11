@@ -34,9 +34,6 @@ public class Desk {
     @JoinColumn(name = "zone_id", nullable = false, foreignKey = @ForeignKey(name = "fk_desk_zone"))
     private Zone zone;
 
-    @Column(name = "zone", nullable = false, length = 100)
-    private String zoneName;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private DeskType type = DeskType.SHARED;
@@ -54,6 +51,19 @@ public class Desk {
     @Column(name = "temporary_available_until")
     private LocalDateTime temporaryAvailableUntil;
 
+    @Column(name = "current_x")
+    private Double currentX;
+
+    @Column(name = "current_y")
+    private Double currentY;
+
+    @Column(name = "base_x")
+    private Double baseX;
+
+    @Column(name = "base_y")
+    private Double baseY;
+
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -64,12 +74,6 @@ public class Desk {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
-    }
-    public void setZone(Zone zone) {
-        this.zone = zone;
-        if (zone != null) {
-            this.zoneName = zone.getZoneName();
-        }
     }
 
 }

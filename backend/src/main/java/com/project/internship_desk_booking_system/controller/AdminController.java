@@ -2,6 +2,8 @@ package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
+import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.service.AdminService;
@@ -84,5 +86,21 @@ public class AdminController {
                                 bookingId,
                                 bookingUpdateCommand
                         ));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/baseCoordinates")
+    public ResponseEntity<List<DeskCoordinatesDTO>> getBaseCoordinates() {
+        return ResponseEntity.ok(adminService.getBaseCoordinates());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/edit/currentCoordinates")
+    public ResponseEntity<DeskCoordinatesDTO> editCurrentCoordinates(
+            @RequestBody @Valid CoordinatesUpdateCommand coordinatesUpdateCommand
+            ){
+        return ResponseEntity.ok(
+                adminService.changeCurrentCoordinates(coordinatesUpdateCommand)
+        );
     }
 }

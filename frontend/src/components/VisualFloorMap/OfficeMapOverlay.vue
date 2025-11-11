@@ -1,27 +1,20 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import {
   layout,
   colNum,
   rowHeight,
   totalRows,
   IMAGE_WIDTH_PX,
-  makeBottomClusters,
-  makeTopClusters,
-  makeLeftClusters,
-  resetLayout,
+  loadDesksFromBackend,
+  resetLayout
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 
-resetLayout();
-makeBottomClusters(888, 555, 4);
-makeBottomClusters(400, 555, 2);
-
-makeTopClusters(888, 30, 4);
-makeTopClusters(400, 30, 1);
-
-makeLeftClusters(178, 555, 2);
-makeLeftClusters(271, 173, 2);
+onMounted(()=>{
+  resetLayout();
+  loadDesksFromBackend();
+});
 
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);

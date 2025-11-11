@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.repository;
 
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -68,4 +69,16 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             "AND d.temporaryAvailableUntil >= :dateTime))")
     List<Desk> findAvailableDesksInZoneAt(@Param("zoneId") Long zoneId, @Param("dateTime") LocalDateTime dateTime);
     List<Desk> findByStatus(DeskStatus status);
+
+    @Query("""
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.currentX, d.currentY)
+    FROM Desk d
+    """)
+    List<DeskCoordinatesDTO> findCurrentCoordinates();
+
+    @Query("""
+    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.baseX, d.baseY)
+    FROM Desk d
+    """)
+    List<DeskCoordinatesDTO> findBaseCoordinates();
 }

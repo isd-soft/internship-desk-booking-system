@@ -1,11 +1,14 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,18 @@ public class DeskService {
                 .stream()
                 .map(deskMapper::toDto)
                 .toList();
+    }
+
+    public List<DeskCoordinatesDTO> getCoordinates(){
+        List<DeskCoordinatesDTO>  coordinates = deskRepository.findCurrentCoordinates();
+        if(coordinates.isEmpty()){
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "CURRENT_DESK_COORDINATES_NOT_FOUND",
+                    "Current coordinates not found "
+            );
+        }
+        return coordinates;
     }
 
 }

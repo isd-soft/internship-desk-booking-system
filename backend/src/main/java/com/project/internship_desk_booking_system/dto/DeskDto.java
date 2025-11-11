@@ -14,7 +14,6 @@ public record DeskDto(
         @NotBlank
         String displayName,
         @NotBlank
-        //String zone,
         Long zoneId,
         DeskType type,
         DeskStatus deskStatus,
@@ -23,6 +22,10 @@ public record DeskDto(
         @Null
         LocalDateTime temporaryAvailableFrom,
         @Null
-        LocalDateTime temporaryAvailableUntil
+        LocalDateTime temporaryAvailableUntil,
+        Double currentX,
+        Double currentY,
+        Double baseX,
+        Double baseY
 ) {
 }
