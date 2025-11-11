@@ -4,6 +4,7 @@ import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.BookingTimeLimits;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
@@ -19,9 +20,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class BookingService {
     private final DeskRepository deskRepository;
     private final BookingMapper bookingMapper;
     private final EmailService emailService;
+    private final BookingTimeLimitsService bookingTimeLimitsService;
 
     private static final int MIN_BOOKING_HOURS = 1;
     private static final int MAX_BOOKING_HOURS = 8;
@@ -52,8 +56,10 @@ public class BookingService {
         });
 
         validateBookingTimes(request.getStartTime(), request.getEndTime());
+        validateMaxDaysInAdvance(request.getStartTime());
         checkDeskAvailability(request.getDeskId(), request.getStartTime(), request.getEndTime());
         checkUserAvailability(user.getId(), request.getStartTime(), request.getEndTime());
+        validateWeeklyHoursLimit(user.getId(), request.getStartTime(), request.getEndTime());
 
         Booking booking = Booking.builder()
                 .user(user)
@@ -150,6 +156,63 @@ public class BookingService {
         }
 
         log.debug("Booking times validated successfully. Duration: {} hours", hours);
+    }
+
+    private void validateMaxDaysInAdvance(LocalDateTime startTime) {
+        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+        LocalDateTime now = LocalDateTime.now();
+
+        long daysInAdvance = ChronoUnit.DAYS.between(now.toLocalDate(), startTime.toLocalDate());
+
+        if (daysInAdvance > policy.getMaxDaysInAdvance()) {
+            log.error("Booking {} days in advance exceeds maximum of {} days",
+                    daysInAdvance, policy.getMaxDaysInAdvance());
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "BOOKING_TOO_FAR_AHEAD",
+                    String.format("Cannot book more than %d days in advance. You are trying to book %d days ahead.",
+                            policy.getMaxDaysInAdvance(), daysInAdvance)
+            );
+        }
+
+        log.debug("Days in advance validated: {} days (max: {})", daysInAdvance, policy.getMaxDaysInAdvance());
+    }
+
+    private void validateWeeklyHoursLimit(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+
+        LocalDateTime weekStart = startTime.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
+        LocalDateTime weekEnd = weekStart.plusDays(7);
+
+        log.debug("Checking weekly hours limit for user {} in week {} to {}",
+                userId, weekStart, weekEnd);
+
+        List<Booking> weeklyBookings = bookingRepository.findUserBookings(
+                userId, weekStart, weekEnd
+        );
+
+        long bookedHours = weeklyBookings.stream()
+                .mapToLong(b -> Duration.between(b.getStartTime(), b.getEndTime()).toHours())
+                .sum();
+
+        long newBookingHours = Duration.between(startTime, endTime).toHours();
+        long totalHours = bookedHours + newBookingHours;
+
+        log.debug("User {} has {} hours booked this week, requesting {} more hours (total: {})",
+                userId, bookedHours, newBookingHours, totalHours);
+
+        if (totalHours > policy.getMaxHoursPerWeek()) {
+            log.error("User {} would exceed weekly limit: {} hours (max: {})",
+                    userId, totalHours, policy.getMaxHoursPerWeek());
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "WEEKLY_HOURS_EXCEEDED",
+                    String.format("Cannot exceed %d hours per week. You have %d hours booked and are requesting %d more hours.",
+                            policy.getMaxHoursPerWeek(), bookedHours, newBookingHours)
+            );
+        }
+
+        log.debug("Weekly hours limit validated successfully for user {}", userId);
     }
 
     public void checkDeskAvailability(Long desk_id, LocalDateTime startTime, LocalDateTime endTime) {
