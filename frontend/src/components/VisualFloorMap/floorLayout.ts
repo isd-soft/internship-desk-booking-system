@@ -15,6 +15,29 @@ export const layout = reactive<any[]>([]);
 export const deskCoordinates = ref<Array<{ id: number; x: number; y: number }>>([]);
 export const horizontalDesks = [5,10,15,20,25,30,31,32,33,34,39,44,49,54,59,60,61,62,63];
 
+const someColors=[
+  {
+    id: 1,
+    color: "GREEN" 
+  },
+  {
+    id: 2,
+    color: "RED" 
+  },
+  {
+    id: 3,
+    color: "AMBER" 
+  },
+  {
+    id: 4,
+    color: "BLUE" 
+  },
+  {
+    id: 5,
+    color: "GRAY" 
+  }
+];
+
 const DEFAULT_WIDTH = 27;
 const DEFAULT_HEIGHT = 50;
 
@@ -32,8 +55,6 @@ export const loadDesksFromBackend = async () => {
     const data = Array.isArray(response.data) ? response.data : [];
     deskCoordinates.value = data;
 
-
-
     resetLayout();
 
     data.forEach((desk: any) => {
@@ -50,6 +71,9 @@ export const loadDesksFromBackend = async () => {
           current_width = HORIZONTAL_DESK_WIDTH;
           current_height = HORIZONTAL_DESK_HEIGHT;
         }
+        const colorMatch = someColors.find((c) => c.id === desk.id);
+        const current_color = colorMatch ? colorMatch.color : "NOT A COLOR";
+
         layout.push({
           x: Math.round(desk.x),
           y: Math.round(desk.y),
@@ -58,6 +82,7 @@ export const loadDesksFromBackend = async () => {
           i: String(desk.id),
           static: false,
           deskName: desk.deskName,
+          color: current_color
         });
       }
     });

@@ -1,23 +1,22 @@
 <template>
-  <VRow justify="center" align="center">
-    <VCol cols="12" md="4">
+  <VRow justify="center">
+    <VCol cols="12" class="d-flex justify-center">
       <VMenu
         v-model="menu"
         :close-on-content-click="false"
         transition="scale-transition"
         offset="10"
+        max-width="340"
       >
-
         <template #activator="{ props }">
           <VBtn
             v-bind="props"
             color="primary"
             variant="outlined"
-            class="text-none text-left"
+            class="text-none date-btn"
             prepend-icon="mdi-calendar"
-            style="width: 100%; justify-content: flex-start;"
           >
-            <span class="text-truncate">
+            <span class="date-text">
               {{ displayDate || date }}
             </span>
           </VBtn>
@@ -30,10 +29,7 @@
           show-adjacent-months
           @update:model-value="menu = false"
           class="clean-picker"
-        >
-        <template #title>
-        </template>
-        </VDatePicker>
+        />
       </VMenu>
     </VCol>
   </VRow>
@@ -63,10 +59,34 @@ const displayDate = computed(() => {
 </script>
 
 <style scoped>
+.date-btn {
+  min-width: 180px;          
+  max-width: 260px;        
+  width: fit-content;        
+  padding: 0 16px;           
+  white-space: nowrap;        
+  flex-shrink: 0;          
+  height: 48px;
+  font-size: 16px;
+}
+
+.date-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;         
+  display: inline-block;
+}
+
+:deep(.v-col) {
+  padding: 0;
+}
+
 .clean-picker :deep(.v-date-picker-controls__month-btn),
 .clean-picker :deep(.v-date-picker-controls__mode-btn) {
   display: none !important;
 }
+
 .clean-picker :deep(.v-date-picker-controls__month) {
   display: flex !important;
   justify-content: space-between;
@@ -86,23 +106,19 @@ const displayDate = computed(() => {
 }
 
 .clean-picker :deep(.v-date-picker-header__content){
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: 1px;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 1px;
 }
 
-.clean-picker :deep(.v-date-picker-month__day){
-        font-weight: 800;
-    font-size: 15px;
-}
-
-.clean-picker :deep(.v-date-picker-month__weekday){
-        font-weight: 800;
-    font-size: 15px;
+.clean-picker :deep(.v-date-picker-month__day),
+.clean-picker :deep(.v-date-picker-month__weekday) {
+  font-weight: 800;
+  font-size: 15px;
 }
 
 .clean-picker :deep(.v-btn__content){
-    font-size:18px;
+  font-size: 18px;
 }
 
 .clean-picker :deep(.v-date-picker-controls) {
