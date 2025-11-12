@@ -7,6 +7,8 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
+  loadAllColors,
+  DeskColors,
   resetLayout,
   horizontalDesks
 } from "../VisualFloorMap/floorLayout";
@@ -18,7 +20,7 @@ const favStore = useFavouritesStore();
 onMounted(async () => {
   resetLayout();
   loadDesksFromBackend();
-  await favStore.ensureLoaded(); 
+  await favStore.ensureLoaded();
 });
 
 const showBookingModal = ref(false);
@@ -32,8 +34,26 @@ function isDeskFavourite(id: string | number) {
 
 function handleDeskClick(item: any) {
   if (item.static) return;
+  console.log("Clicked desk:", item.i);
   selectedDesk.value = item;
   showBookingModal.value = true;
+}
+
+function getDeskColor(color: string){
+  switch(color){
+    case "GREEN":
+      return "#50C878";
+    case "RED":
+      return "#EE4B2B";
+    case "AMBER":
+      return "#FFBF00";
+    case "BLUE":
+      return "#7393B3";
+    case "GRAY":
+      return "#818589	";
+    case "NOT A COLOR":
+      return "";
+  }
 }
 
 function handleConfirmBooking(data: { duration: number }) {
@@ -53,7 +73,6 @@ function getExistingBooking(id: string) {
   return isDeskBooked(id) ? { duration: 60 } : undefined;
 }
 </script>
-
 
 <template>
   <div class="floorplan-container no-anim">
@@ -81,6 +100,9 @@ function getExistingBooking(id: string) {
             vertical: !horizontalDesks.includes(Number(item.i))
           }"
           @click="handleDeskClick(item)"
+          :style="{
+            backgroundColor: getDeskColor(item.color)
+            }"
         >
           <span class="text">{{ item.deskName || item.i }}</span>
           <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
@@ -144,6 +166,10 @@ function getExistingBooking(id: string) {
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius : 10px;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .desk.vertical .text {

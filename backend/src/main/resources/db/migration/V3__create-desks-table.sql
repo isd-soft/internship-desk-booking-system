@@ -5,7 +5,7 @@ CREATE TABLE desk (
                       zone_id INTEGER NOT NULL,
                       type VARCHAR(20) NOT NULL DEFAULT 'SHARED',
                       status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                      is_temporarily_available BOOLEAN NOT NULL DEFAULT false,
+                      is_temporarily_available BOOLEAN NOT NULL DEFAULT true,
                       temporary_available_from TIMESTAMP,
                       temporary_available_until TIMESTAMP,
                       current_x DOUBLE PRECISION NOT NULL,

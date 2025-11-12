@@ -3,13 +3,11 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
-import com.project.internship_desk_booking_system.config.BookingProperties;
 import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.BookingTimeLimits;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
-import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -21,11 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -233,6 +229,8 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+        Desk desk = booking.getDesk();
+        updateDeskStatus(desk, DeskStatus.ACTIVE);
         log.info("Booking id: {} cancelled successfully by user: {}", id, email);
 
         emailService.sendCancelledBookingEmail(
@@ -247,6 +245,75 @@ public class BookingService {
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
         log.info("Booking id: {} deleted successfully", id);
+    }
+
+    private void updateDeskStatus(Desk desk, DeskStatus status) {
+        log.debug("Updating desk id: {} status to {}", desk.getId(), status);
+        desk.setStatus(status);
+        deskRepository.save(desk);
+        log.info("Desk id: {} status updated to {}", desk.getId(), status);
+    }
+
+    public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (startTime.isBefore(now)) {
+            log.error("Invalid booking time: start time {} is before current time {}", startTime, now);
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before today's date and time");
+        }
+
+        if (endTime.isBefore(startTime)) {
+            log.error("Invalid booking time: end time {} is before start time {}", endTime, startTime);
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
+        }
+
+        long hours = Duration.between(startTime, endTime).toHours();
+
+        if (hours > MAX_BOOKING_HOURS) {
+            log.error("Booking duration {} hours exceeds maximum of {} hours", hours, MAX_BOOKING_HOURS);
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking more than 8 Hours");
+        }
+
+        if (hours < MIN_BOOKING_HOURS) {
+            log.error("Booking duration {} hours is less than minimum of {} hour", hours, MIN_BOOKING_HOURS);
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking less than 1 Hour");
+        }
+
+        log.debug("Booking times validated successfully. Duration: {} hours", hours);
+    }
+
+    public void checkDeskAvailability(Long desk_id, LocalDateTime startTime, LocalDateTime endTime) {
+        log.debug("Checking desk availability for desk id: {} between {} and {}", desk_id, startTime, endTime);
+
+        List<Booking> overLappingBookings = bookingRepository.findOverlappingBookings(
+                desk_id,
+                startTime,
+                endTime
+        );
+
+        if (!overLappingBookings.isEmpty()) {
+            log.error("Desk id: {} has {} overlapping bookings for the requested time period", desk_id, overLappingBookings.size());
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_NOT_AVAILABLE", "Desk is not available for booking due to overlapping time");
+        }
+
+        log.debug("Desk id: {} is available for booking", desk_id);
+    }
+
+    public void checkUserAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
+        log.debug("Checking user availability for user id: {} between {} and {}", user_id, startTime, endTime);
+
+        List<Booking> userBookings = bookingRepository.findUserBookings(
+                user_id,
+                startTime,
+                endTime
+        );
+
+        if (!userBookings.isEmpty()) {
+            log.error("User id: {} already has {} booking(s) in the requested time period", user_id, userBookings.size());
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE", "Already have a booking in this time period");
+        }
+
+        log.debug("User id: {} is available for booking", user_id);
     }
 
     @Transactional(readOnly = true)
@@ -318,4 +385,72 @@ public class BookingService {
                 .toList();
     }
 
+    public List<BookingDTO> getBookingsByDate(
+            LocalDate localDate
+    ){
+
+        log.info(
+                "looking for bookings at time {}",
+                localDate
+        );
+        List<Booking> bookings = bookingRepository
+                .findBookingsByDate(localDate);
+
+        if(bookings == null || bookings.isEmpty()){
+            log.warn(
+                    "Bookings at time {} was not found ",
+                    localDate
+            );
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "BOOKINGS_NOT_FOUND",
+                    String.format(
+                            "Bookings for %s date not found",
+                            localDate.toString()
+                    )
+            );
+        }
+        Map<Long, List<Booking>> bookingsByDesk = bookings
+                .stream()
+                .collect(Collectors.groupingBy(
+                        booking -> booking.getDesk().getId())
+                );
+        List<BookingDTO> resultList = new ArrayList<>();
+
+        for(Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()){
+            Long deskId = entry.getKey();
+            List<Booking> deskBookings = entry.getValue();
+
+            long totalDuration = 0;
+
+            for(Booking booking : deskBookings){
+                BookingDTO bookingDTO = new BookingDTO();
+                DeskColorDTO deskColorDTO = new DeskColorDTO();
+                deskColorDTO.setDeskId(deskId);
+                bookingDTO.setStartDate(booking.getStartTime());
+                bookingDTO.setEndDate(booking.getEndTime());
+
+                totalDuration += Duration
+                        .between(
+                                booking.getStartTime(),
+                                booking.getEndTime()
+                        ).toHours();
+
+                if(totalDuration > 0 && totalDuration < 9){
+                    deskColorDTO.setDeskColor(DeskColor.AMBER);
+                } else if(totalDuration >= 9){
+                    deskColorDTO.setDeskColor(DeskColor.RED);
+                }
+                log.info(
+                        "total duration is {} for desk with id {} and color {}",
+                        totalDuration,
+                        deskId,
+                        deskColorDTO.getDeskColor()
+                );
+                bookingDTO.setDeskColorDTO(deskColorDTO);
+                resultList.add(bookingDTO);
+            }
+        }
+        return resultList;
+    }
 }

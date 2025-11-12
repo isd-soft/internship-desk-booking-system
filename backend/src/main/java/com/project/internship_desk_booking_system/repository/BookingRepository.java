@@ -1,6 +1,8 @@
 package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
+import com.project.internship_desk_booking_system.dto.BookingDTO;
+import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -132,6 +135,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 """, nativeQuery = true)
     DeskStatsProjection findMostBookedDeskInRange(
             @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("""
+            SELECT b
+            FROM Booking b
+            WHERE DATE(b.startTime) = :localDate
+            """)
+    List<Booking> findBookingsByDate(
+            @Param("localDate") LocalDate localDate
+    );
             @Param("endDate") LocalDateTime endDate
     );
 }
