@@ -3,6 +3,7 @@ package com.project.internship_desk_booking_system.repository;
 import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,9 @@ import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+
+    @EntityGraph(attributePaths = {"user", "desk"})
+    List<Booking> findByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 
     @Query("""
             SELECT b FROM Booking b
