@@ -4,7 +4,16 @@
   </v-app>
 </template>
 
-<script setup></script>
+<script setup lang="ts">
+import { onMounted } from "vue";
+import { useFavouritesStore } from "@/stores/favourites";
+
+const favStore = useFavouritesStore();
+
+onMounted(() => {
+  favStore.ensureLoaded(); // ← ГЛАВНОЕ
+});
+</script>
 
 <style>
 html,

@@ -21,12 +21,12 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<StatisticsDTO> getStatistics(){
         return ResponseEntity.ok(statisticsService.getStatistics());
     }
     @GetMapping("/range")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<StatisticsDTO> getStatisticsForRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {

@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FavouriteDesksDTO {
-
-        private Long deskId;
-        private String deskName;
-    private Zone zone;
-        boolean isFavourite;
-        }
+    private Long deskId;
+    private String deskName;
+    private ZoneDto zone;
+}
 

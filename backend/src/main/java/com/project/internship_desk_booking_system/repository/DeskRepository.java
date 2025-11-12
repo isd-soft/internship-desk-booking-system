@@ -15,6 +15,8 @@ import java.util.Optional;
 
 public interface DeskRepository extends JpaRepository<Desk, Long> {
 
+    Optional<Desk> findById(Long id);
+
     List<Desk> findByType(DeskType type);
 
     List<Desk> findByZone(Zone zone);
@@ -68,17 +70,18 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             "AND d.temporaryAvailableFrom <= :dateTime " +
             "AND d.temporaryAvailableUntil >= :dateTime))")
     List<Desk> findAvailableDesksInZoneAt(@Param("zoneId") Long zoneId, @Param("dateTime") LocalDateTime dateTime);
+
     List<Desk> findByStatus(DeskStatus status);
 
     @Query("""
-    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.currentX, d.currentY)
-    FROM Desk d
-    """)
+            SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.currentX, d.currentY)
+            FROM Desk d
+            """)
     List<DeskCoordinatesDTO> findCurrentCoordinates();
 
     @Query("""
-    SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.baseX, d.baseY)
-    FROM Desk d
-    """)
+            SELECT new com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO(d.id, d.deskName, d.baseX, d.baseY)
+            FROM Desk d
+            """)
     List<DeskCoordinatesDTO> findBaseCoordinates();
 }

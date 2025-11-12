@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue";
+import { reactive, watch, ref, computed } from "vue";
+import { useFavouritesStore } from "@/stores/favourites";
 
 interface Props {
   modelValue: boolean;
   desk: any;
   isBooked: boolean;
-  existingBooking?: {
-    duration: number;
-  };
+  existingBooking?: { duration: number };
 }
-
 interface Emits {
   (e: "update:modelValue", value: boolean): void;
   (e: "confirm", data: { duration: number }): void;
@@ -19,29 +17,42 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const bookingForm = reactive({
-  duration: 30,
-  customMinutes: 30,
+const bookingForm = reactive({ duration: 480 });
+const isProcessing = ref(false);
+
+const favStore = useFavouritesStore();
+
+const deskId = computed<number | null>(() => {
+  const n = Number(props.desk?.i);
+  return Number.isFinite(n) ? n : null;
 });
 
-// Синхронизация с существующим бронированием
+const isFavourite = computed(() => favStore.isFav(deskId.value));
+
 watch(
-  () => props.existingBooking,
-  (booking) => {
-    if (booking) {
-      bookingForm.duration = booking.duration;
-      bookingForm.customMinutes = booking.duration;
-    } else {
-      bookingForm.duration = 30;
-      bookingForm.customMinutes = 30;
-    }
+  () => props.modelValue,
+  async (open) => {
+    if (!open) return;
+
+    await favStore.ensureLoaded();
   },
   { immediate: true }
 );
 
+
 function setDuration(minutes: number) {
   bookingForm.duration = minutes;
-  bookingForm.customMinutes = minutes;
+}
+
+function closeModal() {
+  emit("update:modelValue", false);
+}
+
+async function toggleFavourite() {
+  if (!deskId.value) return;
+  isProcessing.value = true;
+  await favStore.toggle(deskId.value);
+  isProcessing.value = false;
 }
 
 function handleConfirm() {
@@ -51,18 +62,13 @@ function handleConfirm() {
 
 function handleCancel() {
   emit("cancel");
+  closeModal();
 }
 
-function closeModal() {
-  emit("update:modelValue", false);
-}
-
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}min`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}min`;
+function formatDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
 }
 </script>
 
@@ -74,93 +80,65 @@ function formatDuration(minutes: number): string {
     transition="dialog-bottom-transition"
     persistent
   >
-    <v-card class="booking-card" elevation="0">
+    <v-card class="booking-card">
       <v-card-title class="card-header">
         <div class="header-content">
           <div class="header-info">
             <div class="workspace-label">WORKSPACE</div>
-            <div class="desk-title">Desk {{ desk?.i }}</div>
+            <div class="desk-title">{{ desk?.deskName || `Desk ${desk?.i}` }}</div>
           </div>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="closeModal"
-            class="close-button"
-          >
+          <v-btn icon variant="text" size="small" @click="closeModal">
             <v-icon size="20">mdi-close</v-icon>
           </v-btn>
         </div>
       </v-card-title>
 
       <v-card-text class="card-body">
-        <v-alert
-          v-if="isBooked"
-          class="status-alert"
-          variant="tonal"
-          density="compact"
+
+
+
+<div class="section dark-slider">
+  <div class="section-title">Custom Duration</div>
+
+  <div class="slider-wrap">
+    <input
+      type="range"
+      min="60"
+      max="480"
+      step="1"
+      v-model="bookingForm.duration"
+      class="black-duration-slider"
+    />
+    <div class="slider-value-label">
+      {{ formatDuration(bookingForm.duration) }}
+    </div>
+  </div>
+
+<div class="slider-scale">
+  <span>1h</span>
+  <span>2h</span>
+  <span>4h</span>
+  <span>6h</span>
+  <span>8h</span>
+</div>
+  
+
+</div>
+
+        <button
+          @click.stop="toggleFavourite"
+          :disabled="isProcessing || !deskId"
+          :class="['favourite-button', { active: isFavourite }]"
         >
-          <div class="alert-content">
-            <v-icon size="18">mdi-check-circle</v-icon>
-            <span>Currently Reserved</span>
-          </div>
-        </v-alert>
+          <v-icon size="20">
+            {{ isFavourite ? 'mdi-heart' : 'mdi-heart-outline' }}
+          </v-icon>
+          <span>{{ isFavourite ? 'Remove from Favourites' : 'Add to Favourites' }}</span>
+        </button>
 
-        <div class="section">
-          <div class="section-title">Duration</div>
-          <div class="duration-grid">
-            <button
-              v-for="duration in [30, 60, 120]"
-              :key="duration"
-              @click.stop="setDuration(duration)"
-              :class="[
-                'duration-btn',
-                { active: bookingForm.duration === duration },
-              ]"
-            >
-              <div class="duration-value">{{ duration }}</div>
-              <div class="duration-unit">min</div>
-            </button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Custom Duration</div>
-          <div class="custom-input-wrapper">
-            <input
-              v-model.number="bookingForm.customMinutes"
-              @input="bookingForm.duration = bookingForm.customMinutes"
-              type="number"
-              class="custom-input"
-              placeholder="Enter minutes"
-            />
-            <span class="input-suffix">minutes</span>
-          </div>
-        </div>
-
-        <div class="summary-box">
-          <div class="summary-icon">
-            <v-icon size="24" color="white">mdi-clock-outline</v-icon>
-          </div>
-          <div class="summary-info">
-            <div class="summary-label">Total Booking Time</div>
-            <div class="summary-duration">
-              {{ formatDuration(bookingForm.duration) }}
-            </div>
-          </div>
-        </div>
       </v-card-text>
 
       <v-card-actions class="card-actions">
-        <v-btn
-          v-if="isBooked"
-          variant="text"
-          class="cancel-button"
-          @click.stop="handleCancel"
-        >
-          Cancel Booking
-        </v-btn>
-        <v-spacer v-if="isBooked" />
         <v-btn class="confirm-button" size="x-large" @click.stop="handleConfirm">
           {{ isBooked ? "Update Booking" : "Confirm Booking" }}
         </v-btn>
@@ -168,6 +146,7 @@ function formatDuration(minutes: number): string {
     </v-card>
   </v-dialog>
 </template>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
@@ -317,48 +296,86 @@ function formatDuration(minutes: number): string {
   letter-spacing: 0.2px;
 }
 
-.custom-input-wrapper {
+.slider-container {
   position: relative;
+}
+
+.slider-labels {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.custom-input {
-  width: 100%;
-  padding: 16px 90px 16px 16px;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  font-size: 15px;
+.slider-label {
+  font-size: 11px;
   font-weight: 600;
-  color: #171717;
-  background: #ffffff;
-  transition: all 0.3s ease;
-  outline: none;
-}
-
-.custom-input:hover {
-  border-color: #a3a3a3;
-  background: #fafafa;
-}
-
-.custom-input:focus {
-  border-color: #171717;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
-.custom-input::placeholder {
   color: #a3a3a3;
-  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
-.input-suffix {
-  position: absolute;
-  right: 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #737373;
-  pointer-events: none;
+.duration-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e5e5e5;
+  border-radius: 10px;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+.duration-slider:hover {
+  background: #d4d4d4;
+}
+
+.duration-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #171717;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.duration-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.duration-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: #171717;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.duration-slider::-moz-range-thumb:active {
+  transform: scale(1.05);
+}
+
+.slider-value {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+  margin-top: 12px;
+  letter-spacing: 0.3px;
 }
 
 .summary-box {
@@ -369,6 +386,7 @@ function formatDuration(minutes: number): string {
   align-items: center;
   gap: 16px;
   margin-top: 28px;
+  margin-bottom: 16px;
 }
 
 .summary-icon {
@@ -400,6 +418,52 @@ function formatDuration(minutes: number): string {
   color: #ffffff;
   letter-spacing: -0.5px;
   line-height: 1;
+}
+
+.favourite-button {
+  width: 100%;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 600;
+  color: #171717;
+  letter-spacing: 0.2px;
+  outline: none;
+}
+
+.favourite-button:hover:not(:disabled) {
+  border-color: #a3a3a3;
+  background: #fafafa;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.favourite-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.favourite-button.active {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.favourite-button.active:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.favourite-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .card-actions {
@@ -458,5 +522,169 @@ function formatDuration(minutes: number): string {
 :deep(.dialog-bottom-transition-leave-to) {
   opacity: 0;
   transform: translateY(30px) scale(0.96);
+}
+
+/* 🌙 Smooth Custom Slider */
+.smooth-slider {
+  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+  border: 1px solid #ececec;
+  border-radius: 14px;
+  padding: 20px 18px 24px 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.smooth-slider:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.slider-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.custom-duration-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ff8a00 0%, #ffb74d 100%);
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.custom-duration-slider:hover {
+  filter: brightness(1.1);
+}
+
+.custom-duration-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  border: 3px solid #ff8a00;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(255, 138, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.custom-duration-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 5px 14px rgba(255, 138, 0, 0.45);
+}
+
+.custom-duration-slider::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+  border-color: #ff9f33;
+}
+
+/* 🖤 Premium Dark Smooth Slider */
+.dark-slider {
+  background: #111;
+  border-radius: 16px;
+  padding: 22px 18px 26px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s ease;
+}
+
+.dark-slider:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 6px 24px rgba(0, 0, 0, 0.45);
+  transform: translateY(-1px);
+}
+
+.black-duration-slider {
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(90deg, #2c2c2c 0%, #000000 100%);
+  border-radius: 10px;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.5s ease;
+}
+
+.black-duration-slider:hover {
+  background: linear-gradient(90deg, #3a3a3a 0%, #0d0d0d 100%);
+}
+
+.black-duration-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #1f1f1f;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(255, 255, 255, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.black-duration-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+.black-duration-slider::-webkit-slider-thumb:active {
+  transform: scale(0.96);
+  background: #f0f0f0;
+}
+
+.slider-value-label {
+  margin-top: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.3px;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a3a3a3;
+  margin-top: 10px;
+  letter-spacing: 0.4px;
+}
+
+.dark-slider .section-title {
+  color: #fff;
+}
+
+.time-range-display {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.time-range-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a3a3a3;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.time-range-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
 }
 </style>

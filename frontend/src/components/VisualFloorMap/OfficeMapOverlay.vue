@@ -13,10 +13,24 @@ import {
   horizontalDesks
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
+import { useFavouritesStore } from "@/stores/favourites";
+
+const favStore = useFavouritesStore();
+
+onMounted(async () => {
+  resetLayout();
+  loadDesksFromBackend();
+  await favStore.ensureLoaded();
+});
 
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
 const bookedDesks = ref<Set<string>>(new Set());
+
+function isDeskFavourite(id: string | number) {
+  return favStore.isFav(Number(id));
+}
+
 
 function handleDeskClick(item: any) {
   if (item.static) return;
@@ -43,91 +57,20 @@ function getDeskColor(color: string){
 }
 
 function handleConfirmBooking(data: { duration: number }) {
-  console.log("Booking confirmed:", selectedDesk.value?.i, data.duration);
-
-  // TODO: API call здесь
-  // Пример структуры API запроса:
-  /*
-  const bookingData = {
-    deskId: selectedDesk.value?.i,
-    duration: data.duration,
-    startTime: new Date().toISOString(),
-  };
-  
-  try {
-    const response = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(bookingData),
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      if (selectedDesk.value) {
-        bookedDesks.value.add(selectedDesk.value.i);
-      }
-    } else {
-      console.error('Booking failed:', await response.text());
-    }
-  } catch (error) {
-    console.error('API error:', error);
-  }
-  */
-
-  // Временно добавляем локально (удалить после добавления API)
-  if (selectedDesk.value) {
-    bookedDesks.value.add(selectedDesk.value.i);
-  }
+  if (selectedDesk.value) bookedDesks.value.add(selectedDesk.value.i);
 }
 
 function handleCancelBooking() {
-  console.log("Booking cancelled:", selectedDesk.value?.i);
-
-  // TODO: API call здесь
-  // Пример структуры API запроса:
-  /*
-  const deskId = selectedDesk.value?.i;
-  
-  try {
-    const response = await fetch(`/api/bookings/${deskId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (response.ok) {
-      if (selectedDesk.value) {
-        bookedDesks.value.delete(selectedDesk.value.i);
-      }
-    } else {
-      console.error('Cancel failed:', await response.text());
-    }
-  } catch (error) {
-    console.error('API error:', error);
-  }
-  */
-
-  // Временно удаляем локально (удалить после добавления API)
-  if (selectedDesk.value) {
-    bookedDesks.value.delete(selectedDesk.value.i);
-  }
-  
-  // Закрываем модалку после отмены
+  if (selectedDesk.value) bookedDesks.value.delete(selectedDesk.value.i);
   showBookingModal.value = false;
 }
 
-function isDeskBooked(deskId: string): boolean {
-  return bookedDesks.value.has(deskId);
+function isDeskBooked(id: string) {
+  return bookedDesks.value.has(id);
 }
 
-function getExistingBooking(deskId: string) {
-  if (isDeskBooked(deskId)) {
-    return { duration: 60 };
-  }
-  return undefined;
+function getExistingBooking(id: string) {
+  return isDeskBooked(id) ? { duration: 60 } : undefined;
 }
 </script>
 
@@ -153,14 +96,20 @@ function getExistingBooking(deskId: string) {
           class="desk"
           :class="{
             static: item.static,
+            favourite: isDeskFavourite(item.i),
             vertical: !horizontalDesks.includes(Number(item.i))
           }"
           @click="handleDeskClick(item)"
-          :style="{ 
+          :style="{
             backgroundColor: getDeskColor(item.color)
             }"
         >
           <span class="text">{{ item.deskName || item.i }}</span>
+          <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+              <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+            </svg>
+          </div>
         </div>
       </template>
     </GridLayout>
@@ -200,11 +149,14 @@ function getExistingBooking(deskId: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static)) {
+  border: 2px solid #d1d5db;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   border-radius: 10px;
   position: relative;
   overflow: visible;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .desk {
@@ -219,7 +171,8 @@ function getExistingBooking(deskId: string) {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.desk.vertical .text{
+
+.desk.vertical .text {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
@@ -230,12 +183,13 @@ function getExistingBooking(deskId: string) {
   white-space: nowrap;
 }
 
+/* Улучшенный hover эффект */
 :deep(.vgl-item:not(.vgl-item--static):hover) {
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2),
-    0 3px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25),
+    0 4px 10px rgba(59, 130, 246, 0.15);
+  transform: translateY(-3px) scale(1.02);
 }
 
 .text {
@@ -257,7 +211,68 @@ function getExistingBooking(deskId: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static):active) {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(-1px) scale(0.98);
   transition: transform 0.1s ease;
+}
+
+/* Улучшенная иконка избранного - над десками */
+.favourite-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5),
+    0 0 0 3px #ffffff,
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.heart-icon {
+  width: 10px;
+  height: 10px;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Мягкое свечение для избранных десков */
+.desk.favourite::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444, #f97316, #ef4444);
+  background-size: 200% 200%;
+  opacity: 0;
+  z-index: -1;
+  animation: gradientShift 3s ease infinite;
+  transition: opacity 0.3s ease;
+}
+
+.desk.favourite:hover::before {
+  opacity: 0.15;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Улучшенный hover для избранных десков */
+.desk.favourite:hover .favourite-badge {
+  transform: scale(1.2) rotate(5deg);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.5),
+    0 1px 4px rgba(0, 0, 0, 0.15);
 }
 </style>

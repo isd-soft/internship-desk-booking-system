@@ -47,11 +47,11 @@ public class User {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<FavouriteDesks> favourites;
+    private List<FavouriteDesks> favourites = new ArrayList<>();
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Booking> bookings;
+    private List<Booking> bookings = new ArrayList<>();
 
     public User(String firstName, String lastName, String email, String passwordHash) {
         this.firstName = firstName;

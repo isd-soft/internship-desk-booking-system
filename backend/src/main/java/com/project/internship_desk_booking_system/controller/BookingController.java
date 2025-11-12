@@ -8,7 +8,6 @@ import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,16 +34,14 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-
-    @PostMapping("/create")
-    public ResponseEntity<BookingResponseDto> createBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest bookingCreateRequest) {
-        String email = principal.getEmail();
-        BookingResponseDto booking = bookingService.createBooking(email, bookingCreateRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(booking);
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping()
+    public ResponseEntity<Void> createBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest request) {
+        bookingService.createBooking(principal.getEmail(), request);
+        return ResponseEntity.ok().build();
     }
 
-
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/upcoming")
     public ResponseEntity<List<BookingResponse>> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(bookingService.getUpcomingBookingsR(principal.getEmail()));
