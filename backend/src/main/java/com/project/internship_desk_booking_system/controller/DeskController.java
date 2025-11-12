@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.controller;
 
+import com.project.internship_desk_booking_system.dto.DeskColorDTO;
 import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.service.DeskService;
@@ -37,4 +38,15 @@ public class DeskController {
         return ResponseEntity.ok(deskService.getCoordinates());
     }
 
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/gray")
+    public ResponseEntity<List<DeskColorDTO>> getGrayDesks(){
+        return ResponseEntity.ok(deskService.getGrayDesks());
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/blue")
+    public ResponseEntity<List<DeskColorDTO>> getBlueDesks(){
+        return ResponseEntity.ok(deskService.getBlueDesks());
+    }
 }
