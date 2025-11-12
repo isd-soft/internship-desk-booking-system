@@ -2,6 +2,7 @@ package com.project.internship_desk_booking_system.service;
 
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
+import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
 import com.project.internship_desk_booking_system.dto.StatisticsDTO;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -33,8 +34,8 @@ public class StatisticsService {
         long monthlyBookings = bookingRepository.countBookingByStartTimeAfter(monthStart);
         long monthlyUsers = userRepository.countUsersWithBookingsAfter(monthStart);
 
-        DeskStatsDTO mostBookedDesk = bookingRepository.findMostBookedDesk();
-        DeskStatsDTO leastBookedDesk = bookingRepository.findLeastBookedDesk();
+        DeskStatsDTO mostBookedDesk = convertToDTO(bookingRepository.findMostBookedDesk());
+        DeskStatsDTO leastBookedDesk = convertToDTO(bookingRepository.findLeastBookedDesk());
 
         LocalDateTime dayStart = now.minusDays(1);
         List<BookingResponseDto> bookingHoursPerDay = bookingRepository
@@ -48,6 +49,9 @@ public class StatisticsService {
                 .stream()
                 .map(bookingMapper::maptoDto)
                 .collect(Collectors.toList());
+
+        log.info("Statistics - Weekly Bookings: {}, Monthly Bookings: {}", weeklyBookings, monthlyBookings);
+        log.info("Most Booked Desk: {}, Least Booked Desk: {}", mostBookedDesk, leastBookedDesk);
 
         return StatisticsDTO.builder()
                 .weeklyBookings(weeklyBookings)
@@ -65,14 +69,16 @@ public class StatisticsService {
         long bookingsInRange = bookingRepository.countByStartTimeBetween(startDate, endDate);
         long usersInRange = userRepository.countUsersWithBookingsBetween(startDate, endDate);
 
-        DeskStatsDTO mostBooked = bookingRepository.findMostBookedDeskInRange(startDate, endDate);
-        DeskStatsDTO leastBooked = bookingRepository.findLeastBookedDeskInRange(startDate, endDate);
+        DeskStatsDTO mostBooked = convertToDTO(bookingRepository.findMostBookedDeskInRange(startDate, endDate));
+        DeskStatsDTO leastBooked = convertToDTO(bookingRepository.findLeastBookedDeskInRange(startDate, endDate));
 
         List<BookingResponseDto> bookingHoursInRange = bookingRepository
                 .findByStartTimeBetween(startDate, endDate)
                 .stream()
                 .map(bookingMapper::maptoDto)
                 .collect(Collectors.toList());
+
+        log.info("Date Range Statistics - Bookings: {}, Users: {}", bookingsInRange, usersInRange);
 
         return StatisticsDTO.builder()
                 .weeklyBookings(bookingsInRange)
@@ -83,6 +89,17 @@ public class StatisticsService {
                 .leastBookedDesk(leastBooked)
                 .bookingHoursPerDay(bookingHoursInRange)
                 .bookingHoursPerWeek(bookingHoursInRange)
+                .build();
+    }
+
+    private DeskStatsDTO convertToDTO(DeskStatsProjection projection) {
+        if (projection == null) {
+            log.warn("Desk stats projection is null");
+            return null;
+        }
+        return DeskStatsDTO.builder()
+                .deskName(projection.getDeskName())
+                .bookingCount(projection.getBookingCount())
                 .build();
     }
 }

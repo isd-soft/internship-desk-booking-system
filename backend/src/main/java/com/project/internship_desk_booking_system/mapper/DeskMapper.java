@@ -1,10 +1,13 @@
 package com.project.internship_desk_booking_system.mapper;
 
 import com.project.internship_desk_booking_system.dto.DeskDto;
+import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class DeskMapper {
     public DeskDto toDto(Desk desk) {
         return new DeskDto(
