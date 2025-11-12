@@ -119,19 +119,19 @@
           </template>
 
           <template #item.type="{ item }">
-            <v-chip size="x-small" :color="getStatusColor(item.type)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getColor(item.type)" variant="flat" class="status-chip">
               {{ item.type }}
             </v-chip>
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getColor(item.status)" variant="flat" class="status-chip">
               {{ item.status }}
             </v-chip>
           </template>
 
           <template #item.isTemporarilyAvailable="{ item }">
-            <v-chip size="x-small" :color="item.isTemporarilyAvailable ? 'success' : 'error'" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="item.isTemporarilyAvailable ?  '#10b981' : '#ef4444' " variant="flat" class="status-chip">
               {{ item.isTemporarilyAvailable ? 'Yes' : 'No' }}
             </v-chip>
           </template>
@@ -185,6 +185,7 @@
 
         <!-- View Modal -->
         <DeskViewModal
+            :show="showViewModal"
             v-model="showViewModal"
             :desk="selectedDesk"
         />
@@ -193,6 +194,7 @@
         <DeskEditModal
             v-model="showEditModal"
             :desk="selectedDesk"
+            @close="showEditModal = false"
             @save="handleSave"
         />
 
@@ -233,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from "vue-router";
 import api from '../plugins/axios';
 import DeskEditModal from "../components/AdminDashboard/DeskEditModal.vue";
@@ -282,7 +284,8 @@ const headers = [
   { title: 'Status', key: 'status', width: 120 },
   { title: 'Temporarily Available', key: 'isTemporarilyAvailable', width: 180, align: 'center' },
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false }
-];
+] as const;
+
 
 // Computed
 const filteredDesks = computed(() => {
@@ -345,16 +348,16 @@ function resetFilters() {
   searchQuery.value = '';
 }
 
-function getStatusColor(status: string): string {
+function getColor(status: string): string {
   const statusMap: Record<string, string> = {
     ACTIVE: "#10b981",
-    COMPLETED: "#6366f1",
-    DEACTIVATED: "#ef4444",
-    ASSIGNED: "#0b4df5",
     SHARED: "#10b981",
-    UNAVAILABLE: "#737373FF",
-    CONFIRMED: "#10b981",
+    COMPLETED: "#0b4df5",
+    CONFIRMED: "#0b4df5",
+    ASSIGNED: "#0b4df5",
     CANCELLED: "#ef4444",
+    DEACTIVATED: "#ef4444",
+    UNAVAILABLE: "#737373FF",
   };
   return statusMap[status?.toUpperCase()] || "#737373";
 }
