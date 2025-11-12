@@ -2,34 +2,48 @@
 import SidePanel from "../components/SidePanel.vue";
 import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import DatePicker from "../components/DatePicker.vue";
+import { ref } from "vue";
+import { selectedDate, loadAllColors, loadDesksFromBackend, resetLayout, DeskColors } from "../components/VisualFloorMap/floorLayout.ts";
+
+const reloadColors = async () => {
+  resetLayout();
+  DeskColors.value = [];
+  await loadAllColors();
+  await loadDesksFromBackend();
+};
+
+import { onMounted } from "vue";
+onMounted(() => {
+  reloadColors();
+});
 </script>
 
 <template>
   <div class="layout">
     <SidePanel />
     <div class="map-holder">
-      <DatePicker/>
+      <DatePicker @update:date="selectedDate = $event; reloadColors()" />
       <OfficeMapOverlay />
       <div class="color-legend-container">
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #50C878;"></span>
-          <span class="legend-label">available</span>
+          <span class="legend-label">Available</span>
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #EE4B2B;"></span>
-          <span class="legend-label">fully booked</span>
+          <span class="legend-label">Fully booked</span>
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #FFBF00;"></span>
-          <span class="legend-label">partially booked</span>
+          <span class="legend-label">Partially booked</span>
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #7393B3;"></span>
-          <span class="legend-label">assigned (not a share desk)</span>
+          <span class="legend-label">Assigned (not a shared desk)</span>
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #818589;"></span>
-          <span class="legend-label">unavailable</span>
+          <span class="legend-label">Unavailable</span>
         </div>
       </div>
     </div>

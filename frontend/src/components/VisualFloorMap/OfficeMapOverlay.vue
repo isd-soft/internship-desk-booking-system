@@ -7,15 +7,12 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
+  loadAllColors,
+  DeskColors,
   resetLayout,
   horizontalDesks
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
-
-onMounted(()=>{
-  resetLayout();
-  loadDesksFromBackend();
-});
 
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
@@ -26,6 +23,23 @@ function handleDeskClick(item: any) {
   console.log("Clicked desk:", item.i);
   selectedDesk.value = item;
   showBookingModal.value = true;
+}
+
+function getDeskColor(color: string){
+  switch(color){
+    case "GREEN":
+      return "#50C878";
+    case "RED":
+      return "#EE4B2B";
+    case "AMBER":
+      return "#FFBF00";
+    case "BLUE":
+      return "#7393B3";
+    case "GRAY":
+      return "#818589	";
+    case "NOT A COLOR":
+      return "";
+  }
 }
 
 function handleConfirmBooking(data: { duration: number }) {
@@ -142,6 +156,9 @@ function getExistingBooking(deskId: string) {
             vertical: !horizontalDesks.includes(Number(item.i))
           }"
           @click="handleDeskClick(item)"
+          :style="{ 
+            backgroundColor: getDeskColor(item.color)
+            }"
         >
           <span class="text">{{ item.deskName || item.i }}</span>
         </div>
@@ -183,14 +200,11 @@ function getExistingBooking(deskId: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static)) {
-  border: 2px solid #d1d5db;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   border-radius: 10px;
   position: relative;
   overflow: visible;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .desk {
@@ -200,6 +214,10 @@ function getExistingBooking(deskId: string) {
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius : 10px;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .desk.vertical .text{
   writing-mode: vertical-rl;
