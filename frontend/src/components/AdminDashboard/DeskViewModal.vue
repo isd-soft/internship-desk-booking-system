@@ -1,1 +1,1 @@
-<template><div>DeskViewModal</div></template>
+<template></template>
