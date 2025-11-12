@@ -72,20 +72,24 @@ function getExistingBooking(id: string) {
       :is-resizable="false"
       style="position: relative"
     >
-<template #item="{ item }">
-  <div
-    class="desk"
-    :class="{
-      static: item.static,
-      favourite: isDeskFavourite(item.i),
-      vertical: !horizontalDesks.includes(Number(item.i))
-    }"
-    @click="handleDeskClick(item)"
-  >
-    <span class="text">{{ item.deskName || item.i }}</span>
-  </div>
-</template>
-
+      <template #item="{ item }">
+        <div
+          class="desk"
+          :class="{
+            static: item.static,
+            favourite: isDeskFavourite(item.i),
+            vertical: !horizontalDesks.includes(Number(item.i))
+          }"
+          @click="handleDeskClick(item)"
+        >
+          <span class="text">{{ item.deskName || item.i }}</span>
+          <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+              <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+            </svg>
+          </div>
+        </div>
+      </template>
     </GridLayout>
 
     <BookingModal
@@ -141,7 +145,8 @@ function getExistingBooking(id: string) {
   justify-content: center;
   position: relative;
 }
-.desk.vertical .text{
+
+.desk.vertical .text {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
@@ -152,12 +157,13 @@ function getExistingBooking(id: string) {
   white-space: nowrap;
 }
 
+/* Улучшенный hover эффект */
 :deep(.vgl-item:not(.vgl-item--static):hover) {
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2),
-    0 3px 8px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25),
+    0 4px 10px rgba(59, 130, 246, 0.15);
+  transform: translateY(-3px) scale(1.02);
 }
 
 .text {
@@ -179,21 +185,68 @@ function getExistingBooking(id: string) {
 }
 
 :deep(.vgl-item:not(.vgl-item--static):active) {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(-1px) scale(0.98);
   transition: transform 0.1s ease;
 }
-.desk.favourite {
-  border-color: #ef4444 !important;
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.55) !important;
-}
-.desk.favourite::after {
-  content: "❤";
-  color: #dc2626;
-  font-size: 14px;
+
+/* Улучшенная иконка избранного - над десками */
+.favourite-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5),
+    0 0 0 3px #ffffff,
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
+.heart-icon {
+  width: 10px;
+  height: 10px;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Мягкое свечение для избранных десков */
+.desk.favourite::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444, #f97316, #ef4444);
+  background-size: 200% 200%;
+  opacity: 0;
+  z-index: -1;
+  animation: gradientShift 3s ease infinite;
+  transition: opacity 0.3s ease;
+}
+
+.desk.favourite:hover::before {
+  opacity: 0.15;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Улучшенный hover для избранных десков */
+.desk.favourite:hover .favourite-badge {
+  transform: scale(1.2) rotate(5deg);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.5),
+    0 1px 4px rgba(0, 0, 0, 0.15);
+}
 </style>
