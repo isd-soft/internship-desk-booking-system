@@ -86,12 +86,12 @@ public class AdminService {
         log.info(
                 "Adding new desk: name={}, zone={}, type={}, status={}",
                 deskDto.displayName(),
-                deskDto.zoneId(),
+                deskDto.zoneDto().getId(),
                 deskDto.type(),
                 deskDto.deskStatus()
         );
-        Zone zone = zoneRepository.findById(deskDto.zoneId())
-                .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneId()));
+        Zone zone = zoneRepository.findById(deskDto.zoneDto().getId())
+                .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneDto()));
         Desk desk = new Desk();
         desk.setDeskName(deskDto.displayName());
         desk.setZone(zone);
@@ -290,6 +290,7 @@ public class AdminService {
 
         return new DeskCoordinatesDTO(
                 desk.getId(),
+                desk.getDeskName(),
                 desk.getCurrentX(),
                 desk.getCurrentY()
         );

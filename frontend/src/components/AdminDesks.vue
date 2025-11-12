@@ -68,6 +68,8 @@ const headers = [
   { title: 'Zone', key: 'zone', width: 140 },
   { title: 'Type', key: 'type', width: 120 },
   { title: 'Status', key: 'status', width: 120 },
+  { title: 'Temporarily Available', key: 'isTemporarilyAvailable', width: 180, align: 'center'},
+  { title: '', key: 'actions', width: 56, align: 'end', sortable: false}
 ];
 
 const mappedDesks = computed(() => {
@@ -75,6 +77,7 @@ const mappedDesks = computed(() => {
     id: d.id ?? '—',
     name: d.displayName ?? 'N/A',
     zone: d.zoneId ?? 'N/A',
+    zoneName: d.zoneName ?? 'N/A',
     type: d.type ?? 'N/A',
     status: d.deskStatus ?? 'N/A',
     isTemporarilyAvailable: d.isTemporarilyAvailable ?? true,

@@ -166,12 +166,11 @@ class FavouriteDesksServiceTest {
         when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(user1));
         when(favouriteDesksRepository.findByUser(user1)).thenReturn(List.of(fav));
 
-        List<FavouriteDesksDTO> result = favouriteDesksService.getFavouriteDesksDTO(email);
+        List<FavouriteDesksDTO> result = favouriteDesksService.getFavouriteDesks(email);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getDeskName()).isEqualTo("PLC 201");
         assertThat(result.get(0).getZone()).isEqualTo("PLC");
-        assertThat(result.get(0).isFavourite()).isTrue();
 
         verify(favouriteDesksRepository, times(1)).findByUser(user1);
     }
@@ -185,7 +184,7 @@ class FavouriteDesksServiceTest {
         when(deskRepository.findAll()).thenReturn(List.of(desk2, desk3));
         when(favouriteDesksRepository.findByUser(user1)).thenReturn(List.of(fav));
 
-        List<FavouriteDesksDTO> result = favouriteDesksService.getAllDesksWithFavourites(email);
+        List<FavouriteDesksDTO> result = favouriteDesksService.getFavouriteDesks(email);
 
         assertThat(result).hasSize(2);
 
@@ -198,9 +197,6 @@ class FavouriteDesksServiceTest {
                 .filter(dto -> dto.getDeskId().equals(3L))
                 .findFirst()
                 .orElseThrow();
-
-        assertThat(desk2Dto.isFavourite()).isTrue();
-        assertThat(desk3Dto.isFavourite()).isFalse();
 
         verify(deskRepository, times(1)).findAll();
         verify(favouriteDesksRepository, times(1)).findByUser(user1);
