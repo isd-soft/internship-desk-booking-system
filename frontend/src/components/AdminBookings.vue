@@ -103,7 +103,7 @@
           </template>
 
           <template #item.deskType="{ item }">
-            <v-chip size="x-small" :color="getTypeColor(item.deskType)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getColor(item.deskType)" variant="flat" class="status-chip">
               {{ item.deskType }}
             </v-chip>
           </template>
@@ -123,7 +123,7 @@
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getColor(item.status)" variant="flat" class="status-chip">
               {{ item.status }}
             </v-chip>
           </template>
@@ -191,7 +191,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../plugins/axios';
@@ -295,22 +295,18 @@ const fetchBookings = async () => {
   }
 };
 
-function getStatusColor(status) {
-  const statusMap = {
-    CONFIRMED: 'success',
-    CANCELLED: 'error',
-    ACTIVE: 'warning',
+function getColor(status: string): string {
+  const statusMap: Record<string, string> = {
+    ACTIVE: "#10b981",
+    SHARED: "#10b981",
+    COMPLETED: "#0b4df5",
+    CONFIRMED: "#0b4df5",
+    ASSIGNED: "#0b4df5",
+    CANCELLED: "#ef4444",
+    DEACTIVATED: "#ef4444",
+    UNAVAILABLE: "#737373FF",
   };
-  return statusMap[status?.toUpperCase()] || 'primary';
-}
-
-function getTypeColor(type) {
-  const typeMap = {
-    SHARED: 'success',
-    ASSIGNED: 'warning',
-    UNAVAILABLE: 'error',
-  };
-  return typeMap[type?.toUpperCase()] || 'primary';
+  return statusMap[status?.toUpperCase()] || "#737373";
 }
 
 function toDatetimeLocalValue(dateStr) {
