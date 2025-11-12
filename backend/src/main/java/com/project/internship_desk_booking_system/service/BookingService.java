@@ -3,11 +3,16 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.config.BookingProperties;
+import com.project.internship_desk_booking_system.dto.BookingDTO;
+import com.project.internship_desk_booking_system.dto.DeskColorDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -20,9 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -135,62 +143,62 @@ public class BookingService {
                 });
     }
 
-    private void validateMaxDaysInAdvance(LocalDateTime startTime) {
-        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
-        LocalDateTime now = LocalDateTime.now();
+//    private void validateMaxDaysInAdvance(LocalDateTime startTime) {
+//        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+//        LocalDateTime now = LocalDateTime.now();
+//
+//        long daysInAdvance = ChronoUnit.DAYS.between(now.toLocalDate(), startTime.toLocalDate());
+//
+//        if (daysInAdvance > policy.getMaxDaysInAdvance()) {
+//            log.error("Booking {} days in advance exceeds maximum of {} days",
+//                    daysInAdvance, policy.getMaxDaysInAdvance());
+//            throw new ExceptionResponse(
+//                    HttpStatus.BAD_REQUEST,
+//                    "BOOKING_TOO_FAR_AHEAD",
+//                    String.format("Cannot book more than %d days in advance. You are trying to book %d days ahead.",
+//                            policy.getMaxDaysInAdvance(), daysInAdvance)
+//            );
+//        }
+//
+//        log.debug("Days in advance validated: {} days (max: {})", daysInAdvance, policy.getMaxDaysInAdvance());
+//    }
 
-        long daysInAdvance = ChronoUnit.DAYS.between(now.toLocalDate(), startTime.toLocalDate());
-
-        if (daysInAdvance > policy.getMaxDaysInAdvance()) {
-            log.error("Booking {} days in advance exceeds maximum of {} days",
-                    daysInAdvance, policy.getMaxDaysInAdvance());
-            throw new ExceptionResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "BOOKING_TOO_FAR_AHEAD",
-                    String.format("Cannot book more than %d days in advance. You are trying to book %d days ahead.",
-                            policy.getMaxDaysInAdvance(), daysInAdvance)
-            );
-        }
-
-        log.debug("Days in advance validated: {} days (max: {})", daysInAdvance, policy.getMaxDaysInAdvance());
-    }
-
-    private void validateWeeklyHoursLimit(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
-
-        LocalDateTime weekStart = startTime.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
-        LocalDateTime weekEnd = weekStart.plusDays(7);
-
-        log.debug("Checking weekly hours limit for user {} in week {} to {}",
-                userId, weekStart, weekEnd);
-
-        List<Booking> weeklyBookings = bookingRepository.findUserBookings(
-                userId, weekStart, weekEnd
-        );
-
-        long bookedHours = weeklyBookings.stream()
-                .mapToLong(b -> Duration.between(b.getStartTime(), b.getEndTime()).toHours())
-                .sum();
-
-        long newBookingHours = Duration.between(startTime, endTime).toHours();
-        long totalHours = bookedHours + newBookingHours;
-
-        log.debug("User {} has {} hours booked this week, requesting {} more hours (total: {})",
-                userId, bookedHours, newBookingHours, totalHours);
-
-        if (totalHours > policy.getMaxHoursPerWeek()) {
-            log.error("User {} would exceed weekly limit: {} hours (max: {})",
-                    userId, totalHours, policy.getMaxHoursPerWeek());
-            throw new ExceptionResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "WEEKLY_HOURS_EXCEEDED",
-                    String.format("Cannot exceed %d hours per week. You have %d hours booked and are requesting %d more hours.",
-                            policy.getMaxHoursPerWeek(), bookedHours, newBookingHours)
-            );
-        }
-
-        log.debug("Weekly hours limit validated successfully for user {}", userId);
-    }
+//    private void validateWeeklyHoursLimit(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+//        BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+//
+//        LocalDateTime weekStart = startTime.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
+//        LocalDateTime weekEnd = weekStart.plusDays(7);
+//
+//        log.debug("Checking weekly hours limit for user {} in week {} to {}",
+//                userId, weekStart, weekEnd);
+//
+//        List<Booking> weeklyBookings = bookingRepository.findUserBookings(
+//                userId, weekStart, weekEnd
+//        );
+//
+//        long bookedHours = weeklyBookings.stream()
+//                .mapToLong(b -> Duration.between(b.getStartTime(), b.getEndTime()).toHours())
+//                .sum();
+//
+//        long newBookingHours = Duration.between(startTime, endTime).toHours();
+//        long totalHours = bookedHours + newBookingHours;
+//
+//        log.debug("User {} has {} hours booked this week, requesting {} more hours (total: {})",
+//                userId, bookedHours, newBookingHours, totalHours);
+//
+//        if (totalHours > policy.getMaxHoursPerWeek()) {
+//            log.error("User {} would exceed weekly limit: {} hours (max: {})",
+//                    userId, totalHours, policy.getMaxHoursPerWeek());
+//            throw new ExceptionResponse(
+//                    HttpStatus.BAD_REQUEST,
+//                    "WEEKLY_HOURS_EXCEEDED",
+//                    String.format("Cannot exceed %d hours per week. You have %d hours booked and are requesting %d more hours.",
+//                            policy.getMaxHoursPerWeek(), bookedHours, newBookingHours)
+//            );
+//        }
+//
+//        log.debug("Weekly hours limit validated successfully for user {}", userId);
+//    }
 
     public void checkUserAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
         log.debug("Checking user availability for user id: {} between {} and {}", user_id, startTime, endTime);
@@ -254,67 +262,6 @@ public class BookingService {
         log.info("Desk id: {} status updated to {}", desk.getId(), status);
     }
 
-    public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
-        LocalDateTime now = LocalDateTime.now();
-
-        if (startTime.isBefore(now)) {
-            log.error("Invalid booking time: start time {} is before current time {}", startTime, now);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before today's date and time");
-        }
-
-        if (endTime.isBefore(startTime)) {
-            log.error("Invalid booking time: end time {} is before start time {}", endTime, startTime);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
-        }
-
-        long hours = Duration.between(startTime, endTime).toHours();
-
-        if (hours > MAX_BOOKING_HOURS) {
-            log.error("Booking duration {} hours exceeds maximum of {} hours", hours, MAX_BOOKING_HOURS);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking more than 8 Hours");
-        }
-
-        if (hours < MIN_BOOKING_HOURS) {
-            log.error("Booking duration {} hours is less than minimum of {} hour", hours, MIN_BOOKING_HOURS);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking less than 1 Hour");
-        }
-
-        log.debug("Booking times validated successfully. Duration: {} hours", hours);
-    }
-
-    public void checkDeskAvailability(Long desk_id, LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("Checking desk availability for desk id: {} between {} and {}", desk_id, startTime, endTime);
-
-        List<Booking> overLappingBookings = bookingRepository.findOverlappingBookings(
-                desk_id,
-                startTime,
-                endTime
-        );
-
-        if (!overLappingBookings.isEmpty()) {
-            log.error("Desk id: {} has {} overlapping bookings for the requested time period", desk_id, overLappingBookings.size());
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_NOT_AVAILABLE", "Desk is not available for booking due to overlapping time");
-        }
-
-        log.debug("Desk id: {} is available for booking", desk_id);
-    }
-
-    public void checkUserAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("Checking user availability for user id: {} between {} and {}", user_id, startTime, endTime);
-
-        List<Booking> userBookings = bookingRepository.findUserBookings(
-                user_id,
-                startTime,
-                endTime
-        );
-
-        if (!userBookings.isEmpty()) {
-            log.error("User id: {} already has {} booking(s) in the requested time period", user_id, userBookings.size());
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE", "Already have a booking in this time period");
-        }
-
-        log.debug("User id: {} is available for booking", user_id);
-    }
 
     @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(String email) {
@@ -387,7 +334,7 @@ public class BookingService {
 
     public List<BookingDTO> getBookingsByDate(
             LocalDate localDate
-    ){
+    ) {
 
         log.info(
                 "looking for bookings at time {}",
@@ -396,7 +343,7 @@ public class BookingService {
         List<Booking> bookings = bookingRepository
                 .findBookingsByDate(localDate);
 
-        if(bookings == null || bookings.isEmpty()){
+        if (bookings == null || bookings.isEmpty()) {
             log.warn(
                     "Bookings at time {} was not found ",
                     localDate
@@ -417,13 +364,13 @@ public class BookingService {
                 );
         List<BookingDTO> resultList = new ArrayList<>();
 
-        for(Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()){
+        for (Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()) {
             Long deskId = entry.getKey();
             List<Booking> deskBookings = entry.getValue();
 
             long totalDuration = 0;
 
-            for(Booking booking : deskBookings){
+            for (Booking booking : deskBookings) {
                 BookingDTO bookingDTO = new BookingDTO();
                 DeskColorDTO deskColorDTO = new DeskColorDTO();
                 deskColorDTO.setDeskId(deskId);
@@ -436,9 +383,9 @@ public class BookingService {
                                 booking.getEndTime()
                         ).toHours();
 
-                if(totalDuration > 0 && totalDuration < 9){
+                if (totalDuration > 0 && totalDuration < 9) {
                     deskColorDTO.setDeskColor(DeskColor.AMBER);
-                } else if(totalDuration >= 9){
+                } else if (totalDuration >= 9) {
                     deskColorDTO.setDeskColor(DeskColor.RED);
                 }
                 log.info(

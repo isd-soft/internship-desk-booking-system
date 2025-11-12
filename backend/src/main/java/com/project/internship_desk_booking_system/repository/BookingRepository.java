@@ -145,6 +145,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findBookingsByDate(
             @Param("localDate") LocalDate localDate
     );
-            @Param("endDate") LocalDateTime endDate
-    );
 }
