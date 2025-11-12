@@ -1,16 +1,5 @@
-
 <template>
   <v-app>
-    <v-app-bar color="orange"
-               dark elevation="2">
-      <v-btn icon @click="goBack">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <v-app-bar-title class="mx-auto" style="position: absolute; left: 50%; transform: translateX(-50%);">
-        Statistics
-      </v-app-bar-title>
-    </v-app-bar>
-
     <!-- Main Content -->
     <v-main class="bg-grey-lighten-4">
       <v-container fluid class="pa-6">
@@ -41,106 +30,125 @@
           <!-- Stats Cards -->
           <v-row align="center" justify="center" class="mb-3">
             <!-- Weekly Bookings -->
-            <v-col cols="auto">
+            <v-col cols="12" sm="6" md="4" lg="auto">
               <v-card class="rounded-card text-center pa-4"
                       color="#f0f0f0"
-                      style="max-width: 200px"
+                      style="max-width: 200px; margin: 0 auto;"
               >
-                <v-icon color="green" size="48">mdi-trending-up</v-icon>
-                <div class="text-h6 text-green mt-2">
-                  +{{ stats.metrics.weeklyBookings.value }} % in
+                <v-icon :color="stats.weeklyBookings >= 0 ? 'green' : 'red'" size="48">
+                  {{ stats.weeklyBookings >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                </v-icon>
+                <div class="text-h6 mt-2" :class="stats.weeklyBookings >= 0 ? 'text-green' : 'text-red'">
+                  {{ stats.weeklyBookings >= 0 ? '+' : '' }}{{ stats.weeklyBookings }}%
                 </div>
                 <div class="text-caption text-grey-darken-1">Weekly Bookings</div>
               </v-card>
             </v-col>
 
             <!-- Weekly Users -->
-            <v-col cols="auto">
+            <v-col cols="12" sm="6" md="4" lg="auto">
               <v-card class="rounded-card text-center pa-4"
                       color="#f0f0f0"
-                      style="max-width: 200px"
+                      style="max-width: 200px; margin: 0 auto;"
               >
-                <v-icon color="green" size="48">mdi-account-multiple</v-icon>
-                <div class="text-h6 text-green mt-2">
-                  +{{ stats.metrics.weeklyUsers.value }} % in
+                <v-icon :color="stats.weeklyUsers >= 0 ? 'green' : 'red'" size="48">
+                  {{ stats.weeklyUsers >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                </v-icon>
+                <div class="text-h6 mt-2" :class="stats.weeklyUsers >= 0 ? 'text-green' : 'text-red'">
+                  {{ stats.weeklyUsers >= 0 ? '+' : '' }}{{ stats.weeklyUsers }}%
                 </div>
                 <div class="text-caption text-grey-darken-1">Weekly Users</div>
               </v-card>
             </v-col>
 
-            <!-- Lifetime Bookings -->
-            <v-col cols="auto">
-              <v-card  class="rounded-card text-center pa-4"
-                       color="#f0f0f0"
-                       style="max-width: 200px"
+            <!-- Monthly Bookings -->
+            <v-col cols="12" sm="6" md="4" lg="auto">
+              <v-card class="rounded-card text-center pa-4"
+                      color="#f0f0f0"
+                      style="max-width: 200px; margin: 0 auto;"
               >
-                <v-icon color="red" size="48">mdi-trending-down</v-icon>
-                <div class="text-h6 text-red mt-2">
-                  {{ stats.metrics.lifetimeBookings.value }} % in
+                <v-icon :color="stats.monthlyUsers >= 0 ? 'green' : 'red'" size="48">
+                  {{ stats.monthlyUsers >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                </v-icon>
+                <div class="text-h6 mt-2" :class="stats.monthlyUsers >= 0 ? 'text-green' : 'text-red'">
+                  {{ stats.monthlyUsers >= 0 ? '+' : '' }}{{ stats.monthlyUsers }}%
                 </div>
                 <div class="text-caption text-grey-darken-1">Monthly Bookings</div>
               </v-card>
             </v-col>
 
             <!-- Most Booked Desk -->
-            <v-col cols="auto">
+            <v-col cols="12" sm="6" md="4" lg="auto">
               <v-card class="rounded-card text-center pa-4"
                       color="#f0f0f0"
-                      style="max-width: 200px"
+                      style="max-width: 200px; margin: 0 auto;"
               >
                 <v-icon color="yellow-darken-2" size="48">mdi-star</v-icon>
-                <div class="text-h6 mt-2">{{ stats.metrics.mostBookedDesk }}</div>
+                <div class="text-h6 mt-2">{{ (stats.mostBookedDesk && stats.mostBookedDesk.deskName) || 'N/A' }}</div>
                 <div class="text-caption text-grey-darken-1">Most Booked Desk</div>
               </v-card>
             </v-col>
 
             <!-- Least Booked Desk -->
-            <v-col cols="12" sm="6" md="4" lg="2">
+            <v-col cols="12" sm="6" md="4" lg="auto">
               <v-card class="rounded-card text-center pa-4"
                       color="#f0f0f0"
-                      style="max-width: 200px"
+                      style="max-width: 200px; margin: 0 auto;"
               >
                 <v-icon color="grey" size="48">mdi-emoticon-sad-outline</v-icon>
-                <div class="text-h6 mt-2">{{ stats.metrics.leastBookedDesk }}</div>
+                <div class="text-h6 mt-2">{{ (stats.leastBookedDesk && stats.leastBookedDesk.deskName) || 'N/A' }}</div>
                 <div class="text-caption text-grey-darken-1">Least Booked Desk</div>
               </v-card>
             </v-col>
           </v-row>
 
           <!-- Booking Analytics Card -->
-          <v-card class="pa-6"
-                  color="#f0f0f0"
-          >
+          <v-card class="pa-6" color="#f0f0f0">
             <v-card-title class="text-h5 mb-4">Booking Analytics</v-card-title>
-
-            <!-- View Mode Toggle -->
-            <v-btn-toggle
-                v-model="viewMode"
-                color="orange"
-                mandatory
-                class="mb-6"
-            >
-              <v-btn rounded="lg" value="weekly">Weekly View</v-btn>
-              <v-btn rounded="lg" value="monthly">Monthly View</v-btn>
-            </v-btn-toggle>
+            <v-row class="mb-4">
+              <v-col cols="12" md="4">
+                <v-text-field
+                    v-model="startDate"
+                    label="Start Date"
+                    type="datetime-local"
+                    variant="outlined"
+                    density="compact"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                    v-model="endDate"
+                    label="End Date"
+                    type="datetime-local"
+                    variant="outlined"
+                    density="compact"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4" class="d-flex align-center">
+                <v-btn color="orange" @click="fetchStatisticsForRange" :loading="loading">
+                  Apply Range
+                </v-btn>
+                <v-btn variant="text" @click="resetToDefault" class="ml-2">
+                  Reset
+                </v-btn>
+              </v-col>
+            </v-row>
 
             <!-- Bookings per Day Chart -->
             <v-card class="pa-6 mb-6" color="#f0f0f0">
-              <v-card-title class="text-h6 mb-4">Bookings per Day</v-card-title>
+              <v-card-title class="text-h6 mb-4">Bookings</v-card-title>
               <v-card-text>
                 <div style="height: 300px;">
-                  <!-- Canvas only rendered when stats exist -->
-                  <canvas v-if="stats" ref="bookingsChart"></canvas>
+                  <canvas ref="bookingsChart" v-show="stats"></canvas>
                 </div>
               </v-card-text>
             </v-card>
 
             <!-- Booking Hours per Day Chart -->
             <v-card class="pa-6" color="#f0f0f0">
-              <v-card-title class="text-h6 mb-4">Booking Hours per Day</v-card-title>
+              <v-card-title class="text-h6 mb-4">Users</v-card-title>
               <v-card-text>
                 <div style="height: 300px;">
-                  <!-- Canvas only rendered when stats exist -->
                   <canvas v-if="stats" ref="hoursChart"></canvas>
                 </div>
               </v-card-text>
@@ -156,6 +164,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue';
 import Chart from 'chart.js/auto';
 
+
 export default {
   name: 'BookingStatistics',
 
@@ -163,85 +172,115 @@ export default {
     const loading = ref(false);
     const error = ref(null);
     const stats = ref(null);
-    const viewMode = ref('weekly');
+    const startDate = ref('');
+    const endDate = ref('');
     const bookingsChart = ref(null);
     const hoursChart = ref(null);
 
     let bookingsChartInstance = null;
     let hoursChartInstance = null;
 
-    // API Service
+
+    watch(stats, async (newStats) => {
+      if (!newStats) return;
+      await nextTick();
+      createCharts();
+    });
+
     const apiService = {
-      // GET: Fetch statistics
-      async getStatistics(view) {
-        const response = await fetch(`/api/statistics?view=${view}`, {
+      async getStatistics() {
+        const response = await fetch('http://localhost:8080/api/statistics', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // Add authentication header if needed
-            // 'Authorization': `Bearer ${token}`
-          }
+             'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          credentials: 'include'
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch statistics: ${response.status} - ${errorText}`);
+        }
+
+        return await response.json();
+      },
+
+      async getStatisticsForRange(start, end) {
+        const params = new URLSearchParams({
+          startDate: start,
+          endDate: end
+        });
+
+        const response = await fetch(`http://localhost:8080/api/statistics/range?${params}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+             'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch statistics: ${response.status} - ${errorText}`);
         }
 
         return await response.json();
       }
     };
 
-    // Fetch statistics data
     const fetchStatistics = async () => {
       loading.value = true;
       error.value = null;
 
       try {
-        // TODO: Replace with your actual API endpoint
-        // const data = await apiService.getStatistics(viewMode.value);
-        // stats.value = data;
-
-        // Simulated API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Mock data (replace this with actual API response)
-        stats.value = {
-          metrics: {
-            weeklyBookings: { value: 13, trend: 'up' },
-            lifetimeBookings: { value: -8, trend: 'down' },
-            mostBookedDesk: 'Ser-01',
-            leastBookedDesk: 'Dev-02',
-            weeklyUsers: { value: 11, trend: 'up' }
-          },
-          bookingsPerDay: [
-            { day: 'Mon', bookings: 12 },
-            { day: 'Tue', bookings: 14 },
-            { day: 'Wed', bookings: 18 },
-            { day: 'Thu', bookings: 13 },
-            { day: 'Fri', bookings: 19 },
-            { day: 'Sat', bookings: 7 },
-            { day: 'Sun', bookings: 5 }
-          ],
-          bookingHoursPerDay: [
-            { day: 'Mon', hours: 96 },
-            { day: 'Tue', hours: 112 },
-            { day: 'Wed', hours: 144 },
-            { day: 'Thu', hours: 104 },
-            { day: 'Fri', hours: 152 },
-            { day: 'Sat', hours: 56 },
-            { day: 'Sun', hours: 40 }
-          ]
-        };
+        const data = await apiService.getStatistics();
+        stats.value = data;
 
         await nextTick();
         createCharts();
-
       } catch (err) {
         error.value = err.message;
         console.error('Error fetching statistics:', err);
       } finally {
         loading.value = false;
       }
+    };
+
+    // Fetch statistics for custom date range
+    const fetchStatisticsForRange = async () => {
+      if (!startDate.value || !endDate.value) {
+        error.value = 'Please select both start and end dates';
+        return;
+      }
+
+      loading.value = true;
+      error.value = null;
+
+      try {
+        // Convert to ISO format for backend
+        const start = new Date(startDate.value).toISOString();
+        const end = new Date(endDate.value).toISOString();
+
+        const data = await apiService.getStatisticsForRange(start, end);
+        stats.value = data;
+
+        await nextTick();
+        createCharts();
+      } catch (err) {
+        error.value = err.message;
+        console.error('Error fetching statistics:', err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    // Reset to default view
+    const resetToDefault = () => {
+      startDate.value = '';
+      endDate.value = '';
+      fetchStatistics();
     };
 
     // Create Chart.js charts
@@ -254,7 +293,7 @@ export default {
 
       // Bookings per Day Bar Chart
       const bookingsCtx = bookingsChart.value?.getContext('2d');
-      if (bookingsCtx) {
+      if (bookingsCtx && stats.value.bookingsPerDay) {
         bookingsChartInstance = new Chart(bookingsCtx, {
           type: 'bar',
           data: {
@@ -272,7 +311,16 @@ export default {
             maintainAspectRatio: false,
             scales: {
               y: {
-                beginAtZero: true
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
               }
             }
           }
@@ -281,7 +329,7 @@ export default {
 
       // Booking Hours Line Chart
       const hoursCtx = hoursChart.value?.getContext('2d');
-      if (hoursCtx) {
+      if (hoursCtx && stats.value.bookingHoursPerDay) {
         hoursChartInstance = new Chart(hoursCtx, {
           type: 'line',
           data: {
@@ -304,6 +352,12 @@ export default {
               y: {
                 beginAtZero: true
               }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              }
             }
           }
         });
@@ -311,14 +365,8 @@ export default {
     };
 
     const goBack = () => {
-      // TODO: Implement navigation
       window.history.back();
     };
-
-    // Watch for view mode changes
-    watch(viewMode, () => {
-      fetchStatistics();
-    });
 
     // Fetch data on mount
     onMounted(() => {
@@ -329,10 +377,13 @@ export default {
       loading,
       error,
       stats,
-      viewMode,
+      startDate,
+      endDate,
       bookingsChart,
       hoursChart,
       fetchStatistics,
+      fetchStatisticsForRange,
+      resetToDefault,
       goBack
     };
   }
@@ -343,18 +394,19 @@ export default {
 .bg-grey-lighten-4 {
   background-color: #f5f5f5;
 }
+
 .v-toolbar-title {
   font-size: 2rem !important;
   font-weight: bold;
 }
-.rounded-card{
-  border-radius:10px;
+
+.rounded-card {
+  border-radius: 10px;
 }
 
 canvas {
-  display: block;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100% !important;
+  height: 300px !important;
 }
 
 </style>
