@@ -5,7 +5,7 @@
         <div class="title-wrap">
           <div class="workspace-label">ADMIN PANEL</div>
           <h2 class="title">All Bookings</h2>
-          <span class="sub">{{ bookings.length }} total bookings</span>
+          <span class="sub">{{ filteredBookings.length }} total bookings</span>
         </div>
         <div class="header-actions">
           <v-text-field
@@ -34,6 +34,7 @@
               label="Filter by status"
               class="filter-select"
           />
+
           <v-select
               v-model="typeFilter"
               :items="TYPE_OPTIONS"
@@ -48,6 +49,7 @@
               label="Filter by desk type"
               class="filter-select"
           />
+
           <v-btn
               color="#171717"
               variant="flat"
@@ -56,7 +58,10 @@
           >
             Reset Filters
           </v-btn>
-          <v-chip size="small" color="#171717" variant="flat" class="count-chip">{{ bookings.length }}</v-chip>
+
+          <v-chip size="small" color="#171717" variant="flat" class="count-chip">
+            {{ filteredBookings.length }}
+          </v-chip>
         </div>
       </div>
 
@@ -78,7 +83,7 @@
       <template v-else>
         <v-data-table
             :headers="headers"
-            :items="mappedBookings"
+            :items="filteredBookings"
             item-key="id"
             density="compact"
             class="elevated-table"
@@ -98,7 +103,7 @@
           </template>
 
           <template #item.deskType="{ item }">
-            <v-chip size="x-small" :color="deskTypeToColor(item.status)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getTypeColor(item.deskType)" variant="flat" class="status-chip">
               {{ item.deskType }}
             </v-chip>
           </template>
@@ -114,11 +119,11 @@
           </template>
 
           <template #item.duration="{ item }">
-            <span class="cell-strong">{{ formatDuration(item.startTime, item.endTime) }}</span>
+            <span class="cell-strong">{{ item.duration }}</span>
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="statusToColor(item.status)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat" class="status-chip">
               {{ item.status }}
             </v-chip>
           </template>
@@ -132,7 +137,6 @@
                     variant="text"
                     size="small"
                     color="#171717"
-                    aria-label="Row actions"
                     :loading="cancellingId === item.id"
                     :disabled="cancellingId === item.id"
                     class="action-btn"
@@ -142,25 +146,25 @@
               </template>
               <v-list density="compact" class="action-menu">
                 <v-list-item
-                    @click="onView(item)"
+                    @click="viewBooking(item)"
                     prepend-icon="mdi-eye"
                     title="View">
                 </v-list-item>
                 <v-list-item
-                    @click="onEdit(item)"
+                    @click="editBooking(item)"
                     prepend-icon="mdi-pencil"
                     title="Edit">
                 </v-list-item>
-
                 <v-list-item
-                    @click="onCancel(item)"
+                    @click="cancelBooking(item)"
                     prepend-icon="mdi-cancel"
                     title="Cancel booking"
-                    :disabled="cancellingId === item.id || String(item.status).toUpperCase() === 'CANCELLED'"
+                    :disabled="cancellingId === item.id || item.status === 'CANCELLED'"
                 ></v-list-item>
               </v-list>
             </v-menu>
           </template>
+
           <template #no-data>
             <div class="empty-state">
               <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-calendar-blank</v-icon>
@@ -169,15 +173,18 @@
             </div>
           </template>
         </v-data-table>
+
         <BookingViewModal
+            :show="showViewModal"
             v-model="showViewModal"
             :booking="selectedBooking"
         />
+
         <BookingEditModal
-            :show="showModal"
+            :show="showEditModal"
             :booking="selectedBooking"
-            @close="closeModal"
-            @save="handleSave"
+            @close="showEditModal = false"
+            @save="saveBooking"
         />
       </template>
     </div>
@@ -190,43 +197,42 @@ import { useRouter, useRoute } from 'vue-router';
 import api from '../plugins/axios';
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
-const selectedBooking = ref(null);
-const showModal = ref(false);
-const showViewModal = ref(false);
+
 const router = useRouter();
 const route = useRoute();
-
 
 const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const cancellingId = ref(null);
-const searchQuery = ref('')
+const searchQuery = ref('');
+const selectedBooking = ref(null);
+const showEditModal = ref(false);
+const showViewModal = ref(false);
 
-// Status filter UI options and state
 const STATUS_OPTIONS = [
   { title: 'All', value: 'ALL' },
   { title: 'Active', value: 'ACTIVE' },
   { title: 'Cancelled', value: 'CANCELLED' },
   { title: 'Confirmed', value: 'CONFIRMED' },
 ];
-const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
 
 const TYPE_OPTIONS = [
-  {title: 'All', value: 'ALL'},
-  {title: 'Shared', value: 'SHARED'},
-  {title: 'Assigned', value: 'ASSIGNED'},
-  {title: 'Unavailable', value: 'UNAVAILABLE'},
+  { title: 'All', value: 'ALL' },
+  { title: 'Shared', value: 'SHARED' },
+  { title: 'Assigned', value: 'ASSIGNED' },
+  { title: 'Unavailable', value: 'UNAVAILABLE' },
 ];
-const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 
+const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
+const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 
 const headers = [
   { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
   { title: 'Desk ID', key: 'deskId', width: 100 },
   { title: 'User ID', key: 'userId', width: 100 },
   { title: 'Desk', key: 'deskName', width: 220 },
-  { title: 'Desk Type', key: 'deskType', width: 100},
+  { title: 'Desk Type', key: 'deskType', width: 100 },
   { title: 'Start', key: 'startTime', width: 150 },
   { title: 'End', key: 'endTime', width: 150 },
   { title: 'Duration', key: 'duration', width: 110 },
@@ -234,59 +240,51 @@ const headers = [
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false },
 ];
 
+const filteredBookings = computed(() => {
+  let filtered = bookings.value;
+
+  if (statusFilter.value !== 'ALL') {
+    filtered = filtered.filter(b => b.status === statusFilter.value);
+  }
+
+  if (typeFilter.value !== 'ALL') {
+    filtered = filtered.filter(b => b.desk?.type === typeFilter.value);
+  }
+
+  if (searchQuery.value) {
+    const search = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(b =>
+        b.desk?.displayName?.toLowerCase().includes(search) ||
+        b.user_id?.toString().includes(search)
+    );
+  }
+
+  return filtered.map(b => ({
+    id: b.bookingId ?? '—',
+    deskId: b.desk?.id ?? null,
+    userId: b.user_id ?? null,
+    deskName: b.desk?.displayName ?? 'N/A',
+    zoneId: b.desk?.zoneDto?.id ?? '0',
+    zoneName: b.desk?.zoneDto?.zoneName ?? 'N/A',
+    deskType: b.desk?.type ?? 'N/A',
+    startTime: b.startTime,
+    endTime: b.endTime,
+    duration: formatDuration(b.startTime, b.endTime),
+    status: b.status ?? '—',
+  }));
+});
 
 function resetFilters() {
   statusFilter.value = 'ALL';
   typeFilter.value = 'ALL';
   searchQuery.value = '';
 }
-const mappedBookings = computed(() => {
-  const items = bookings.value || [];
-
-  const status = String(statusFilter.value || 'ALL').toUpperCase();
-  const type = String(typeFilter.value || 'ALL').toUpperCase();
-  const search = (searchQuery.value || '').toLowerCase(); // assuming searchQuery is a ref
-
-  let filtered = items;
-
-  if (status !== 'ALL') {
-    filtered = filtered.filter((b) => b.status === status);
-  }
-  if (type !== 'ALL') {
-    filtered = filtered.filter((b) => b.desk?.type === type);
-  }
-  if (search) {
-    filtered = filtered.filter((b) =>
-        (b.desk?.displayName?.toLowerCase().includes(search)) ||
-        (b.user_id?.toString().includes(search)) ||
-        (b.status?.toLowerCase().includes(search))
-    );
-  }
-  return filtered.map((b) => ({
-    id: b.bookingId ?? '—',
-    deskId: b.desk?.id ?? null,
-    userId: b.user_id ?? null,
-    deskName: b.desk?.displayName ?? 'N/A',
-    zoneId: b.desk?.zoneId ?? 'N/A',
-    zoneName: b.desk?.zoneName ?? 'N/A',
-    deskType: b.desk?.type ?? 'N/A',
-    startTime: b.startTime,
-    endTime: b.endTime,
-    duration: null,
-    status: b.status ?? '—',
-  }));
-});
-
 
 const fetchBookings = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const params = {};
-    if (statusFilter.value && statusFilter.value !== 'ALL') {
-      params.status = statusFilter.value;
-    }
-    console.log('[AdminBookings] Fetching with params:', params);
+    const params = statusFilter.value !== 'ALL' ? { status: statusFilter.value } : {};
     const response = await api.get('/booking/all', { params });
     bookings.value = response.data;
   } catch (err) {
@@ -297,38 +295,38 @@ const fetchBookings = async () => {
   }
 };
 
-function statusToColor(s) {
-  if (!s) return 'primary';
-  const val = String(s).toUpperCase();
-  if (val === 'CONFIRMED') return 'success';
-  if (val === 'CANCELLED') return 'error';
-  if (val ===  'ACTIVE') return 'warning';
-  return 'primary';
+function getStatusColor(status) {
+  const statusMap = {
+    CONFIRMED: 'success',
+    CANCELLED: 'error',
+    ACTIVE: 'warning',
+  };
+  return statusMap[status?.toUpperCase()] || 'primary';
 }
 
-function deskTypeToColor(s) {
-  if (!s) return 'primary';
-  const val = String(s).toUpperCase();
-  if (val === 'SHARED') return 'success';
-  if (val === 'ASSIGNED') return 'warning';
-  if (val === 'UNAVAILABLE') return 'error';
-  return 'primary';
+function getTypeColor(type) {
+  const typeMap = {
+    SHARED: 'success',
+    ASSIGNED: 'warning',
+    UNAVAILABLE: 'error',
+  };
+  return typeMap[type?.toUpperCase()] || 'primary';
 }
 
 function toDatetimeLocalValue(dateStr) {
   const date = new Date(dateStr);
   const pad = n => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
 }
+
 function formatTime(dateStr) {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return dateStr ? new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 }
+
 function formatDuration(startStr, endStr) {
   if (!startStr || !endStr) return '—';
   const diff = new Date(endStr) - new Date(startStr);
@@ -338,16 +336,12 @@ function formatDuration(startStr, endStr) {
   return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
 }
 
-// Row action handlers (stubbed)
-function onView(item) {
-  console.log('[AdminBookings] Edit booking', item?.id, item);
+function viewBooking(item) {
   selectedBooking.value = item;
   showViewModal.value = true;
 }
 
-function onEdit(item) {
-  console.log('[AdminBookings] Edit booking', item);
-
+function editBooking(item) {
   selectedBooking.value = {
     id: item.id,
     userId: item.userId,
@@ -356,17 +350,11 @@ function onEdit(item) {
     endTime: toDatetimeLocalValue(item.endTime),
     status: item.status
   };
+  showEditModal.value = true;
+}
 
-  console.log('[AdminBookings] selectedBooking:', selectedBooking.value);
-  showModal.value = true;
-}
-function closeModal() {
-  showModal.value = false;
-}
-async function handleSave(updatedData) {
+async function saveBooking(updatedData) {
   try {
-    console.log("Updating booking:", updatedData);
-
     const bookingUpdateCommand = {
       userId: selectedBooking.value.userId,
       deskId: updatedData.deskId,
@@ -375,41 +363,25 @@ async function handleSave(updatedData) {
       status: updatedData.status
     };
 
-    console.log("Sending to backend:", bookingUpdateCommand);
-
-    const response = await api.patch(
-        `/admin/edit/booking/${selectedBooking.value.id}`,
-        bookingUpdateCommand
-    );
-
-    console.log("Booking updated successfully:", response.data);
-
+    await api.patch(`/admin/edit/booking/${selectedBooking.value.id}`, bookingUpdateCommand);
     await fetchBookings();
-    d.value = false;
-
-  } catch (error) {
-    console.error("Error updating booking:", error);
-    console.error("Error details:", error.response?.data);
+    showEditModal.value = false;
+  } catch (err) {
+    console.error("Error updating booking:", err);
+    error.value = err.response?.data?.message || 'Failed to update booking';
   }
 }
-async function onCancel(item) {
-  const id = item?.id ?? item?.bookingId;
-  if (!id) {
-    console.warn('[AdminBookings] Cancel: missing id', item);
-    return;
-  }
-  const ok = confirm(`Cancel booking #${id}?`);
-  if (!ok) return;
+
+async function cancelBooking(item) {
+  if (!confirm(`Cancel booking #${item.id}?`)) return;
 
   try {
-    cancellingId.value = id;
-    const response = await api.patch(`/admin/cancel/booking/${id}`);
-    console.log('[AdminBookings] Cancel booking confirmed', id, response?.data);
-
+    cancellingId.value = item.id;
+    await api.patch(`/admin/cancel/booking/${item.id}`);
     await fetchBookings();
   } catch (err) {
-    console.error('[AdminBookings] Cancel booking failed', id, err);
-    error.value = err.response?.data?.message || err.message || `Failed to cancel booking #${id}`;
+    console.error('Cancel booking failed:', err);
+    error.value = err.response?.data?.message || `Failed to cancel booking #${item.id}`;
   } finally {
     cancellingId.value = null;
   }
@@ -417,7 +389,7 @@ async function onCancel(item) {
 
 onMounted(() => {
   const initial = String(route.query?.status || 'ALL').toUpperCase();
-  if (!['ALL', 'ACTIVE', 'CANCELLED','CONFIRMED'].includes(initial)) {
+  if (!['ALL', 'ACTIVE', 'CANCELLED', 'CONFIRMED'].includes(initial)) {
     router.replace({ query: { ...route.query, status: undefined } });
     statusFilter.value = 'ALL';
   } else {
@@ -425,7 +397,7 @@ onMounted(() => {
   }
   fetchBookings();
 });
-// Refetch when filter changes and sync to URL query
+
 watch(statusFilter, (val) => {
   const nextQuery = { ...route.query, status: val === 'ALL' ? undefined : val };
   router.replace({ query: nextQuery });
@@ -522,31 +494,19 @@ watch(statusFilter, (val) => {
   transform: translateY(-1px);
 }
 
-.search-field :deep(.v-field) {
-  border-radius: 12px !important;
-  border: 2px solid #e5e5e5 !important;
-  font-weight: 600;
-}
-
-.search-field :deep(.v-field:hover) {
-  border-color: #a3a3a3 !important;
-}
-
-.search-field :deep(.v-field--focused) {
-  border-color: #171717 !important;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
+.search-field :deep(.v-field),
 .filter-select :deep(.v-field) {
   border-radius: 12px !important;
   border: 2px solid #e5e5e5 !important;
   font-weight: 600;
 }
 
+.search-field :deep(.v-field:hover),
 .filter-select :deep(.v-field:hover) {
   border-color: #a3a3a3 !important;
 }
 
+.search-field :deep(.v-field--focused),
 .filter-select :deep(.v-field--focused) {
   border-color: #171717 !important;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
@@ -692,4 +652,3 @@ watch(statusFilter, (val) => {
   letter-spacing: 0.3px;
 }
 </style>
-

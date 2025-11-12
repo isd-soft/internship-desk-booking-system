@@ -4,11 +4,14 @@ import lombok.*;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class DeskStatsDTO {
-    private Long desk_id;
     private String deskName;
-    private String zone;
     private Long bookingCount;
+
+    public DeskStatsDTO(String deskName, Number bookingCount) {
+        this.deskName = deskName;
+        this.bookingCount = bookingCount == null ? 0L : bookingCount.longValue();
+    }
 }

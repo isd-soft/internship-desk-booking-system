@@ -1,6 +1,6 @@
 package com.project.internship_desk_booking_system.repository;
 
-import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
+import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,7 +31,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
-            "AND b.status = 'ACTIVE' " +
+            "AND b.status = 'CONFIRMED' " +
             "AND b.startTime <= :endTime " +
             "AND b.endTime >= :startTime")
     List<Booking> findUserBookings(
@@ -85,45 +85,53 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
-    long countByStartTimeAfter(LocalDateTime startTime);
+    long countBookingByStartTimeAfter(LocalDateTime startTime);
 
     long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 
-    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
-            "FROM desk d " +
-            "LEFT JOIN booking b ON b.desk_id = d.id " +
-            "GROUP BY d.id, d.desk_name, d.zone " +
-            "ORDER BY booking_count DESC " +
-            "LIMIT 1", nativeQuery = true)
-    DeskStatsDTO findMostBookedDesk();
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COALESCE(COUNT(b.id), 0) AS bookingCount
+    FROM desk d
+    LEFT JOIN booking b ON b.desk_id = d.id
+    GROUP BY d.id, d.desk_name
+    ORDER BY bookingCount DESC
+    LIMIT 1
+""", nativeQuery = true)
+    DeskStatsProjection findMostBookedDesk();
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
+    FROM desk d
+    INNER JOIN booking b ON b.desk_id = d.id
+    GROUP BY d.id, d.desk_name
+    ORDER BY COUNT(b.id) ASC, d.desk_name ASC
+    LIMIT 1
+""", nativeQuery = true)
+    DeskStatsProjection findLeastBookedDesk();
 
-    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
-            "FROM desk d " +
-            "LEFT JOIN booking b ON b.desk_id = d.id " +
-            "GROUP BY d.id, d.desk_name, d.zone " +
-            "ORDER BY booking_count ASC " +
-            "LIMIT 1", nativeQuery = true)
-    DeskStatsDTO findLeastBookedDesk();
-
-    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
-            "FROM desk d " +
-            "LEFT JOIN booking b ON b.desk_id = d.id " +
-            "WHERE b.start_time BETWEEN :startDate AND :endDate " +
-            "GROUP BY d.id, d.desk_name, d.zone " +
-            "ORDER BY booking_count DESC " +
-            "LIMIT 1", nativeQuery = true)
-    DeskStatsDTO findMostBookedDeskInRange(
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
+    FROM desk d
+    INNER JOIN booking b ON b.desk_id = d.id 
+        AND b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY d.id, d.desk_name
+    ORDER BY COUNT(b.id) ASC, d.desk_name ASC
+    LIMIT 1
+""", nativeQuery = true)
+    DeskStatsProjection findLeastBookedDeskInRange(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate
+    );
 
-    @Query(value = "SELECT d.id, d.desk_name, d.zone, COUNT(b.id) as booking_count " +
-            "FROM desk d " +
-            "LEFT JOIN booking b ON b.desk_id = d.id " +
-            "WHERE b.start_time BETWEEN :startDate AND :endDate " +
-            "GROUP BY d.id, d.desk_name, d.zone " +
-            "ORDER BY booking_count ASC " +
-            "LIMIT 1", nativeQuery = true)
-    DeskStatsDTO findLeastBookedDeskInRange(
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
+    FROM desk d
+    LEFT JOIN booking b ON b.desk_id = d.id AND b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY d.id, d.desk_name
+    ORDER BY bookingCount DESC
+    LIMIT 1
+""", nativeQuery = true)
+    DeskStatsProjection findMostBookedDeskInRange(
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+            @Param("endDate") LocalDateTime endDate
+    );
 }
