@@ -77,6 +77,7 @@
               {{ stats.weeklyBookings >= 0 ? '+' : '' }}{{ stats.weeklyBookings }}%
             </div>
             <div class="stat-label">Weekly Bookings</div>
+            <div class="stat-count">{{ stats.weeklyBookings || 0 }} bookings</div>
           </div>
 
           <!-- Weekly Users -->
@@ -87,22 +88,24 @@
               </v-icon>
             </div>
             <div class="stat-value" :class="stats.weeklyUsers >= 0 ? 'positive' : 'negative'">
-              {{ stats.weeklyUsers >= 0 ? '+' : '' }}{{ stats.weeklyUsers }}%
+              {{ stats.weeklyUsers >= 0 ? '+' : '' }}{{ stats.weeklyUsers }}
             </div>
             <div class="stat-label">Weekly Users</div>
+            <div class="stat-count">Active this week</div>
           </div>
 
           <!-- Monthly Bookings -->
           <div class="stat-card">
-            <div class="stat-icon-wrap" :class="stats.monthlyUsers >= 0 ? 'positive' : 'negative'">
+            <div class="stat-icon-wrap" :class="stats.monthlyBookings >= 0 ? 'positive' : 'negative'">
               <v-icon size="32">
-                {{ stats.monthlyUsers >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                {{ stats.monthlyBookings >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
               </v-icon>
             </div>
-            <div class="stat-value" :class="stats.monthlyUsers >= 0 ? 'positive' : 'negative'">
-              {{ stats.monthlyUsers >= 0 ? '+' : '' }}{{ stats.monthlyUsers }}%
+            <div class="stat-value" :class="stats.monthlyBookings >= 0 ? 'positive' : 'negative'">
+              {{ stats.monthlyBookings || 0 }}
             </div>
             <div class="stat-label">Monthly Bookings</div>
+            <div class="stat-count">{{ stats.monthlyUsers || 0 }} users</div>
           </div>
 
           <!-- Most Booked Desk -->
@@ -110,8 +113,9 @@
             <div class="stat-icon-wrap highlight">
               <v-icon size="32">mdi-star</v-icon>
             </div>
-            <div class="stat-value">{{ (stats.mostBookedDesk && stats.mostBookedDesk.deskName) || 'N/A' }}</div>
+            <div class="stat-value">{{ getMostBookedDeskName() }}</div>
             <div class="stat-label">Most Booked Desk</div>
+            <div class="stat-count">{{ getMostBookedCount() }} bookings</div>
           </div>
 
           <!-- Least Booked Desk -->
@@ -119,36 +123,45 @@
             <div class="stat-icon-wrap neutral">
               <v-icon size="32">mdi-emoticon-sad-outline</v-icon>
             </div>
-            <div class="stat-value">{{ (stats.leastBookedDesk && stats.leastBookedDesk.deskName) || 'N/A' }}</div>
+            <div class="stat-value">{{ getLeastBookedDeskName() }}</div>
             <div class="stat-label">Least Booked Desk</div>
+            <div class="stat-count">{{ getLeastBookedCount() }} bookings</div>
           </div>
         </div>
 
         <!-- Charts Section -->
         <div class="charts-section">
-          <!-- Bookings Chart -->
+          <!-- Bookings Per Day Chart -->
           <div class="chart-card">
             <div class="chart-header">
-              <h3 class="chart-title">Bookings per Day</h3>
+              <h3 class="chart-title">Daily Bookings</h3>
               <v-chip size="small" color="#171717" variant="flat" class="chart-chip">
                 Bar Chart
               </v-chip>
             </div>
-            <div class="chart-container">
-              <canvas ref="bookingsChart"></canvas>
+            <div class="chart-container" v-if="hasBookingsPerDay()">
+              <canvas ref="bookingsChartCanvas"></canvas>
+            </div>
+            <div v-else class="no-data">
+              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-bar</v-icon>
+              <div>No daily booking data available</div>
             </div>
           </div>
 
-          <!-- Users Chart -->
+          <!-- Bookings Per Week Chart -->
           <div class="chart-card">
             <div class="chart-header">
-              <h3 class="chart-title">Booking Hours per Day</h3>
+              <h3 class="chart-title">Weekly Bookings</h3>
               <v-chip size="small" color="#171717" variant="flat" class="chart-chip">
                 Line Chart
               </v-chip>
             </div>
-            <div class="chart-container">
-              <canvas ref="hoursChart"></canvas>
+            <div class="chart-container" v-if="hasBookingsPerWeek()">
+              <canvas ref="hoursChartCanvas"></canvas>
+            </div>
+            <div v-else class="no-data">
+              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-line</v-icon>
+              <div>No weekly booking data available</div>
             </div>
           </div>
         </div>
@@ -170,16 +183,19 @@ export default {
     const stats = ref(null);
     const startDate = ref('');
     const endDate = ref('');
-    const bookingsChart = ref(null);
-    const hoursChart = ref(null);
+    const bookingsChartCanvas = ref(null);
+    const hoursChartCanvas = ref(null);
 
     let bookingsChartInstance = null;
     let hoursChartInstance = null;
 
     watch(stats, async (newStats) => {
+      console.log('Stats updated:', newStats);
       if (!newStats) return;
       await nextTick();
-      createCharts();
+      setTimeout(() => {
+        createCharts();
+      }, 100);
     });
 
     const apiService = {
@@ -231,10 +247,8 @@ export default {
 
       try {
         const data = await apiService.getStatistics();
+        console.log('Fetched statistics:', data);
         stats.value = data;
-
-        await nextTick();
-        createCharts();
       } catch (err) {
         error.value = err.message;
         console.error('Error fetching statistics:', err);
@@ -257,10 +271,8 @@ export default {
         const end = new Date(endDate.value).toISOString();
 
         const data = await apiService.getStatisticsForRange(start, end);
+        console.log('Fetched range statistics:', data);
         stats.value = data;
-
-        await nextTick();
-        createCharts();
       } catch (err) {
         error.value = err.message;
         console.error('Error fetching statistics:', err);
@@ -275,154 +287,242 @@ export default {
       fetchStatistics();
     };
 
+    // Helper functions to extract data from the API response
+    const hasBookingsPerDay = () => {
+      return stats.value?.bookingHoursPerDay && Array.isArray(stats.value.bookingHoursPerDay) && stats.value.bookingHoursPerDay.length > 0;
+    };
+
+    const hasBookingsPerWeek = () => {
+      return stats.value?.bookingHoursPerWeek && Array.isArray(stats.value.bookingHoursPerWeek) && stats.value.bookingHoursPerWeek.length > 0;
+    };
+
+    const getMostBookedDeskName = () => {
+      return stats.value?.mostBookedDesk?.deskName || 'N/A';
+    };
+
+    const getMostBookedCount = () => {
+      return stats.value?.mostBookedDesk?.bookingCount || 0;
+    };
+
+    const getLeastBookedDeskName = () => {
+      return stats.value?.leastBookedDesk?.deskName || 'N/A';
+    };
+
+    const getLeastBookedCount = () => {
+      return stats.value?.leastBookedDesk?.bookingCount || 0;
+    };
+
     const createCharts = () => {
-      if (!stats.value) return;
+      console.log('Creating charts with stats:', stats.value);
 
-      if (bookingsChartInstance) bookingsChartInstance.destroy();
-      if (hoursChartInstance) hoursChartInstance.destroy();
-
-      const bookingsCtx = bookingsChart.value?.getContext('2d');
-      if (bookingsCtx && stats.value.bookingsPerDay) {
-        bookingsChartInstance = new Chart(bookingsCtx, {
-          type: 'bar',
-          data: {
-            labels: stats.value.bookingsPerDay.map(d => d.day),
-            datasets: [{
-              label: 'Number of Bookings',
-              data: stats.value.bookingsPerDay.map(d => d.bookings),
-              backgroundColor: '#171717',
-              borderColor: '#171717',
-              borderWidth: 0,
-              borderRadius: 8
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  stepSize: 1,
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 12
-                  },
-                  color: '#737373'
-                },
-                grid: {
-                  color: '#f5f5f5'
-                }
-              },
-              x: {
-                ticks: {
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 12
-                  },
-                  color: '#737373'
-                },
-                grid: {
-                  display: false
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 13
-                  },
-                  color: '#171717',
-                  usePointStyle: true,
-                  padding: 15
-                }
-              }
-            }
-          }
-        });
+      if (!stats.value) {
+        console.warn('No stats available for charts');
+        return;
       }
 
-      const hoursCtx = hoursChart.value?.getContext('2d');
-      if (hoursCtx && stats.value.bookingHoursPerDay) {
-        hoursChartInstance = new Chart(hoursCtx, {
-          type: 'line',
-          data: {
-            labels: stats.value.bookingHoursPerDay.map(d => d.day),
-            datasets: [{
-              label: 'Total Hours',
-              data: stats.value.bookingHoursPerDay.map(d => d.hours),
-              borderColor: '#171717',
-              backgroundColor: 'rgba(23, 23, 23, 0.1)',
-              tension: 0.4,
-              fill: true,
-              pointRadius: 6,
-              pointBackgroundColor: '#171717',
-              pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              borderWidth: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 12
+      // Destroy existing charts
+      if (bookingsChartInstance) {
+        bookingsChartInstance.destroy();
+        bookingsChartInstance = null;
+      }
+      if (hoursChartInstance) {
+        hoursChartInstance.destroy();
+        hoursChartInstance = null;
+      }
+
+      // Daily Bookings Chart (using bookingHoursPerDay)
+      if (bookingsChartCanvas.value && hasBookingsPerDay()) {
+        const ctx = bookingsChartCanvas.value.getContext('2d');
+        const dailyData = stats.value.bookingHoursPerDay;
+
+        console.log('Creating daily bookings chart with data:', dailyData);
+
+        try {
+          // Extract data from the nested structure
+          const labels = [];
+          const bookingCounts = [];
+
+          dailyData.forEach(dayData => {
+            // Format the date nicely
+            const date = new Date(dayData.startTime);
+            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            labels.push(formattedDate);
+
+            // Count total bookings for this day
+            const totalBookings = (dayData.bookings || []).length;
+            bookingCounts.push(totalBookings);
+          });
+
+          bookingsChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Bookings per Day',
+                data: bookingCounts,
+                backgroundColor: '#171717',
+                borderColor: '#171717',
+                borderWidth: 0,
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 12
+                    },
+                    color: '#737373'
                   },
-                  color: '#737373'
+                  grid: {
+                    color: '#f5f5f5'
+                  }
                 },
-                grid: {
-                  color: '#f5f5f5'
+                x: {
+                  ticks: {
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 12
+                    },
+                    color: '#737373'
+                  },
+                  grid: {
+                    display: false
+                  }
                 }
               },
-              x: {
-                ticks: {
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 12
-                  },
-                  color: '#737373'
-                },
-                grid: {
-                  display: false
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                  font: {
-                    family: 'Inter',
-                    weight: '600',
-                    size: 13
-                  },
-                  color: '#171717',
-                  usePointStyle: true,
-                  padding: 15
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 13
+                    },
+                    color: '#171717',
+                    usePointStyle: true,
+                    padding: 15
+                  }
                 }
               }
             }
-          }
-        });
+          });
+          console.log('Daily bookings chart created successfully');
+        } catch (err) {
+          console.error('Error creating daily bookings chart:', err);
+        }
+      }
+
+      // Weekly Bookings Chart (using bookingHoursPerWeek)
+      if (hoursChartCanvas.value && hasBookingsPerWeek()) {
+        const ctx = hoursChartCanvas.value.getContext('2d');
+        const weeklyData = stats.value.bookingHoursPerWeek;
+
+        console.log('Creating weekly bookings chart with data:', weeklyData);
+
+        try {
+          const labels = [];
+          const bookingCounts = [];
+
+          weeklyData.forEach(weekData => {
+            // Format the date nicely
+            const date = new Date(weekData.startTime);
+            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            labels.push(formattedDate);
+
+            // Count total bookings for this week
+            const totalBookings = (weekData.bookings || []).length;
+            bookingCounts.push(totalBookings);
+          });
+
+          hoursChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Bookings per Week',
+                data: bookingCounts,
+                borderColor: '#171717',
+                backgroundColor: 'rgba(23, 23, 23, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 6,
+                pointBackgroundColor: '#171717',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                borderWidth: 3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 12
+                    },
+                    color: '#737373'
+                  },
+                  grid: {
+                    color: '#f5f5f5'
+                  }
+                },
+                x: {
+                  ticks: {
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 12
+                    },
+                    color: '#737373'
+                  },
+                  grid: {
+                    display: false
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    font: {
+                      family: 'Inter',
+                      weight: '600',
+                      size: 13
+                    },
+                    color: '#171717',
+                    usePointStyle: true,
+                    padding: 15
+                  }
+                }
+              }
+            }
+          });
+          console.log('Weekly bookings chart created successfully');
+        } catch (err) {
+          console.error('Error creating weekly bookings chart:', err);
+        }
       }
     };
 
     onMounted(() => {
+      console.log('Component mounted, fetching statistics...');
       fetchStatistics();
     });
 
@@ -432,11 +532,17 @@ export default {
       stats,
       startDate,
       endDate,
-      bookingsChart,
-      hoursChart,
+      bookingsChartCanvas,
+      hoursChartCanvas,
       fetchStatistics,
       fetchStatisticsForRange,
-      resetToDefault
+      resetToDefault,
+      hasBookingsPerDay,
+      hasBookingsPerWeek,
+      getMostBookedDeskName,
+      getMostBookedCount,
+      getLeastBookedDeskName,
+      getLeastBookedCount
     };
   }
 };
@@ -663,6 +769,14 @@ export default {
   font-weight: 600;
   color: #737373;
   letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.stat-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a3a3a3;
+  letter-spacing: 0.2px;
 }
 
 /* Charts Section */
@@ -711,8 +825,20 @@ export default {
 }
 
 .chart-container canvas {
-  width: 100% !important;
-  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #737373;
+}
+
+.no-data div {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
 }
 
 @media (max-width: 768px) {
