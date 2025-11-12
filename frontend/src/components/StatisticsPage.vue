@@ -312,6 +312,79 @@ export default {
       return stats.value?.leastBookedDesk?.bookingCount || 0;
     };
 
+    // Group bookings by day
+    const groupBookingsByDay = (bookings) => {
+      if (!bookings || bookings.length === 0) return [];
+
+      const grouped = {};
+
+      bookings.forEach(booking => {
+        // Parse the date string - handles LocalDateTime format from Java
+        const date = new Date(booking.startTime);
+
+        // Skip invalid dates
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date found:', booking.startTime);
+          return;
+        }
+
+        // Get date string (YYYY-MM-DD)
+        const dateKey = date.toISOString().split('T')[0];
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = {
+            startTime: dateKey + 'T00:00:00',
+            bookings: []
+          };
+        }
+
+        grouped[dateKey].bookings.push(booking);
+      });
+
+      // Convert to array and sort by date
+      return Object.values(grouped).sort((a, b) =>
+          new Date(a.startTime) - new Date(b.startTime)
+      );
+    };
+
+    // Group bookings by week
+    const groupBookingsByWeek = (bookings) => {
+      if (!bookings || bookings.length === 0) return [];
+
+      const grouped = {};
+
+      bookings.forEach(booking => {
+        const date = new Date(booking.startTime);
+
+        // Skip invalid dates
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date found:', booking.startTime);
+          return;
+        }
+
+        // Get week start (Monday)
+        const dayOfWeek = date.getDay();
+        const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const weekStart = new Date(date.setDate(diff));
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekKey = weekStart.toISOString().split('T')[0];
+
+        if (!grouped[weekKey]) {
+          grouped[weekKey] = {
+            startTime: weekKey + 'T00:00:00',
+            bookings: []
+          };
+        }
+
+        grouped[weekKey].bookings.push(booking);
+      });
+
+      return Object.values(grouped).sort((a, b) =>
+          new Date(a.startTime) - new Date(b.startTime)
+      );
+    };
+
     const createCharts = () => {
       console.log('Creating charts with stats:', stats.value);
 
@@ -333,24 +406,21 @@ export default {
       // Daily Bookings Chart (using bookingHoursPerDay)
       if (bookingsChartCanvas.value && hasBookingsPerDay()) {
         const ctx = bookingsChartCanvas.value.getContext('2d');
-        const dailyData = stats.value.bookingHoursPerDay;
 
-        console.log('Creating daily bookings chart with data:', dailyData);
+        // Group the flat list of bookings by day
+        const groupedByDay = groupBookingsByDay(stats.value.bookingHoursPerDay);
+
+        console.log('Grouped daily data:', groupedByDay);
 
         try {
-          // Extract data from the nested structure
           const labels = [];
           const bookingCounts = [];
 
-          dailyData.forEach(dayData => {
-            // Format the date nicely
+          groupedByDay.forEach(dayData => {
             const date = new Date(dayData.startTime);
             const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             labels.push(formattedDate);
-
-            // Count total bookings for this day
-            const totalBookings = (dayData.bookings || []).length;
-            bookingCounts.push(totalBookings);
+            bookingCounts.push(dayData.bookings.length);
           });
 
           bookingsChartInstance = new Chart(ctx, {
@@ -426,23 +496,21 @@ export default {
       // Weekly Bookings Chart (using bookingHoursPerWeek)
       if (hoursChartCanvas.value && hasBookingsPerWeek()) {
         const ctx = hoursChartCanvas.value.getContext('2d');
-        const weeklyData = stats.value.bookingHoursPerWeek;
 
-        console.log('Creating weekly bookings chart with data:', weeklyData);
+        // Group the flat list of bookings by week
+        const groupedByWeek = groupBookingsByWeek(stats.value.bookingHoursPerWeek);
+
+        console.log('Grouped weekly data:', groupedByWeek);
 
         try {
           const labels = [];
           const bookingCounts = [];
 
-          weeklyData.forEach(weekData => {
-            // Format the date nicely
+          groupedByWeek.forEach(weekData => {
             const date = new Date(weekData.startTime);
             const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             labels.push(formattedDate);
-
-            // Count total bookings for this week
-            const totalBookings = (weekData.bookings || []).length;
-            bookingCounts.push(totalBookings);
+            bookingCounts.push(weekData.bookings.length);
           });
 
           hoursChartInstance = new Chart(ctx, {
