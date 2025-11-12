@@ -6,10 +6,7 @@ import com.project.internship_desk_booking_system.command.CoordinatesUpdateComma
 import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
-import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.Desk;
-import com.project.internship_desk_booking_system.entity.Zone;
-import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
@@ -27,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -41,6 +39,7 @@ public class AdminService {
     private final BookingMapper bookingMapper;
     private final UserRepository userRepository;
     private final DeskMapper deskMapper;
+    private final BookingTimeLimitsService bookingTimeLimitsService;
 
     private void applyTemporaryAvailability(
             Desk desk,
@@ -340,6 +339,22 @@ public class AdminService {
                     existingBooking);
         }
         if(bookingUpdateCommand.startTime() != null){
+            if (bookingUpdateCommand.startTime().isBefore(LocalDateTime.now())) {
+                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before current time");
+            }
+            BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+            long daysInAdvance = ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), bookingUpdateCommand.startTime().toLocalDate());
+
+            if (daysInAdvance > policy.getMaxDaysInAdvance()) {
+                log.error("Booking {} days in advance exceeds maximum of {} days",
+                        daysInAdvance, policy.getMaxDaysInAdvance());
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "BOOKING_TOO_FAR_AHEAD",
+                        String.format("Cannot book more than %d days in advance. You are trying to book %d days ahead.",
+                                policy.getMaxDaysInAdvance(), daysInAdvance)
+                );
+            }
             log.info(
                     "Editing start time {} for booking with id {}",
                     bookingUpdateCommand.startTime(),
@@ -349,6 +364,9 @@ public class AdminService {
             existingBooking.setStartTime(bookingUpdateCommand.startTime());
         }
         if(bookingUpdateCommand.endTime() != null){
+            if (bookingUpdateCommand.endTime() .isBefore(bookingUpdateCommand.startTime())) {
+                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
+            }
             log.info(
                     "Editing end time {} for booking with id {}",
                     bookingUpdateCommand.endTime(),
