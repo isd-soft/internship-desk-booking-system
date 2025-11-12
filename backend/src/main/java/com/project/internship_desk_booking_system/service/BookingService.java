@@ -3,10 +3,13 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.dto.BookingDTO;
+import com.project.internship_desk_booking_system.dto.DeskColorDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
@@ -19,10 +22,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -255,4 +259,72 @@ public class BookingService {
                 .toList();
     }
 
+    public List<BookingDTO> getBookingsByDate(
+            LocalDate localDate
+    ){
+
+        log.info(
+                "looking for bookings at time {}",
+                localDate
+        );
+        List<Booking> bookings = bookingRepository
+                .findBookingsByDate(localDate);
+
+        if(bookings == null || bookings.isEmpty()){
+            log.warn(
+                    "Bookings at time {} was not found ",
+                    localDate
+            );
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "BOOKINGS_NOT_FOUND",
+                    String.format(
+                            "Bookings for %s date not found",
+                            localDate.toString()
+                    )
+            );
+        }
+        Map<Long, List<Booking>> bookingsByDesk = bookings
+                .stream()
+                .collect(Collectors.groupingBy(
+                        booking -> booking.getDesk().getId())
+                );
+        List<BookingDTO> resultList = new ArrayList<>();
+
+        for(Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()){
+            Long deskId = entry.getKey();
+            List<Booking> deskBookings = entry.getValue();
+
+            long totalDuration = 0;
+
+            for(Booking booking : deskBookings){
+                BookingDTO bookingDTO = new BookingDTO();
+                DeskColorDTO deskColorDTO = new DeskColorDTO();
+                deskColorDTO.setDeskId(deskId);
+                bookingDTO.setStartDate(booking.getStartTime());
+                bookingDTO.setEndDate(booking.getEndTime());
+
+                totalDuration += Duration
+                        .between(
+                                booking.getStartTime(),
+                                booking.getEndTime()
+                        ).toHours();
+
+                if(totalDuration > 0 && totalDuration < 9){
+                    deskColorDTO.setDeskColor(DeskColor.AMBER);
+                } else if(totalDuration >= 9){
+                    deskColorDTO.setDeskColor(DeskColor.RED);
+                }
+                log.info(
+                        "total duration is {} for desk with id {} and color {}",
+                        totalDuration,
+                        deskId,
+                        deskColorDTO.getDeskColor()
+                );
+                bookingDTO.setDeskColorDTO(deskColorDTO);
+                resultList.add(bookingDTO);
+            }
+        }
+        return resultList;
+    }
 }

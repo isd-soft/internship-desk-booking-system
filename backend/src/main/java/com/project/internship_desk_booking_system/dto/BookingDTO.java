@@ -1,13 +1,18 @@
 package com.project.internship_desk_booking_system.dto;
 
-import com.project.internship_desk_booking_system.enums.BookingStatus;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-public record BookingDTO(
-        Long deskId,
-        LocalDateTime startDate,
-        LocalDateTime endDate,
-        BookingStatus status
-) {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class BookingDTO {
+    DeskColorDTO deskColorDTO;
+    LocalDateTime startDate;
+    LocalDateTime endDate;
 }

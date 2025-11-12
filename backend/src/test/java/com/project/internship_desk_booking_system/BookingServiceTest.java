@@ -7,6 +7,7 @@ import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
@@ -60,6 +61,7 @@ class BookingServiceTest {
     private Booking testBooking;
     private BookingResponseDto bookingResponseDto;
     private BookingResponse bookingResponse;
+    private Zone testZone;
     private DeskDto deskDTO;
 
     @BeforeEach
@@ -70,9 +72,14 @@ class BookingServiceTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
 
+        testZone = new Zone();
+        testZone.setId(1L);
+        testZone.setZoneName("Service");
+        testZone.setZoneAbv("Ser");
+
         testDesk = new Desk();
         testDesk.setId(1L);
-        testDesk.setZone("Service");
+        testDesk.setZone(testZone);
         testDesk.setDeskName("Ser-01");
 
         LocalDateTime startTime = LocalDateTime.now().plusHours(2);
@@ -106,10 +113,14 @@ class BookingServiceTest {
         DeskDto deskDTO = new DeskDto(
                 1L,
                 "Ser-01",
-                "Service",
+                1L,
                 DeskType.SHARED,
                 DeskStatus.ACTIVE,
                 false,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -164,7 +175,7 @@ class BookingServiceTest {
         assertEquals(1L, result.get(0).getBookingId());
         assertEquals(BookingStatus.CONFIRMED, result.get(0).getStatus());
         assertNotNull(result.get(0).getDesk());
-        assertEquals("Ser-01", result.get(0).getDesk().deskName());
+        assertEquals("Ser-01", result.get(0).getDesk().displayName());
         verify(bookingRepository, times(1)).findUpcomingBookingsWithin8Hours(
                 eq(testUser.getId()), any(LocalDateTime.class), any(LocalDateTime.class));
     }

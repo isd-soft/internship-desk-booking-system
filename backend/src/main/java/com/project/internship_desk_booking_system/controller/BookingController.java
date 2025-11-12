@@ -3,6 +3,7 @@ package com.project.internship_desk_booking_system.controller;
 import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.BookingService;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -64,5 +66,15 @@ public class BookingController {
         String email = principal.getEmail();
         bookingService.cancelBooking(email, bookingId);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/byDate")
+    public ResponseEntity<List<BookingDTO>> getBookingsByDate(
+            @RequestParam LocalDate localDate
+    ){
+        return ResponseEntity.ok(
+                bookingService.getBookingsByDate(localDate)
+        );
     }
 }
