@@ -7,13 +7,18 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
-  loadAllColors,
-  DeskColors,
   resetLayout,
-  horizontalDesks
+  horizontalDesks,
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 import { useFavouritesStore } from "@/stores/favourites";
+
+const props = defineProps({
+  selectedDateISO: {
+    type: String,
+    required: true,
+  },
+});
 
 const favStore = useFavouritesStore();
 
@@ -27,10 +32,15 @@ const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
 const bookedDesks = ref<Set<string>>(new Set());
 
+// Дата из календаря (ISO): по умолчанию сегодня
+// const selectedDateISO = ref<string>(new Date().toISOString().slice(0, 10));
+
+// Если у тебя есть отдельный DatePicker, просто привяжи его так:
+// <DatePicker @update:date="(v:string)=> selectedDateISO.value = v" />
+
 function isDeskFavourite(id: string | number) {
   return favStore.isFav(Number(id));
 }
-
 
 function handleDeskClick(item: any) {
   if (item.static) return;
@@ -39,8 +49,8 @@ function handleDeskClick(item: any) {
   showBookingModal.value = true;
 }
 
-function getDeskColor(color: string){
-  switch(color){
+function getDeskColor(color: string) {
+  switch (color) {
     case "GREEN":
       return "#50C878";
     case "RED":
@@ -50,27 +60,24 @@ function getDeskColor(color: string){
     case "BLUE":
       return "#7393B3";
     case "GRAY":
-      return "#818589	";
-    case "NOT A COLOR":
+      return "#818589";
+    default:
       return "";
   }
-}
-
-function handleConfirmBooking(data: { duration: number }) {
-  if (selectedDesk.value) bookedDesks.value.add(selectedDesk.value.i);
-}
-
-function handleCancelBooking() {
-  if (selectedDesk.value) bookedDesks.value.delete(selectedDesk.value.i);
-  showBookingModal.value = false;
 }
 
 function isDeskBooked(id: string) {
   return bookedDesks.value.has(id);
 }
 
-function getExistingBooking(id: string) {
-  return isDeskBooked(id) ? { duration: 60 } : undefined;
+function handleCreated() {
+  // тут можно перезагрузить данные/цвета/лист букингов
+  console.log("[Map] booking created → refresh data");
+  showBookingModal.value = false;
+}
+
+function handleCancelBooking() {
+  showBookingModal.value = false;
 }
 </script>
 
@@ -97,17 +104,22 @@ function getExistingBooking(id: string) {
           :class="{
             static: item.static,
             favourite: isDeskFavourite(item.i),
-            vertical: !horizontalDesks.includes(Number(item.i))
+            vertical: !horizontalDesks.includes(Number(item.i)),
           }"
           @click="handleDeskClick(item)"
-          :style="{
-            backgroundColor: getDeskColor(item.color)
-            }"
+          :style="{ backgroundColor: getDeskColor(item.color) }"
         >
           <span class="text">{{ item.deskName || item.i }}</span>
           <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
-              <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="heart-icon"
+            >
+              <path
+                d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"
+              />
             </svg>
           </div>
         </div>
@@ -118,10 +130,10 @@ function getExistingBooking(id: string) {
       v-model="showBookingModal"
       :desk="selectedDesk"
       :is-booked="selectedDesk ? isDeskBooked(selectedDesk.i) : false"
-      :existing-booking="
-        selectedDesk ? getExistingBooking(selectedDesk.i) : undefined
-      "
-      @confirm="handleConfirmBooking"
+      :selected-date-i-s-o="props.selectedDateISO"
+      :office-start-hour="8"
+      :office-end-hour="18"
+      @created="handleCreated"
       @cancel="handleCancelBooking"
     />
   </div>
@@ -166,7 +178,7 @@ function getExistingBooking(id: string) {
   align-items: center;
   justify-content: center;
   position: relative;
-  border-radius : 10px;
+  border-radius: 10px;
   border: 2px solid #d1d5db;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -227,8 +239,7 @@ function getExistingBooking(id: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5),
-    0 0 0 3px #ffffff,
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5), 0 0 0 3px #ffffff,
     0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 100;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -244,7 +255,7 @@ function getExistingBooking(id: string) {
 
 /* Мягкое свечение для избранных десков */
 .desk.favourite::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -2px;
   border-radius: 10px;
@@ -261,7 +272,8 @@ function getExistingBooking(id: string) {
 }
 
 @keyframes gradientShift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -272,7 +284,6 @@ function getExistingBooking(id: string) {
 /* Улучшенный hover для избранных десков */
 .desk.favourite:hover .favourite-badge {
   transform: scale(1.2) rotate(5deg);
-  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.5),
-    0 1px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.5), 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 </style>

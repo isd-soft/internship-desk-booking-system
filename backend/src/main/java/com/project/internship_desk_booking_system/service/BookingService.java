@@ -68,11 +68,10 @@ public class BookingService {
         validateMaxDaysInAdvance(start);
         checkDeskAvailability(request.getDeskId(), start, end);
         checkUserAvailability(user.getId(), start, end);
-       validateWeeklyHoursLimit(user.getId(), start, end);
+        validateWeeklyHoursLimit(user.getId(), start, end);
 
-        log.info("✅ Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
+        log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
     }
-
 
     private void validateDeskType(Desk desk) {
         if (desk.getType() == DeskType.ASSIGNED || desk.getType() == DeskType.UNAVAILABLE) {
@@ -90,9 +89,13 @@ public class BookingService {
         int officeStart = bookingProperties.getOfficeStartHour();
         int officeEnd = bookingProperties.getOfficeEndHour();
 
-        if (start.getHour() < officeStart || end.getHour() >= officeEnd) {
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "OUTSIDE_OFFICE_HOURS",
-                    String.format("Booking must be within office hours (%02d:00–%02d:00)", officeStart, officeEnd));
+        if (start.getHour() < bookingProperties.getOfficeStartHour() || (end.getHour() > officeEnd ||
+                (end.getHour() == officeEnd && end.getMinute() > 0))) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "OUTSIDE_OFFICE_HOURS",
+                    String.format("Booking must be within office hours (%02d:00–%02d:00)", officeStart, officeEnd)
+            );
         }
         log.debug("Booking is within office hours ({}–{})", officeStart, officeEnd);
     }
