@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 public class BookingResponse {
     private Long bookingId;
     private Long userId;
-    private Long deskId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BookingStatus status;

@@ -289,11 +289,15 @@ export default {
 
     // Helper functions to extract data from the API response
     const hasBookingsPerDay = () => {
-      return stats.value?.bookingHoursPerDay && Array.isArray(stats.value.bookingHoursPerDay) && stats.value.bookingHoursPerDay.length > 0;
+      return stats.value?.bookingHoursPerDay &&
+          Array.isArray(stats.value.bookingHoursPerDay) &&
+          stats.value.bookingHoursPerDay.length > 0;
     };
 
     const hasBookingsPerWeek = () => {
-      return stats.value?.bookingHoursPerWeek && Array.isArray(stats.value.bookingHoursPerWeek) && stats.value.bookingHoursPerWeek.length > 0;
+      return stats.value?.bookingHoursPerWeek &&
+          Array.isArray(stats.value.bookingHoursPerWeek) &&
+          stats.value.bookingHoursPerWeek.length > 0;
     };
 
     const getMostBookedDeskName = () => {
@@ -310,79 +314,6 @@ export default {
 
     const getLeastBookedCount = () => {
       return stats.value?.leastBookedDesk?.bookingCount || 0;
-    };
-
-    // Group bookings by day
-    const groupBookingsByDay = (bookings) => {
-      if (!bookings || bookings.length === 0) return [];
-
-      const grouped = {};
-
-      bookings.forEach(booking => {
-        // Parse the date string - handles LocalDateTime format from Java
-        const date = new Date(booking.startTime);
-
-        // Skip invalid dates
-        if (isNaN(date.getTime())) {
-          console.warn('Invalid date found:', booking.startTime);
-          return;
-        }
-
-        // Get date string (YYYY-MM-DD)
-        const dateKey = date.toISOString().split('T')[0];
-
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = {
-            startTime: dateKey + 'T00:00:00',
-            bookings: []
-          };
-        }
-
-        grouped[dateKey].bookings.push(booking);
-      });
-
-      // Convert to array and sort by date
-      return Object.values(grouped).sort((a, b) =>
-          new Date(a.startTime) - new Date(b.startTime)
-      );
-    };
-
-    // Group bookings by week
-    const groupBookingsByWeek = (bookings) => {
-      if (!bookings || bookings.length === 0) return [];
-
-      const grouped = {};
-
-      bookings.forEach(booking => {
-        const date = new Date(booking.startTime);
-
-        // Skip invalid dates
-        if (isNaN(date.getTime())) {
-          console.warn('Invalid date found:', booking.startTime);
-          return;
-        }
-
-        // Get week start (Monday)
-        const dayOfWeek = date.getDay();
-        const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        const weekStart = new Date(date.setDate(diff));
-        weekStart.setHours(0, 0, 0, 0);
-
-        const weekKey = weekStart.toISOString().split('T')[0];
-
-        if (!grouped[weekKey]) {
-          grouped[weekKey] = {
-            startTime: weekKey + 'T00:00:00',
-            bookings: []
-          };
-        }
-
-        grouped[weekKey].bookings.push(booking);
-      });
-
-      return Object.values(grouped).sort((a, b) =>
-          new Date(a.startTime) - new Date(b.startTime)
-      );
     };
 
     const createCharts = () => {
@@ -403,25 +334,30 @@ export default {
         hoursChartInstance = null;
       }
 
-      // Daily Bookings Chart (using bookingHoursPerDay)
+      // Daily Bookings Chart
       if (bookingsChartCanvas.value && hasBookingsPerDay()) {
         const ctx = bookingsChartCanvas.value.getContext('2d');
 
-        // Group the flat list of bookings by day
-        const groupedByDay = groupBookingsByDay(stats.value.bookingHoursPerDay);
+        // Backend now sends aggregated data: [{date: "2025-11-09", count: 10}, ...]
+        const dailyData = stats.value.bookingHoursPerDay;
 
-        console.log('Grouped daily data:', groupedByDay);
+        console.log('Daily data from backend:', dailyData);
 
         try {
-          const labels = [];
-          const bookingCounts = [];
+          const labels = dailyData.map(item => {
+            // Parse the date string (format: "2025-11-09" or array [2025, 11, 9])
+            let date;
+            if (Array.isArray(item.date)) {
+              // Handle LocalDate as array [year, month, day]
+              date = new Date(item.date[0], item.date[1] - 1, item.date[2]);
+            } else {
+              date = new Date(item.date);
+            }
 
-          groupedByDay.forEach(dayData => {
-            const date = new Date(dayData.startTime);
-            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            labels.push(formattedDate);
-            bookingCounts.push(dayData.bookings.length);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           });
+
+          const bookingCounts = dailyData.map(item => item.count);
 
           bookingsChartInstance = new Chart(ctx, {
             type: 'bar',
@@ -493,25 +429,30 @@ export default {
         }
       }
 
-      // Weekly Bookings Chart (using bookingHoursPerWeek)
+      // Weekly Bookings Chart
       if (hoursChartCanvas.value && hasBookingsPerWeek()) {
         const ctx = hoursChartCanvas.value.getContext('2d');
 
-        // Group the flat list of bookings by week
-        const groupedByWeek = groupBookingsByWeek(stats.value.bookingHoursPerWeek);
+        // Backend now sends aggregated data: [{date: "2025-11-02", count: 1}, ...]
+        const weeklyData = stats.value.bookingHoursPerWeek;
 
-        console.log('Grouped weekly data:', groupedByWeek);
+        console.log('Weekly data from backend:', weeklyData);
 
         try {
-          const labels = [];
-          const bookingCounts = [];
+          const labels = weeklyData.map(item => {
+            // Parse the date string (format: "2025-11-09" or array [2025, 11, 9])
+            let date;
+            if (Array.isArray(item.date)) {
+              // Handle LocalDate as array [year, month, day]
+              date = new Date(item.date[0], item.date[1] - 1, item.date[2]);
+            } else {
+              date = new Date(item.date);
+            }
 
-          groupedByWeek.forEach(weekData => {
-            const date = new Date(weekData.startTime);
-            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            labels.push(formattedDate);
-            bookingCounts.push(weekData.bookings.length);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           });
+
+          const bookingCounts = weeklyData.map(item => item.count);
 
           hoursChartInstance = new Chart(ctx, {
             type: 'line',

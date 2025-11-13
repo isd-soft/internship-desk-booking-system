@@ -97,7 +97,7 @@ public class BookingService {
         log.debug("Booking is within office hours ({}–{})", officeStart, officeEnd);
     }
 
-    private void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
+    public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
         LocalDateTime now = LocalDateTime.now();
 
         if (startTime.isBefore(now)) {
