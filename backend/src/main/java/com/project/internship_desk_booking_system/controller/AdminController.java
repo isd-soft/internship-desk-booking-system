@@ -113,4 +113,5 @@ public class AdminController {
                 adminService.changeCurrentCoordinates(coordinatesUpdateCommand)
         );
     }
+
 }
