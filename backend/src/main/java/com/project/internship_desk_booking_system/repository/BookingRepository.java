@@ -193,6 +193,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("localDate") LocalDate localDate
     );
 
+    List<Booking> userId(Long userId);
     @Query("""
             SELECT b
             FROM Booking b
