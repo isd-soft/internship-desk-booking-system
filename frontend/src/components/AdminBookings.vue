@@ -1,13 +1,13 @@
 <template>
-  <div class="admin-bookings">
-    <div class="admin-card">
-      <div class="admin-header">
-        <div class="title-wrap">
-          <div class="workspace-label">ADMIN PANEL</div>
-          <h2 class="title">All Bookings</h2>
-          <span class="sub">{{ filteredBookings.length }} total bookings</span>
+  <div class="bookings-container">
+    <div class="bookings-card">
+      <div class="bookings-header">
+        <div class="header-title-section">
+          <div class="header-label">ADMIN PANEL</div>
+          <h2 class="header-title">All Bookings</h2>
+          <span class="header-subtitle">{{ filteredBookings.length }} total bookings</span>
         </div>
-        <div class="header-actions">
+        <div class="header-controls">
           <v-text-field
               v-model="searchQuery"
               density="compact"
@@ -17,7 +17,7 @@
               placeholder="Search bookings..."
               style="max-width: 250px;"
               :disabled="loading"
-              class="search-field"
+              class="control-input"
           />
 
           <v-select
@@ -32,7 +32,7 @@
               :clearable="false"
               hide-details
               label="Filter by status"
-              class="filter-select"
+              class="control-select"
           />
 
           <v-select
@@ -47,21 +47,17 @@
               :clearable="false"
               hide-details
               label="Filter by desk type"
-              class="filter-select"
+              class="control-select"
           />
 
           <v-btn
               color="#171717"
               variant="flat"
               @click="resetFilters"
-              class="reset-btn"
+              class="control-button"
           >
             Reset Filters
           </v-btn>
-
-          <v-chip size="small" color="#171717" variant="flat" class="count-chip">
-            {{ filteredBookings.length }}
-          </v-chip>
         </div>
       </div>
 
@@ -75,9 +71,9 @@
         {{ error }}
       </v-alert>
 
-      <div v-if="loading" class="loading-wrap">
+      <div v-if="loading" class="loading-container">
         <v-progress-circular indeterminate size="48" width="4" color="#171717" />
-        <p class="loading-text mt-3">Loading bookings…</p>
+        <p class="loading-message mt-3">Loading bookings…</p>
       </div>
 
       <template v-else>
@@ -86,44 +82,44 @@
             :items="filteredBookings"
             item-key="id"
             density="compact"
-            class="elevated-table"
+            class="bookings-table"
             :items-per-page="15"
             fixed-header
             height="70vh"
         >
           <template #item.userId="{ item }">
-            <span class="cell-strong">{{ item.userId ?? '—' }}</span>
+            <span class="table-text-bold">{{ item.userId ?? '—' }}</span>
           </template>
 
           <template #item.deskName="{ item }">
-            <div class="cell-main">
-              <div class="desk-name">{{ item.deskName }}</div>
-              <div class="desk-meta">{{ item.zoneName }} • {{ item.zoneId }}</div>
+            <div class="table-cell-stacked">
+              <div class="table-text-bold">{{ item.deskName }}</div>
+              <div class="table-text-meta">{{ item.zoneAbv }} • {{ item.zoneId }}</div>
             </div>
           </template>
 
           <template #item.deskType="{ item }">
-            <v-chip size="x-small" :color="getColor(item.deskType)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getStatusColor(item.deskType)" variant="flat" class="table-chip">
               {{ item.deskType }}
             </v-chip>
           </template>
 
           <template #item.startTime="{ item }">
-            <div class="nowrap">{{ formatDate(item.startTime) }}</div>
-            <div class="muted nowrap">{{ formatTime(item.startTime) }}</div>
+            <div class="table-text-primary">{{ formatDate(item.startTime) }}</div>
+            <div class="table-text-secondary">{{ formatTime(item.startTime) }}</div>
           </template>
 
           <template #item.endTime="{ item }">
-            <div class="nowrap">{{ formatDate(item.endTime) }}</div>
-            <div class="muted nowrap">{{ formatTime(item.endTime) }}</div>
+            <div class="table-text-primary">{{ formatDate(item.endTime) }}</div>
+            <div class="table-text-secondary">{{ formatTime(item.endTime) }}</div>
           </template>
 
           <template #item.duration="{ item }">
-            <span class="cell-strong">{{ item.duration }}</span>
+            <span class="table-text-bold">{{ item.duration }}</span>
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="getColor(item.status)" variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat" class="table-chip">
               {{ item.status }}
             </v-chip>
           </template>
@@ -139,12 +135,12 @@
                     color="#171717"
                     :loading="cancellingId === item.id"
                     :disabled="cancellingId === item.id"
-                    class="action-btn"
+                    class="table-action-button"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
-              <v-list density="compact" class="action-menu">
+              <v-list density="compact" class="table-action-menu">
                 <v-list-item
                     @click="viewBooking(item)"
                     prepend-icon="mdi-eye"
@@ -156,7 +152,7 @@
                     title="Edit">
                 </v-list-item>
                 <v-list-item
-                    @click="cancelBooking(item)"
+                    @click="CancelBooking(item)"
                     prepend-icon="mdi-cancel"
                     title="Cancel booking"
                     :disabled="cancellingId === item.id || item.status === 'CANCELLED'"
@@ -166,10 +162,10 @@
           </template>
 
           <template #no-data>
-            <div class="empty-state">
+            <div class="table-empty-state">
               <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-calendar-blank</v-icon>
-              <div class="empty-title">No bookings found</div>
-              <div class="empty-sub">Try adjusting your filters or check back later.</div>
+              <div class="table-empty-title">No bookings found</div>
+              <div class="table-empty-subtitle">Try adjusting your filters or check back later.</div>
             </div>
           </template>
         </v-data-table>
@@ -184,8 +180,38 @@
             :show="showEditModal"
             :booking="selectedBooking"
             @close="showEditModal = false"
-            @save="saveBooking"
+            @save="handleSaveBooking"
         />
+        <v-dialog v-model="showCancelDialog" max-width="500">
+          <v-card class="delete-dialog">
+            <v-card-title class="dialog-title">
+              <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+              Cancel Booking
+            </v-card-title>
+            <v-card-text class="dialog-text">
+              Are you sure you want to deactivate booking <strong>{{ selectedBooking?.name }}</strong>?
+              This action cannot be undone.
+            </v-card-text>
+            <v-card-actions class="dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn
+                  variant="text"
+                  @click="showCancelDialog = false"
+                  :disabled="cancellingId !== null"
+              >
+                NO
+              </v-btn>
+              <v-btn
+                  color="error"
+                  variant="flat"
+                  @click="confirmCancelBooking"
+                  :loading="cancellingId !== null"
+              >
+                YES
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </template>
     </div>
   </div>
@@ -209,6 +235,10 @@ const searchQuery = ref('');
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
+const showCancelDialog = ref(false);
+const successMessage = ref(null);
+
+
 
 const STATUS_OPTIONS = [
   { title: 'All', value: 'ALL' },
@@ -224,24 +254,41 @@ const TYPE_OPTIONS = [
   { title: 'Unavailable', value: 'UNAVAILABLE' },
 ];
 
+const STATUS_COLOR_MAP: Record<string, string> = {
+  ACTIVE: "#10b981",
+  SHARED: "#10b981",
+  COMPLETED: "#0b4df5",
+  CONFIRMED: "#0b4df5",
+  ASSIGNED: "#0b4df5",
+  CANCELLED: "#ef4444",
+  DEACTIVATED: "#ef4444",
+  UNAVAILABLE: "#737373FF",
+};
+
+const DEFAULT_COLOR = "#737373";
+
 const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
 const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 
 const headers = [
-  { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
-  { title: 'Desk ID', key: 'deskId', width: 100 },
-  { title: 'User ID', key: 'userId', width: 100 },
-  { title: 'Desk', key: 'deskName', width: 220 },
-  { title: 'Desk Type', key: 'deskType', width: 100 },
-  { title: 'Start', key: 'startTime', width: 150 },
-  { title: 'End', key: 'endTime', width: 150 },
-  { title: 'Duration', key: 'duration', width: 110 },
-  { title: 'Status', key: 'status', width: 120 },
-  { title: '', key: 'actions', width: 56, align: 'end', sortable: false },
-];
+  { title: 'ID', key: 'id', width: 80, align: 'start', sortable: true },
+  { title: 'Desk Name', key: 'deskName', width: 150, align: 'start', sortable: true },
+  { title: 'Zone', key: 'zoneName', width: 150, align: 'start', sortable: true },
+  { title: 'Type', key: 'deskType', width: 100, align: 'center', sortable: false },
+  { title: 'Start Time', key: 'startTime', width: 160, align: 'center', sortable: false },
+  { title: 'End Time', key: 'endTime', width: 160, align: 'center', sortable: false },
+  { title: 'Duration', key: 'duration', width: 120, align: 'center', sortable: false },
+  { title: 'Status', key: 'status', width: 120, align: 'center', sortable: false },
+  { title: 'Actions', key: 'actions', width: 120, align: 'center', sortable: false },
+] as const;
 
 const filteredBookings = computed(() => {
-  let filtered = bookings.value;
+  return applyFilters(bookings.value)
+      .map(transformBookingData);
+});
+
+function applyFilters(bookingsList: any[]) {
+  let filtered = bookingsList;
 
   if (statusFilter.value !== 'ALL') {
     filtered = filtered.filter(b => b.status === statusFilter.value);
@@ -252,27 +299,90 @@ const filteredBookings = computed(() => {
   }
 
   if (searchQuery.value) {
-    const search = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(b =>
-        b.desk?.displayName?.toLowerCase().includes(search) ||
-        b.user_id?.toString().includes(search)
-    );
+    filtered = applySearchFilter(filtered, searchQuery.value);
   }
 
-  return filtered.map(b => ({
-    id: b.bookingId ?? '—',
-    deskId: b.desk?.id ?? null,
-    userId: b.user_id ?? null,
-    deskName: b.desk ? b.desk.displayName : '[Deleted Desk]',
-    zoneId: b.desk?.zoneDto?.id ?? '0',
-    zoneName: b.desk?.zoneDto?.zoneName ?? 'N/A',
-    deskType: b.desk?.type ?? 'N/A',
-    startTime: b.startTime,
-    endTime: b.endTime,
-    duration: formatDuration(b.startTime, b.endTime),
-    status: b.status ?? '—',
-  }));
-});
+  return filtered;
+}
+
+function applySearchFilter(bookingsList: any[], query: string) {
+  const search = query.toLowerCase();
+  return bookingsList.filter(b =>
+      b.desk?.displayName?.toLowerCase().includes(search) ||
+      b.user_id?.toString().includes(search)
+  );
+}
+
+function transformBookingData(booking: any) {
+  return {
+    id: booking.bookingId ?? '—',
+    deskId: booking.desk?.id ?? null,
+    userId: booking.userId ?? null,
+    deskName: booking.desk ? booking.desk.displayName : '[Deleted Desk]',
+    zoneId: booking.desk?.zoneDto?.id ?? '0',
+    zoneName: booking.desk?.zoneDto?.zoneName ?? 'N/A',
+    zoneAbv: booking.desk?.zoneDto?.zoneAbv ?? 'N/A',
+    deskType: booking.desk?.type ?? 'N/A',
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    duration: calculateDuration(booking.startTime, booking.endTime),
+    status: booking.status ?? '—',
+  };
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTime(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateTimeLocal(dateStr: string): string {
+  const date = new Date(dateStr);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function calculateDuration(startStr: string, endStr: string): string {
+  if (!startStr || !endStr) return '—';
+
+  const diffMs = +new Date(endStr) - +new Date(startStr);
+  const totalMinutes = Math.max(0, Math.round(diffMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return hours > 0 ? `${hours}h ${minutes.toString().padStart(2, '0')}m` : `${minutes}m`;
+}
+
+function getStatusColor(status: string): string {
+  return STATUS_COLOR_MAP[status?.toUpperCase()] || DEFAULT_COLOR;
+}
+
+async function fetchBookings() {
+  try {
+    loading.value = true;
+    error.value = null;
+    const params = statusFilter.value !== 'ALL' ? { status: statusFilter.value } : {};
+    const response = await api.get('/booking/all', { params });
+    bookings.value = response.data;
+  } catch (err: any) {
+    console.error('Error fetching bookings:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to fetch bookings';
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function updateBooking(bookingId: number, updateData: any) {
+  await api.patch(`/admin/edit/booking/${bookingId}`, updateData);
+}
+
+async function cancelBookingById(bookingId: number) {
+  await api.patch(`/admin/cancel/booking/${bookingId}`);
+}
 
 function resetFilters() {
   statusFilter.value = 'ALL';
@@ -280,76 +390,24 @@ function resetFilters() {
   searchQuery.value = '';
 }
 
-const fetchBookings = async () => {
-  try {
-    loading.value = true;
-    error.value = null;
-    const params = statusFilter.value !== 'ALL' ? { status: statusFilter.value } : {};
-    const response = await api.get('/booking/all', { params });
-    bookings.value = response.data;
-  } catch (err) {
-    console.error('Error fetching bookings:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to fetch bookings';
-  } finally {
-    loading.value = false;
-  }
-};
-
-function getColor(status: string): string {
-  const statusMap: Record<string, string> = {
-    ACTIVE: "#10b981",
-    SHARED: "#10b981",
-    COMPLETED: "#0b4df5",
-    CONFIRMED: "#0b4df5",
-    ASSIGNED: "#0b4df5",
-    CANCELLED: "#ef4444",
-    DEACTIVATED: "#ef4444",
-    UNAVAILABLE: "#737373FF",
-  };
-  return statusMap[status?.toUpperCase()] || "#737373";
-}
-
-function toDatetimeLocalValue(dateStr) {
-  const date = new Date(dateStr);
-  const pad = n => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function formatDate(dateStr) {
-  return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
-}
-
-function formatTime(dateStr) {
-  return dateStr ? new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-}
-
-function formatDuration(startStr, endStr) {
-  if (!startStr || !endStr) return '—';
-  const diff = new Date(endStr) - new Date(startStr);
-  const min = Math.max(0, Math.round(diff / 60000));
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
-}
-
-function viewBooking(item) {
+function viewBooking(item: any) {
   selectedBooking.value = item;
   showViewModal.value = true;
 }
 
-function editBooking(item) {
+function editBooking(item: any) {
   selectedBooking.value = {
     id: item.id,
     userId: item.userId,
     deskId: item.deskId,
-    startTime: toDatetimeLocalValue(item.startTime),
-    endTime: toDatetimeLocalValue(item.endTime),
+    startTime: formatDateTimeLocal(item.startTime),
+    endTime: formatDateTimeLocal(item.endTime),
     status: item.status
   };
   showEditModal.value = true;
 }
 
-async function saveBooking(updatedData) {
+async function handleSaveBooking(updatedData: any) {
   try {
     const bookingUpdateCommand = {
       userId: selectedBooking.value.userId,
@@ -359,44 +417,58 @@ async function saveBooking(updatedData) {
       status: updatedData.status
     };
 
-    await api.patch(`/admin/edit/booking/${selectedBooking.value.id}`, bookingUpdateCommand);
+    await updateBooking(selectedBooking.value.id, bookingUpdateCommand);
     await fetchBookings();
     showEditModal.value = false;
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error updating booking:", err);
     error.value = err.response?.data?.message || 'Failed to update booking';
   }
 }
+function CancelBooking(item) {
+  selectedBooking.value = item;
+  showCancelDialog.value = true;
+}
 
-async function cancelBooking(item) {
-  if (!confirm(`Cancel booking #${item.id}?`)) return;
+async function confirmCancelBooking() {
+  if (!selectedBooking.value?.id) return;
 
   try {
-    cancellingId.value = item.id;
-    await api.patch(`/admin/cancel/booking/${item.id}`);
+    cancellingId.value = selectedBooking.value.id;
+    error.value = null;
+    successMessage.value = null;
+
+    await api.patch(`/admin/cancel/booking/${selectedBooking.value.id}`);
+
+    successMessage.value = `Booking  "${selectedBooking.value.name}" cancelled successfully`;
+    showCancelDialog.value = false;
+    selectedBooking.value = null;
+
+    // Refresh desk list
     await fetchBookings();
   } catch (err) {
-    console.error('Cancel booking failed:', err);
-    error.value = err.response?.data?.message || `Failed to cancel booking #${item.id}`;
+    console.error('Error cancelling booking:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to delete desk';
+    showCancelDialog.value = false;
   } finally {
     cancellingId.value = null;
   }
 }
 
+function updateRouteQuery(status: string) {
+  const nextQuery = {
+    ...route.query,
+    status: status === 'ALL' ? undefined : status
+  };
+  router.replace({ query: nextQuery });
+}
+
 onMounted(() => {
-  const initial = String(route.query?.status || 'ALL').toUpperCase();
-  if (!['ALL', 'ACTIVE', 'CANCELLED', 'CONFIRMED'].includes(initial)) {
-    router.replace({ query: { ...route.query, status: undefined } });
-    statusFilter.value = 'ALL';
-  } else {
-    statusFilter.value = initial;
-  }
   fetchBookings();
 });
 
 watch(statusFilter, (val) => {
-  const nextQuery = { ...route.query, status: val === 'ALL' ? undefined : val };
-  router.replace({ query: nextQuery });
+  updateRouteQuery(val);
   fetchBookings();
 });
 </script>
@@ -410,13 +482,13 @@ watch(statusFilter, (val) => {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.admin-bookings {
+.bookings-container {
   padding: 28px;
   background: #fafafa;
   min-height: 100vh;
 }
 
-.admin-card {
+.bookings-card {
   background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 20px;
@@ -424,7 +496,7 @@ watch(statusFilter, (val) => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-.admin-header {
+.bookings-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -433,26 +505,20 @@ watch(statusFilter, (val) => {
   border-bottom: 2px solid #f5f5f5;
 }
 
-.title-wrap {
+.header-title-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.workspace-label {
+.header-label {
   font-size: 11px;
   font-weight: 700;
   color: #737373;
   letter-spacing: 1.5px;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.title {
+.header-title {
   font-size: 28px;
   font-weight: 800;
   color: #171717;
@@ -461,22 +527,38 @@ watch(statusFilter, (val) => {
   line-height: 1;
 }
 
-.sub {
+.header-subtitle {
   font-size: 13px;
   font-weight: 600;
   color: #737373;
   letter-spacing: 0.3px;
 }
 
-.count-chip {
-  font-weight: 700;
-  font-size: 13px;
-  color: #fff !important;
-  letter-spacing: 0.3px;
-  padding: 0 12px !important;
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.reset-btn {
+.control-input :deep(.v-field),
+.control-select :deep(.v-field) {
+  border-radius: 12px !important;
+  border: 2px solid #e5e5e5 !important;
+  font-weight: 600;
+}
+
+.control-input :deep(.v-field:hover),
+.control-select :deep(.v-field:hover) {
+  border-color: #a3a3a3 !important;
+}
+
+.control-input :deep(.v-field--focused),
+.control-select :deep(.v-field--focused) {
+  border-color: #171717 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.control-button {
   font-weight: 600 !important;
   text-transform: none !important;
   letter-spacing: 0.3px;
@@ -485,30 +567,20 @@ watch(statusFilter, (val) => {
   transition: all 0.3s ease;
 }
 
-.reset-btn:hover {
+.control-button:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
   transform: translateY(-1px);
 }
 
-.search-field :deep(.v-field),
-.filter-select :deep(.v-field) {
-  border-radius: 12px !important;
-  border: 2px solid #e5e5e5 !important;
-  font-weight: 600;
+.control-chip {
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff !important;
+  letter-spacing: 0.3px;
+  padding: 0 12px !important;
 }
 
-.search-field :deep(.v-field:hover),
-.filter-select :deep(.v-field:hover) {
-  border-color: #a3a3a3 !important;
-}
-
-.search-field :deep(.v-field--focused),
-.filter-select :deep(.v-field--focused) {
-  border-color: #171717 !important;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
-.loading-wrap {
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -516,25 +588,47 @@ watch(statusFilter, (val) => {
   padding: 60px 0;
 }
 
-.loading-text {
+.loading-message {
   font-size: 15px;
   font-weight: 600;
   color: #737373;
   letter-spacing: 0.3px;
 }
+/* Delete Dialog */
+.delete-dialog {
+  border-radius: 16px !important;
+}
 
-.elevated-table {
+.dialog-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: #171717;
+  padding: 24px 24px 16px;
+}
+
+.dialog-text {
+  font-size: 15px;
+  color: #525252;
+  padding: 0 24px 16px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
+}
+
+.bookings-table {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #f5f5f5;
 }
 
-.elevated-table :deep(table) {
+.bookings-table :deep(table) {
   border-collapse: separate !important;
   border-spacing: 0;
 }
 
-.elevated-table :deep(thead th) {
+.bookings-table :deep(thead th) {
   position: sticky;
   top: 0;
   background: #fafafa !important;
@@ -546,94 +640,87 @@ watch(statusFilter, (val) => {
   border-bottom: 2px solid #f5f5f5 !important;
 }
 
-.elevated-table :deep(tbody tr) {
+.bookings-table :deep(tbody tr) {
   transition: all 0.2s ease;
 }
 
-.elevated-table :deep(tbody tr:hover) {
+.bookings-table :deep(tbody tr:hover) {
   background: #fafafa !important;
-  transform: scale(1.001);
+
 }
 
-.elevated-table :deep(tbody td) {
+.bookings-table :deep(tbody td) {
   font-size: 14px;
   border-bottom: 1px solid #f5f5f5 !important;
 }
 
-.cell-main {
+.table-cell-stacked {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.desk-name {
+.table-text-bold {
   font-weight: 700;
   color: #171717;
-  font-size: 14px;
   letter-spacing: -0.2px;
 }
 
-.desk-meta {
+.table-text-meta {
   font-weight: 600;
   color: #737373;
   font-size: 12px;
   letter-spacing: 0.3px;
 }
 
-.cell-strong {
-  font-weight: 700;
-  color: #171717;
-  letter-spacing: -0.2px;
-}
-
-.muted {
-  color: #737373;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.nowrap {
+.table-text-primary {
   white-space: nowrap;
   font-weight: 600;
   color: #171717;
   font-size: 13px;
 }
 
-.status-chip {
+.table-text-secondary {
+  color: #737373;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.table-chip {
   font-weight: 700 !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 11px !important;
 }
 
-.action-btn {
+.table-action-button {
   border-radius: 8px !important;
   transition: all 0.2s ease;
 }
 
-.action-btn:hover {
+.table-action-button:hover {
   background-color: #f5f5f5 !important;
   transform: rotate(90deg);
 }
 
-.action-menu {
+.table-action-menu {
   border-radius: 12px !important;
   border: 1px solid #e5e5e5 !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
 }
 
-.action-menu :deep(.v-list-item) {
+.table-action-menu :deep(.v-list-item) {
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
-.empty-state {
+.table-empty-state {
   text-align: center;
   padding: 60px 0;
   color: #737373;
 }
 
-.empty-title {
+.table-empty-title {
   font-weight: 700;
   color: #171717;
   font-size: 18px;
@@ -641,7 +728,7 @@ watch(statusFilter, (val) => {
   letter-spacing: -0.3px;
 }
 
-.empty-sub {
+.table-empty-subtitle {
   font-weight: 600;
   color: #737373;
   font-size: 14px;
