@@ -69,11 +69,13 @@ const legends = [
 .layout {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
 .layout > :first-child {
   width: 340px;
   border-right: 1px solid #ddd;
+  flex-shrink: 0;
 }
 
 .map-holder {
@@ -85,10 +87,13 @@ const legends = [
   padding: 32px 20px 20px;
   gap: 20px;
   overflow: auto;
+  min-width: 0;
 }
 
 .legend-bar {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   padding: 8px;
   background: rgba(255, 255, 255, 0.7);
@@ -96,6 +101,7 @@ const legends = [
   border-radius: 20px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  max-width: 100%;
 }
 
 .legend-badge {
@@ -110,6 +116,7 @@ const legends = [
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: default;
   overflow: hidden;
+  min-width: 0;
 }
 
 .legend-badge:hover {
@@ -151,5 +158,101 @@ const legends = [
   white-space: nowrap;
   position: relative;
   z-index: 1;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .layout > :first-child {
+    width: 280px;
+  }
+
+  .map-holder {
+    padding: 24px 16px 16px;
+    gap: 16px;
+  }
+
+  .legend-bar {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .legend-badge {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .badge-text {
+    font-size: 12px;
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .layout > :first-child {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .map-holder {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  .legend-bar {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .legend-badge {
+    width: 100%;
+    padding: 10px 14px;
+    justify-content: flex-start;
+  }
+
+  .badge-text {
+    font-size: 13px;
+  }
+
+  .badge-dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .map-holder {
+    padding: 12px 8px;
+    gap: 10px;
+  }
+
+  .legend-badge {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .badge-text {
+    font-size: 12px;
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+  }
 }
 </style>

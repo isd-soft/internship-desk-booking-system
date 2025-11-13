@@ -44,7 +44,7 @@ public class BookingController {
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/upcoming")
     public ResponseEntity<List<BookingResponse>> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return ResponseEntity.ok(bookingService.getUpcomingBookingsR(principal.getEmail()));
+        return ResponseEntity.ok(bookingService.getUpcomingBookings(principal.getEmail()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -56,6 +56,7 @@ public class BookingController {
 
     }
 
+/*
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(
             @AuthenticationPrincipal CustomUserPrincipal principal,
@@ -64,12 +65,20 @@ public class BookingController {
         bookingService.cancelBooking(email, bookingId);
         return ResponseEntity.ok().build();
     }
+*/
+
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long id) {
+        bookingService.cancelBooking(principal.getEmail(), id);
+        return ResponseEntity.noContent().build();
+    }
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/byDate")
     public ResponseEntity<List<BookingDTO>> getBookingsByDate(
             @RequestParam LocalDate localDate
-    ){
+    ) {
         return ResponseEntity.ok(
                 bookingService.getBookingsByDate(localDate)
         );
