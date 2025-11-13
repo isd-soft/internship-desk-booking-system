@@ -345,6 +345,11 @@ public class BookingService {
                 bookingDTO.setStartDate(booking.getStartTime());
                 bookingDTO.setEndDate(booking.getEndTime());
 
+                if(booking.getDesk().getStatus() == DeskStatus.DEACTIVATED){
+                    deskColorDTO.setDeskColor(DeskColor.GRAY);
+                    continue;
+                }
+
                 totalDuration += Duration
                         .between(
                                 booking.getStartTime(),
