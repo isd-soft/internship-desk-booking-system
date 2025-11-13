@@ -1,6 +1,6 @@
 package com.project.internship_desk_booking_system.service;
 
-import com.project.internship_desk_booking_system.command.BookingResponseDto;
+import com.project.internship_desk_booking_system.dto.BookingChartDataDTO;
 import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
 import com.project.internship_desk_booking_system.dto.StatisticsDTO;
@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,18 +39,16 @@ public class StatisticsService {
         DeskStatsDTO mostBookedDesk = convertToDTO(bookingRepository.findMostBookedDesk());
         DeskStatsDTO leastBookedDesk = convertToDTO(bookingRepository.findLeastBookedDesk());
 
+        // Get aggregated daily booking data for the last day
         LocalDateTime dayStart = now.minusDays(1);
-        List<BookingResponseDto> bookingHoursPerDay = bookingRepository
-                .findByStartTimeBetween(dayStart, now)
-                .stream()
-                .map(bookingMapper::maptoDto)
-                .collect(Collectors.toList());
+        List<BookingChartDataDTO> bookingHoursPerDay = convertToChartData(
+                bookingRepository.countBookingsGroupedByDay(dayStart, now)
+        );
 
-        List<BookingResponseDto> bookingHoursPerWeek = bookingRepository
-                .findByStartTimeBetween(weekStart, now)
-                .stream()
-                .map(bookingMapper::maptoDto)
-                .collect(Collectors.toList());
+        // Get aggregated weekly booking data for the last week
+        List<BookingChartDataDTO> bookingHoursPerWeek = convertToChartData(
+                bookingRepository.countBookingsGroupedByWeek(weekStart, now)
+        );
 
         log.info("Statistics - Weekly Bookings: {}, Monthly Bookings: {}", weeklyBookings, monthlyBookings);
         log.info("Most Booked Desk: {}, Least Booked Desk: {}", mostBookedDesk, leastBookedDesk);
@@ -72,11 +72,15 @@ public class StatisticsService {
         DeskStatsDTO mostBooked = convertToDTO(bookingRepository.findMostBookedDeskInRange(startDate, endDate));
         DeskStatsDTO leastBooked = convertToDTO(bookingRepository.findLeastBookedDeskInRange(startDate, endDate));
 
-        List<BookingResponseDto> bookingHoursInRange = bookingRepository
-                .findByStartTimeBetween(startDate, endDate)
-                .stream()
-                .map(bookingMapper::maptoDto)
-                .collect(Collectors.toList());
+        // Get aggregated chart data for the date range
+        List<BookingChartDataDTO> bookingHoursInRange = convertToChartData(
+                bookingRepository.countBookingsGroupedByDay(startDate, endDate)
+        );
+
+        // For weekly view in custom date range
+        List<BookingChartDataDTO> weeklyBookingsInRange = convertToChartData(
+                bookingRepository.countBookingsGroupedByWeek(startDate, endDate)
+        );
 
         log.info("Date Range Statistics - Bookings: {}, Users: {}", bookingsInRange, usersInRange);
 
@@ -88,7 +92,7 @@ public class StatisticsService {
                 .mostBookedDesk(mostBooked)
                 .leastBookedDesk(leastBooked)
                 .bookingHoursPerDay(bookingHoursInRange)
-                .bookingHoursPerWeek(bookingHoursInRange)
+                .bookingHoursPerWeek(weeklyBookingsInRange)
                 .build();
     }
 
@@ -101,5 +105,34 @@ public class StatisticsService {
                 .deskName(projection.getDeskName())
                 .bookingCount(projection.getBookingCount())
                 .build();
+    }
+
+    /**
+     * Converts raw query results (Object[]) to BookingChartDataDTO list
+     * Expected format: [Date, Long] from SQL query
+     */
+    private List<BookingChartDataDTO> convertToChartData(List<Object[]> results) {
+        return results.stream()
+                .map(row -> {
+                    LocalDate date;
+                    // Handle both java.sql.Date and java.time.LocalDate
+                    if (row[0] instanceof Date) {
+                        date = ((Date) row[0]).toLocalDate();
+                    } else if (row[0] instanceof LocalDate) {
+                        date = (LocalDate) row[0];
+                    } else {
+                        date = LocalDate.parse(row[0].toString());
+                    }
+
+                    Long count = row[1] instanceof Number
+                            ? ((Number) row[1]).longValue()
+                            : Long.parseLong(row[1].toString());
+
+                    return BookingChartDataDTO.builder()
+                            .date(date)
+                            .count(count)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }

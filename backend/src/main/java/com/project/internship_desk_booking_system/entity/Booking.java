@@ -29,7 +29,8 @@ public class Booking {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "desk_id")
+    @JoinColumn(name = "desk_id", insertable = false, updatable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Desk desk;
 
     @Column(name = "start_time", nullable = false)
@@ -52,5 +53,16 @@ public class Booking {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+
+    @PostLoad
+    private void ensureDeskNotNull() {
+        if (this.desk == null) {
+            Desk placeholder = new Desk();
+            placeholder.setId(-1L);
+            placeholder.setDeskName("Deleted DESK");
+            placeholder.setType(null);
+            this.desk = placeholder;
+        }
     }
 }

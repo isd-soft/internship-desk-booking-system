@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -48,6 +49,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     List<Booking> findBookingsByUserOrderByStartTimeDesc(User user);
+
 
     @Query("SELECT b FROM Booking b " +
             "WHERE b.user.id = :userId " +
@@ -101,10 +103,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM desk d
     LEFT JOIN booking b ON b.desk_id = d.id
     GROUP BY d.id, d.desk_name
-    ORDER BY bookingCount DESC
+    HAVING COUNT(b.id) >= 1
+    ORDER BY COUNT(b.id) DESC, d.desk_name ASC
     LIMIT 1
 """, nativeQuery = true)
     DeskStatsProjection findMostBookedDesk();
+
     @Query(value = """
     SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
     FROM desk d
@@ -134,7 +138,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM desk d
     LEFT JOIN booking b ON b.desk_id = d.id AND b.start_time BETWEEN :startDate AND :endDate
     GROUP BY d.id, d.desk_name
-    ORDER BY bookingCount DESC
+    HAVING COUNT(b.id) >= 1
+    ORDER BY COUNT(b.id) DESC, d.desk_name ASC
     LIMIT 1
 """, nativeQuery = true)
     DeskStatsProjection findMostBookedDeskInRange(
@@ -149,4 +154,41 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findBookingsByDate(
             @Param("localDate") LocalDate localDate
     );
+
+    @Query(value = """
+    SELECT DATE(b.start_time) as date, COUNT(b.id) as count
+    FROM booking b
+    WHERE b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY DATE(b.start_time)
+    ORDER BY DATE(b.start_time)
+""", nativeQuery = true)
+    List<Object[]> countBookingsGroupedByDay(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query(value = """
+    SELECT DATE_TRUNC('week', b.start_time)::date as weekStart, 
+           COUNT(b.id) as count
+    FROM booking b
+    WHERE b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY DATE_TRUNC('week', b.start_time)
+    ORDER BY weekStart
+""", nativeQuery = true)
+    List<Object[]> countBookingsGroupedByWeek(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    Optional<Booking> findByDeskId(Long deskId);
+
+    @Modifying
+    @Query("""
+            UPDATE Booking b 
+            SET b.status = 'CANCELLED' 
+            WHERE b.desk.id = :deskId 
+            AND b.status = 'ACTIVE' 
+            AND b.endTime > CURRENT_TIMESTAMP
+            """)
+    void cancelAllActiveBookingsForDesk(@Param("deskId") Long deskId);
 }
