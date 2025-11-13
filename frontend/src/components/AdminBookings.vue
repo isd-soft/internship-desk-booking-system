@@ -263,7 +263,7 @@ const filteredBookings = computed(() => {
     id: b.bookingId ?? '—',
     deskId: b.desk?.id ?? null,
     userId: b.user_id ?? null,
-    deskName: b.desk?.displayName ?? 'N/A',
+    deskName: b.desk ? b.desk.displayName : '[Deleted Desk]',
     zoneId: b.desk?.zoneDto?.id ?? '0',
     zoneName: b.desk?.zoneDto?.zoneName ?? 'N/A',
     deskType: b.desk?.type ?? 'N/A',
