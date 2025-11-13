@@ -158,6 +158,22 @@ public class AdminService {
         return deskMapper.toDto(desk);
     }
 
+    public DeskDto activateDesk(
+            Long id
+    ){
+        log.info("Activating desk with id {}", id);
+
+        Desk desk = deskRepository.findById(id)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND,
+                "DESK_NOT_FOUND",
+                "Desk with id: " + id + " not found"
+                ));
+        desk.setStatus(DeskStatus.ACTIVE);
+        deskRepository.save(desk);
+        log.info("Desk {} activated successfully", id);
+        return deskMapper.toDto(desk);
+    }
+
     @Transactional
     public DeskDto editDesk(
             Long id,

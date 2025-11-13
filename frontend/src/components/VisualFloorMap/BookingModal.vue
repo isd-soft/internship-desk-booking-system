@@ -1,48 +1,245 @@
+<template>
+  <v-dialog
+    :model-value="modelValue"
+    @update:model-value="emit('update:modelValue', $event)"
+    max-width="520"
+    transition="dialog-bottom-transition"
+    persistent
+  >
+    <v-card class="booking-card">
+      <!-- 🔹 Header -->
+      <v-card-title class="card-header">
+        <div class="header-content">
+          <div class="header-info">
+            <div class="workspace-label">WORKSPACE</div>
+            <div class="desk-title">
+              {{ desk?.deskName || `Desk ${desk?.i}` }}
+            </div>
+
+            <!-- 📅 Вывод даты -->
+            <div class="date-badge">
+              <v-icon size="16" class="date-icon">mdi-calendar</v-icon>
+              <div class="date-content">
+                <div class="date-day">{{ formattedDay }}</div>
+                <div class="date-full">{{ formattedDateShort }}</div>
+              </div>
+            </div>
+          </div>
+          <v-btn icon variant="text" size="small" @click="closeModal">
+            <v-icon size="20">mdi-close</v-icon>
+          </v-btn>
+        </div>
+      </v-card-title>
+
+      <!-- 🔹 Time Selection -->
+      <v-card-text class="card-body">
+        <div class="section dark-slider">
+          <div class="section-title">Select Time Range</div>
+
+          <!-- Интерактивная временная шкала -->
+          <div class="timeline-container">
+            <div
+              ref="timelineRef"
+              class="timeline-track"
+              @mousedown="handleTrackClick"
+            >
+              <!-- Выбранный диапазон -->
+              <div
+                class="timeline-range"
+                :style="{
+                  left: `${startPosition}%`,
+                  width: `${endPosition - startPosition}%`,
+                }"
+              />
+
+              <!-- Ручка начала -->
+              <div
+                class="timeline-handle"
+                :style="{ left: `${startPosition}%` }"
+                @mousedown.stop="startDrag('start', $event)"
+              >
+                <div class="handle-time">{{ bookingForm.startHour }}:00</div>
+              </div>
+
+              <!-- Ручка конца -->
+              <div
+                class="timeline-handle"
+                :style="{ left: `${endPosition}%` }"
+                @mousedown.stop="startDrag('end', $event)"
+              >
+                <div class="handle-time">{{ bookingForm.endHour }}:00</div>
+              </div>
+            </div>
+
+            <!-- Часовые метки -->
+            <div class="timeline-labels">
+              <div
+                v-for="hour in hours"
+                :key="hour"
+                class="timeline-label"
+                :style="{ left: `${getHourPosition(hour)}%` }"
+              >
+                {{ hour }}:00
+              </div>
+            </div>
+          </div>
+
+          <!-- Отображение выбранного времени -->
+          <div class="time-range-display">
+            <div class="time-range-label">Selected</div>
+            <div class="time-range-value">{{ formattedTimeRange }}</div>
+            <div class="time-duration">
+              {{ duration }} {{ duration === 1 ? "hour" : "hours" }}
+            </div>
+          </div>
+        </div>
+
+        <!-- ❤️ Favourite button -->
+        <button
+          @click.stop="toggleFavourite"
+          :disabled="isProcessing || !deskId"
+          :class="['favourite-button', { active: isFavourite }]"
+        >
+          <v-icon size="20">
+            {{ isFavourite ? "mdi-heart" : "mdi-heart-outline" }}
+          </v-icon>
+          <span>
+            {{ isFavourite ? "Remove from Favourites" : "Add to Favourites" }}
+          </span>
+        </button>
+      </v-card-text>
+
+      <!-- 🔹 Actions -->
+      <v-card-actions class="card-actions">
+        <v-btn
+          class="confirm-button"
+          size="x-large"
+          @click.stop="confirmBooking"
+        >
+          {{ isBooked ? "Update Booking" : "Confirm Booking" }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
 <script setup lang="ts">
-import { reactive, watch, ref, computed } from "vue";
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
+import api from "@/plugins/axios";
 import { useFavouritesStore } from "@/stores/favourites";
 
 interface Props {
   modelValue: boolean;
   desk: any;
   isBooked: boolean;
-  existingBooking?: { duration: number };
-}
-interface Emits {
-  (e: "update:modelValue", value: boolean): void;
-  (e: "confirm", data: { duration: number }): void;
-  (e: "cancel"): void;
+  selectedDateISO: string;
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
-
-const bookingForm = reactive({ duration: 480 });
-const isProcessing = ref(false);
+const emit = defineEmits(["update:modelValue", "created", "cancel"]);
 
 const favStore = useFavouritesStore();
+const isProcessing = ref(false);
+const bookingForm = reactive({ startHour: 9, endHour: 18 });
 
-const deskId = computed<number | null>(() => {
-  const n = Number(props.desk?.i);
-  return Number.isFinite(n) ? n : null;
-});
+const MIN_HOUR = 9;
+const MAX_HOUR = 18;
+const hours = Array.from(
+  { length: MAX_HOUR - MIN_HOUR + 1 },
+  (_, i) => MIN_HOUR + i
+);
 
+const timelineRef = ref<HTMLElement | null>(null);
+const isDragging = ref<"start" | "end" | null>(null);
+
+const deskId = computed(() => Number(props.desk?.i ?? 0));
 const isFavourite = computed(() => favStore.isFav(deskId.value));
+
+const duration = computed(() => bookingForm.endHour - bookingForm.startHour);
+
+const startPosition = computed(
+  () => ((bookingForm.startHour - MIN_HOUR) / (MAX_HOUR - MIN_HOUR)) * 100
+);
+
+const endPosition = computed(
+  () => ((bookingForm.endHour - MIN_HOUR) / (MAX_HOUR - MIN_HOUR)) * 100
+);
 
 watch(
   () => props.modelValue,
   async (open) => {
-    if (!open) return;
-
-    await favStore.ensureLoaded();
-  },
-  { immediate: true }
+    if (open) await favStore.ensureLoaded();
+  }
 );
 
-
-function setDuration(minutes: number) {
-  bookingForm.duration = minutes;
+function getHourPosition(hour: number): number {
+  return ((hour - MIN_HOUR) / (MAX_HOUR - MIN_HOUR)) * 100;
 }
+
+function startDrag(type: "start" | "end", event: MouseEvent) {
+  event.preventDefault();
+  isDragging.value = type;
+}
+
+function handleMouseMove(event: MouseEvent) {
+  if (!isDragging.value || !timelineRef.value) return;
+
+  const rect = timelineRef.value.getBoundingClientRect();
+  const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+  const percentage = x / rect.width;
+  const hour = Math.round(MIN_HOUR + percentage * (MAX_HOUR - MIN_HOUR));
+
+  if (isDragging.value === "start") {
+    const newStart = Math.max(
+      MIN_HOUR,
+      Math.min(hour, bookingForm.endHour - 1)
+    );
+    bookingForm.startHour = newStart;
+  } else if (isDragging.value === "end") {
+    const newEnd = Math.max(
+      bookingForm.startHour + 1,
+      Math.min(hour, MAX_HOUR)
+    );
+    bookingForm.endHour = newEnd;
+  }
+}
+
+function handleMouseUp() {
+  isDragging.value = null;
+}
+
+function handleTrackClick(event: MouseEvent) {
+  if (!timelineRef.value) return;
+
+  const rect = timelineRef.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const percentage = x / rect.width;
+  const hour = Math.round(MIN_HOUR + percentage * (MAX_HOUR - MIN_HOUR));
+
+  const midPoint = (bookingForm.startHour + bookingForm.endHour) / 2;
+
+  if (hour < midPoint) {
+    bookingForm.startHour = Math.max(
+      MIN_HOUR,
+      Math.min(hour, bookingForm.endHour - 1)
+    );
+  } else {
+    bookingForm.endHour = Math.max(
+      bookingForm.startHour + 1,
+      Math.min(hour, MAX_HOUR)
+    );
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+});
 
 function closeModal() {
   emit("update:modelValue", false);
@@ -55,130 +252,82 @@ async function toggleFavourite() {
   isProcessing.value = false;
 }
 
-function handleConfirm() {
-  emit("confirm", { duration: bookingForm.duration });
-  closeModal();
-}
+const formattedDate = computed(() => {
+  if (!props.selectedDateISO) return "";
+  const d = new Date(props.selectedDateISO);
+  return d.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+});
 
-function handleCancel() {
-  emit("cancel");
-  closeModal();
-}
+const formattedDay = computed(() => {
+  if (!props.selectedDateISO) return "";
+  const d = new Date(props.selectedDateISO);
+  return d.toLocaleDateString("en-GB", { weekday: "short" }).toUpperCase();
+});
 
-function formatDuration(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return h ? `${h}h ${m}m` : `${m}m`;
+const formattedDateShort = computed(() => {
+  if (!props.selectedDateISO) return "";
+  const d = new Date(props.selectedDateISO);
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+});
+
+const formattedTimeRange = computed(() => {
+  const pad = (v: number) => String(v).padStart(2, "0");
+  return `${pad(bookingForm.startHour)}:00 - ${pad(bookingForm.endHour)}:00`;
+});
+
+async function confirmBooking() {
+  if (!deskId.value) return;
+
+  const startTime = `${props.selectedDateISO}T${String(
+    bookingForm.startHour
+  ).padStart(2, "0")}:00:00`;
+  const endTime = `${props.selectedDateISO}T${String(
+    bookingForm.endHour
+  ).padStart(2, "0")}:00:00`;
+
+  try {
+    await api.post("/booking", {
+      deskId: deskId.value,
+      startTime,
+      endTime,
+    });
+    emit("created");
+    closeModal();
+  } catch (err) {
+    console.error("Booking error:", err);
+  }
 }
 </script>
-
-<template>
-  <v-dialog
-    :model-value="modelValue"
-    @update:model-value="emit('update:modelValue', $event)"
-    max-width="480"
-    transition="dialog-bottom-transition"
-    persistent
-  >
-    <v-card class="booking-card">
-      <v-card-title class="card-header">
-        <div class="header-content">
-          <div class="header-info">
-            <div class="workspace-label">WORKSPACE</div>
-            <div class="desk-title">{{ desk?.deskName || `Desk ${desk?.i}` }}</div>
-          </div>
-          <v-btn icon variant="text" size="small" @click="closeModal">
-            <v-icon size="20">mdi-close</v-icon>
-          </v-btn>
-        </div>
-      </v-card-title>
-
-      <v-card-text class="card-body">
-
-
-
-<div class="section dark-slider">
-  <div class="section-title">Custom Duration</div>
-
-  <div class="slider-wrap">
-    <input
-      type="range"
-      min="60"
-      max="480"
-      step="1"
-      v-model="bookingForm.duration"
-      class="black-duration-slider"
-    />
-    <div class="slider-value-label">
-      {{ formatDuration(bookingForm.duration) }}
-    </div>
-  </div>
-
-<div class="slider-scale">
-  <span>1h</span>
-  <span>2h</span>
-  <span>4h</span>
-  <span>6h</span>
-  <span>8h</span>
-</div>
-  
-
-</div>
-
-        <button
-          @click.stop="toggleFavourite"
-          :disabled="isProcessing || !deskId"
-          :class="['favourite-button', { active: isFavourite }]"
-        >
-          <v-icon size="20">
-            {{ isFavourite ? 'mdi-heart' : 'mdi-heart-outline' }}
-          </v-icon>
-          <span>{{ isFavourite ? 'Remove from Favourites' : 'Add to Favourites' }}</span>
-        </button>
-
-      </v-card-text>
-
-      <v-card-actions class="card-actions">
-        <v-btn class="confirm-button" size="x-large" @click.stop="handleConfirm">
-          {{ isBooked ? "Update Booking" : "Confirm Booking" }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
-
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
-* {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 .booking-card {
-  border-radius: 20px !important;
+  border-radius: 20px;
   background: #ffffff;
-  border: 1px solid #e5e5e5;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
 .card-header {
-  padding: 28px 28px 24px 28px;
+  padding: 26px 28px 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-content {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  width: 100%;
-}
-
-.header-info {
-  flex: 1;
+  align-items: flex-start;
 }
 
 .workspace-label {
@@ -186,268 +335,205 @@ function formatDuration(minutes: number) {
   font-weight: 700;
   color: #737373;
   letter-spacing: 1.5px;
-  margin-bottom: 8px;
 }
 
 .desk-title {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: #171717;
-  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.date-icon {
+  color: #666;
+}
+
+.date-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.date-day {
+  font-size: 10px;
+  font-weight: 800;
+  color: #666;
+  letter-spacing: 0.8px;
   line-height: 1;
 }
 
-.close-button {
-  opacity: 0.6;
-  transition: all 0.2s ease;
-  margin-top: -4px;
-}
-
-.close-button:hover {
-  opacity: 1;
-  background-color: #f5f5f5 !important;
-  transform: rotate(90deg);
+.date-full {
+  font-size: 13px;
+  font-weight: 600;
+  color: #171717;
+  line-height: 1.2;
 }
 
 .card-body {
-  padding: 0 28px 28px 28px;
+  padding: 20px 28px 28px;
 }
 
-.status-alert {
-  background: #fafafa !important;
-  border: 1px solid #e5e5e5 !important;
-  border-radius: 12px !important;
-  margin-bottom: 24px;
-  padding: 12px 16px !important;
-}
-
-.alert-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #525252;
-}
-
-.section {
-  margin-bottom: 24px;
+.dark-slider {
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #171717;
-  margin-bottom: 12px;
-  letter-spacing: 0.3px;
-}
-
-.duration-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.duration-btn {
-  background: #ffffff;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 20px 16px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  outline: none;
-}
-
-.duration-btn:hover {
-  border-color: #a3a3a3;
-  background: #fafafa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.duration-btn.active {
-  background: #171717;
-  border-color: #171717;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
-}
-
-.duration-btn.active .duration-value,
-.duration-btn.active .duration-unit {
-  color: #ffffff;
-}
-
-.duration-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #171717;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.duration-unit {
-  font-size: 12px;
   font-weight: 600;
-  color: #737373;
-  text-transform: lowercase;
-  letter-spacing: 0.2px;
+  font-size: 15px;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
 }
 
-.slider-container {
+.timeline-container {
+  margin-bottom: 24px;
+}
+
+.timeline-track {
   position: relative;
-}
-
-.slider-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.slider-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #a3a3a3;
-  letter-spacing: 0.3px;
-}
-
-.duration-slider {
-  width: 100%;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: #e5e5e5;
+  height: 12px;
+  background: #2a2a2a;
   border-radius: 10px;
-  outline: none;
-  transition: background 0.3s ease;
-}
-
-.duration-slider:hover {
-  background: #d4d4d4;
-}
-
-.duration-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  background: #171717;
-  border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.duration-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.duration-slider::-webkit-slider-thumb:active {
-  transform: scale(1.05);
-}
-
-.duration-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  background: #171717;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.duration-slider::-moz-range-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.duration-slider::-moz-range-thumb:active {
-  transform: scale(1.05);
-}
-
-.slider-value {
-  text-align: center;
-  font-size: 16px;
-  font-weight: 700;
-  color: #171717;
-  margin-top: 12px;
-  letter-spacing: 0.3px;
-}
-
-.summary-box {
-  background: #171717;
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 28px;
   margin-bottom: 16px;
 }
 
-.summary-icon {
-  width: 48px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.timeline-range {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%);
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  pointer-events: none;
 }
 
-.summary-info {
-  flex: 1;
+.timeline-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  border: 3px solid #0f0f0f;
+  border-radius: 50%;
+  cursor: grab;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.summary-label {
+.timeline-handle:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.timeline-handle:active {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.handle-time {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f0f0f;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 4px;
-  letter-spacing: 0.3px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
 }
 
-.summary-duration {
-  font-size: 24px;
+.timeline-labels {
+  position: relative;
+  height: 20px;
+  margin-top: 8px;
+}
+
+.timeline-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #888;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.time-range-display {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.time-range-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #999;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.time-range-value {
+  font-size: 28px;
   font-weight: 800;
-  color: #ffffff;
+  color: #fff;
   letter-spacing: -0.5px;
-  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.time-duration {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
 }
 
 .favourite-button {
   width: 100%;
-  padding: 16px 20px;
-  background: #ffffff;
+  padding: 14px 20px;
   border: 2px solid #e5e5e5;
   border-radius: 12px;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 14px;
+  margin-top: 20px;
+  transition: all 0.3s ease;
   font-weight: 600;
   color: #171717;
-  letter-spacing: 0.2px;
-  outline: none;
+  cursor: pointer;
 }
 
 .favourite-button:hover:not(:disabled) {
   border-color: #a3a3a3;
   background: #fafafa;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.favourite-button:active:not(:disabled) {
-  transform: translateY(0);
+.favourite-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .favourite-button.active {
@@ -458,34 +544,14 @@ function formatDuration(minutes: number) {
 
 .favourite-button.active:hover:not(:disabled) {
   background: #fee2e2;
-  border-color: #f87171;
-}
-
-.favourite-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .card-actions {
-  padding: 20px 28px 28px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.cancel-button {
-  color: #dc2626 !important;
-  font-weight: 600 !important;
-  text-transform: none !important;
-  letter-spacing: 0.2px;
-  transition: all 0.2s ease;
-}
-
-.cancel-button:hover {
-  background: #fef2f2 !important;
+  padding: 0 28px 28px;
 }
 
 .confirm-button {
+  width: 100%;
   background: #171717 !important;
   color: #ffffff !important;
   font-weight: 700 !important;
@@ -495,196 +561,12 @@ function formatDuration(minutes: number) {
   height: 52px !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
 }
 
 .confirm-button:hover {
   background: #262626 !important;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24) !important;
   transform: translateY(-2px);
-}
-
-:deep(.v-overlay__scrim) {
-  backdrop-filter: blur(8px);
-  background: rgba(0, 0, 0, 0.4);
-}
-
-:deep(.dialog-bottom-transition-enter-active),
-:deep(.dialog-bottom-transition-leave-active) {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-:deep(.dialog-bottom-transition-enter-from) {
-  opacity: 0;
-  transform: translateY(30px) scale(0.96);
-}
-
-:deep(.dialog-bottom-transition-leave-to) {
-  opacity: 0;
-  transform: translateY(30px) scale(0.96);
-}
-
-/* 🌙 Smooth Custom Slider */
-.smooth-slider {
-  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
-  border: 1px solid #ececec;
-  border-radius: 14px;
-  padding: 20px 18px 24px 18px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.smooth-slider:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
-}
-
-.slider-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-.custom-duration-slider {
-  width: 100%;
-  height: 8px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #ff8a00 0%, #ffb74d 100%);
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.custom-duration-slider:hover {
-  filter: brightness(1.1);
-}
-
-.custom-duration-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 26px;
-  height: 26px;
-  background: #ffffff;
-  border: 3px solid #ff8a00;
-  border-radius: 50%;
-  box-shadow: 0 3px 8px rgba(255, 138, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.custom-duration-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 5px 14px rgba(255, 138, 0, 0.45);
-}
-
-.custom-duration-slider::-webkit-slider-thumb:active {
-  transform: scale(0.95);
-  border-color: #ff9f33;
-}
-
-/* 🖤 Premium Dark Smooth Slider */
-.dark-slider {
-  background: #111;
-  border-radius: 16px;
-  padding: 22px 18px 26px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.35);
-  transition: all 0.3s ease;
-}
-
-.dark-slider:hover {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 6px 24px rgba(0, 0, 0, 0.45);
-  transform: translateY(-1px);
-}
-
-.black-duration-slider {
-  width: 100%;
-  height: 8px;
-  background: linear-gradient(90deg, #2c2c2c 0%, #000000 100%);
-  border-radius: 10px;
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-  transition: background 0.5s ease;
-}
-
-.black-duration-slider:hover {
-  background: linear-gradient(90deg, #3a3a3a 0%, #0d0d0d 100%);
-}
-
-.black-duration-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #1f1f1f;
-  box-shadow:
-    0 3px 10px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(255, 255, 255, 0.1);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.black-duration-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.12);
-  box-shadow:
-    0 5px 14px rgba(0, 0, 0, 0.5),
-    0 0 18px rgba(255, 255, 255, 0.18);
-}
-
-.black-duration-slider::-webkit-slider-thumb:active {
-  transform: scale(0.96);
-  background: #f0f0f0;
-}
-
-.slider-value-label {
-  margin-top: 16px;
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.3px;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease;
-}
-
-.slider-scale {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: #a3a3a3;
-  margin-top: 10px;
-  letter-spacing: 0.4px;
-}
-
-.dark-slider .section-title {
-  color: #fff;
-}
-
-.time-range-display {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.time-range-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #a3a3a3;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.time-range-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
 }
 </style>
