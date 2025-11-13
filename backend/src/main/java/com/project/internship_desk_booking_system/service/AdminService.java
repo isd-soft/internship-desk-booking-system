@@ -334,17 +334,54 @@ public class AdminService {
 
         Booking existingBooking = findBookingById(bookingId);
 
-        if(bookingUpdateCommand.userId() != null){
+        if (bookingUpdateCommand.userId() != null) {
+            //check user availability
+            LocalDateTime startTime = bookingUpdateCommand.startTime() != null
+                    ? bookingUpdateCommand.startTime()
+                    : existingBooking.getStartTime();
+
+            LocalDateTime endTime = bookingUpdateCommand.endTime() != null
+                    ? bookingUpdateCommand.endTime()
+                    : existingBooking.getEndTime();
+
+            List<Booking> userBookings = bookingRepository.findUserBookings(
+                    bookingUpdateCommand.userId(),
+                    startTime,
+                    endTime
+            );
+
+            if (!userBookings.isEmpty()) {
+                log.error("User id: {} already has {} booking(s) in the requested time period",
+                        bookingUpdateCommand.userId(), userBookings.size());
+                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE",
+                        "Already have a booking in this time period");
+            }
+
             log.info(
                     "Editing user with id {} for booking with id {}",
                     bookingUpdateCommand.userId(),
                     bookingId
             );
-            changeUser(
-                    bookingUpdateCommand.userId(),
-                    existingBooking);
+            changeUser(bookingUpdateCommand.userId(), existingBooking);
         }
         if(bookingUpdateCommand.deskId() != null){
+            //booking validation for sharred desks only
+            Desk desk = deskRepository.findById(bookingUpdateCommand.deskId())
+                    .orElseThrow(() -> new ExceptionResponse(
+                            HttpStatus.NOT_FOUND,
+                            "DESK_NOT_FOUND",
+                            "Desk with id " + bookingUpdateCommand.deskId() + " not found"
+                    ));
+
+            if (desk.getType() != DeskType.SHARED) {
+                log.error("Desk {} is not available for booking (type: {})", desk.getId(), desk.getType());
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "DESK_NOT_BOOKABLE",
+                        String.format("Desk %d cannot be booked because it is %s", desk.getId(), desk.getType())
+                );
+            }
+
             log.info(
                     "Editing desk with id {} for booking with id {}",
                     bookingUpdateCommand.deskId(),
@@ -352,7 +389,8 @@ public class AdminService {
             );
             changeDesk(
                     bookingUpdateCommand.deskId(),
-                    existingBooking);
+                    existingBooking
+            );
         }
         if(bookingUpdateCommand.startTime() != null){
             if (bookingUpdateCommand.startTime().isBefore(LocalDateTime.now())) {
