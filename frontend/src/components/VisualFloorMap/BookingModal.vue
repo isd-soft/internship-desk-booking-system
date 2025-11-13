@@ -300,7 +300,8 @@ async function confirmBooking() {
       startTime,
       endTime,
     });
-    emit("created");
+    
+    emit("created", { deskId: deskId.value, success: true });
     closeModal();
   } catch (err) {
     console.error("Booking error:", err);

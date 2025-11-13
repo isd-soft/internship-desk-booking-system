@@ -29,6 +29,7 @@ const legends = [
   { color: "#ffbf00", label: "Partially booked", icon: "mdi-clock-outline" },
   { color: "#7393b3", label: "Assigned", icon: "mdi-account" },
   { color: "#818589", label: "Unavailable", icon: "mdi-minus-circle" },
+  { color: "#E1BEE7", label: "Your booking", icon: "mdi-minus-circle" },
 ];
 </script>
 
@@ -75,9 +76,7 @@ const legends = [
 .layout > :first-child {
   width: 340px;
   border-right: 1px solid #ddd;
-  flex-shrink: 0;
 }
-
 .map-holder {
   flex: 1;
   display: flex;

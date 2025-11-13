@@ -6,10 +6,7 @@ import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.config.BookingProperties;
 import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.dto.DeskColorDTO;
-import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.BookingTimeLimits;
-import com.project.internship_desk_booking_system.entity.Desk;
-import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -376,5 +373,56 @@ public class BookingService {
             }
         }
         return resultList;
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getAllUserBookingsByDate(
+            String email,
+            LocalDate localDate
+    ){
+        log.info(
+                "Looking for user with email {}",
+                email
+        );
+        User user = userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        String.format("User with email: %s is not found", email)
+                ));
+
+        log.info(
+                "Looking for bookigs with user_id {} and start date {}",
+                user.getId(),
+                localDate
+        );
+
+        List<Booking> bookings = bookingRepository
+                .findUserBookingsByDate(
+                        user.getId(),
+                        localDate
+                );
+
+        if(bookings == null || bookings.isEmpty()){
+            log.warn(
+                    "Bookings with user_id {} and start date {} was not found",
+                    user.getId(),
+                    localDate
+            );
+
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "BOOKINGS_BY_DATE_NOT_FOUND",
+                    String.format(
+                            "Bookings by date %s for user with id %d not found",
+                            localDate.toString(),
+                            user.getId()
+                    )
+            );
+        }
+        return bookings.stream()
+                .map(bookingMapper::toResponse)
+                .toList();
     }
 }

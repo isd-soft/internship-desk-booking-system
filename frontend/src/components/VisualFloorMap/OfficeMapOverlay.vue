@@ -7,6 +7,8 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
+  loadAllColors,
+  DeskColors,
   resetLayout,
   horizontalDesks,
 } from "../VisualFloorMap/floorLayout";
@@ -60,7 +62,9 @@ function getDeskColor(color: string) {
     case "BLUE":
       return "#7393B3";
     case "GRAY":
-      return "#818589";
+      return "#818589	";
+    case "PURPLE":
+      return "#E1BEE7";
     default:
       return "";
   }
@@ -70,8 +74,12 @@ function isDeskBooked(id: string) {
   return bookedDesks.value.has(id);
 }
 
-function handleCreated() {
-  // тут можно перезагрузить данные/цвета/лист букингов
+function handleCreated(data: { deskId: number; success: boolean }) {
+  const desk = layout.find((d: any) => Number(d.i) === data.deskId);
+
+  if(desk){
+    desk.color = "PURPLE";
+  }
   console.log("[Map] booking created → refresh data");
   showBookingModal.value = false;
 }

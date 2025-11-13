@@ -193,6 +193,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("localDate") LocalDate localDate
     );
 
+    @Query("""
+            SELECT b
+            FROM Booking b
+            WHERE DATE(b.startTime) = :localDate AND b.user.id = :userId
+            """)
+    List<Booking> findUserBookingsByDate(
+            @Param("userId") Long userId,
+            @Param("localDate") LocalDate localDate
+    );
     @Query(value = """
     SELECT DATE(b.start_time) as date, COUNT(b.id) as count
     FROM booking b
