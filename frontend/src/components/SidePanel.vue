@@ -8,19 +8,20 @@
       @load="loadData"
       @logout="logout"
     />
+<v-slide-y-transition>
+  <ResultsList
+    v-if="items.length > 0"
+    :title="currentTitle"
+    :items="items"
+    :page="currentPage"
+    :perPage="itemsPerPage"
+    :currentType="currentType"
+    @page="(p) => (currentPage = p)"
+    @details="openDetails"
+    @refresh="refreshList"
+  />
+</v-slide-y-transition>
 
-    <v-slide-y-transition>
-      <ResultsList
-        v-if="items.length > 0"
-        :title="currentTitle"
-        :items="items"
-        :page="currentPage"
-        :perPage="itemsPerPage"
-        :currentType="currentType"
-        @page="(p) => (currentPage = p)"
-        @details="openDetails"
-      />
-    </v-slide-y-transition>
 
     <EmptyPanel
       v-if="items.length === 0 && !loading"
@@ -54,6 +55,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
 
+
 import PanelHeader from "../components/panel/PanelHeader.vue";
 import ActionsSection from "../components/panel/ActionSections.vue";
 import ResultsList from "../components/panel/ResultList.vue";
@@ -78,6 +80,10 @@ const currentPage = ref(1);
 
 const winW = ref(window.innerWidth);
 const itemsPerPage = ref(3);
+function refreshList() {
+  loadData(currentType.value as "bookings" | "favourites" | "upcoming");
+}
+
 
 const updateLayout = () => {
   winW.value = window.innerWidth;
@@ -138,18 +144,18 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
 
-      items.value = data.map((b: any, idx: number) => ({
-        id: b.id ?? idx,
-        desk: b.desk?.deskName || "Desk",
-        zone: b.desk?.zone || "Unknown zone",
-        type: b.desk?.deskType || "—",
-        date: formatDate(b.startTime),
-        time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
-        duration: formatDuration(b.startTime, b.endTime),
-        status: b.status,
-        statusColor: statusToColor(b.status),
-        raw: b,
-      }));
+items.value = data.map((b: any, idx: number) => ({
+  id: b.id ?? idx,
+  desk: b.desk?.deskName || "Desk",
+  zone: b.desk?.zoneDto?.zoneName || "Unknown zone",
+  type: b.desk?.deskType || "—",
+  date: formatDate(b.startTime),
+  time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+  duration: formatDuration(b.startTime, b.endTime),
+  status: b.status,
+  statusColor: statusToColor(b.status),
+  raw: b,
+}));
     }
 
     if (type === "favourites") {

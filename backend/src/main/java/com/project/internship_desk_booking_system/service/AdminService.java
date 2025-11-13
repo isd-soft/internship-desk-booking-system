@@ -28,6 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -236,30 +237,43 @@ public class AdminService {
         return deskMapper.toDto(desk);
     }
 
-    public void deleteDesk(
-            Long id
-    ){
-        log.info("Deleting desk with id {}", id);
-
+    @Transactional
+    public void deleteDesk(Long id) {
         Desk desk = deskRepository.findById(id)
                 .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "DESK_NOT_FOUND",
-                        "Desk with id: " + id + " not found"
+                        "Desk not found with id: " + id
                 ));
 
-        // Check if desk has active bookings
         if (hasActiveBookings(desk)) {
-            log.warn("Cannot delete desk {} - has active bookings", id);
-            throw new ExceptionResponse(
-                    HttpStatus.CONFLICT,
-                    "DESK_HAS_ACTIVE_BOOKINGS",
-                    "Cannot delete desk with active bookings"
-            );
+            log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
+            bookingRepository.cancelAllActiveBookingsForDesk(id);
+            log.info("All active bookings for desk {} have been cancelled", id);
         }
 
-        deskRepository.deleteById(id);
-        log.info("Desk {} deleted successfully", id);
+
+        desk.setIsDeleted(true);
+        desk.setDeletedAt(LocalDateTime.now());
+        deskRepository.save(desk);
+
+        log.info("Desk {} soft deleted successfully", id);
+    }
+
+    @Transactional
+    public void restoreDesk(Long id) {
+        Desk desk = deskRepository.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "DESK_NOT_FOUND",
+                        "Desk not found with id: " + id
+                ));
+
+        desk.setIsDeleted(false);
+        desk.setDeletedAt(null);
+        deskRepository.save(desk);
+
+        log.info("Desk {} restored successfully", id);
     }
 
     public List<DeskDto> getAllDesks(){

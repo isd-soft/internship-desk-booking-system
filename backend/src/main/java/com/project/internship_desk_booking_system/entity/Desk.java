@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -16,6 +18,8 @@ import java.util.Objects;
 @Table(name = "desk")
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLDelete(sql = "UPDATE DESK SET is_deleted = true WHERE id = ?")
+@Where(clause = "is_deleted = false")
 public class Desk {
 
     @Id
@@ -50,6 +54,12 @@ public class Desk {
 
     @Column(name = "temporary_available_until")
     private LocalDateTime temporaryAvailableUntil;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "current_x")
     private Double currentX;
