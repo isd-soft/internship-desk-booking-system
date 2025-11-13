@@ -152,7 +152,7 @@
                     title="Edit">
                 </v-list-item>
                 <v-list-item
-                    @click="cancelBooking(item)"
+                    @click="CancelBooking(item)"
                     prepend-icon="mdi-cancel"
                     title="Cancel booking"
                     :disabled="cancellingId === item.id || item.status === 'CANCELLED'"
@@ -182,6 +182,36 @@
             @close="showEditModal = false"
             @save="handleSaveBooking"
         />
+        <v-dialog v-model="showCancelDialog" max-width="500">
+          <v-card class="delete-dialog">
+            <v-card-title class="dialog-title">
+              <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+              Cancell Booking
+            </v-card-title>
+            <v-card-text class="dialog-text">
+              Are you sure you want to deactivate booking <strong>{{ selectedBooking?.name }}</strong>?
+              This action cannot be undone.
+            </v-card-text>
+            <v-card-actions class="dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn
+                  variant="text"
+                  @click="showCancelDialog = false"
+                  :disabled="cancellingId !== null"
+              >
+                NO
+              </v-btn>
+              <v-btn
+                  color="error"
+                  variant="flat"
+                  @click="confirmCancelBooking"
+                  :loading="cancellingId !== null"
+              >
+                YES
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </template>
     </div>
   </div>
@@ -205,6 +235,10 @@ const searchQuery = ref('');
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
+const showCancelDialog = ref(false);
+const successMessage = ref(null);
+
+
 
 const STATUS_OPTIONS = [
   { title: 'All', value: 'ALL' },
@@ -391,17 +425,31 @@ async function handleSaveBooking(updatedData: any) {
     error.value = err.response?.data?.message || 'Failed to update booking';
   }
 }
+function CancelBooking(item) {
+  selectedBooking.value = item;
+  showCancelDialog.value = true;
+}
 
-async function cancelBooking(item: any) {
-  if (!confirm(`Cancel booking #${item.id}?`)) return;
+async function confirmCancelBooking() {
+  if (!selectedBooking.value?.id) return;
 
   try {
-    cancellingId.value = item.id;
-    await cancelBookingById(item.id);
+    cancellingId.value = selectedBooking.value.id;
+    error.value = null;
+    successMessage.value = null;
+
+    await api.patch(`/admin/cancel/booking/${selectedBooking.value.id}`);
+
+    successMessage.value = `Booking  "${selectedBooking.value.name}" cancelled successfully`;
+    showCancelDialog.value = false;
+    selectedBooking.value = null;
+
+    // Refresh desk list
     await fetchBookings();
-  } catch (err: any) {
-    console.error('Cancel booking failed:', err);
-    error.value = err.response?.data?.message || `Failed to cancel booking #${item.id}`;
+  } catch (err) {
+    console.error('Error cancelling booking:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to delete desk';
+    showCancelDialog.value = false;
   } finally {
     cancellingId.value = null;
   }
