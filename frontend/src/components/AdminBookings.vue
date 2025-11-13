@@ -186,7 +186,7 @@
           <v-card class="delete-dialog">
             <v-card-title class="dialog-title">
               <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
-              Cancell Booking
+              Cancel Booking
             </v-card-title>
             <v-card-text class="dialog-text">
               Are you sure you want to deactivate booking <strong>{{ selectedBooking?.name }}</strong>?
@@ -593,6 +593,28 @@ watch(statusFilter, (val) => {
   font-weight: 600;
   color: #737373;
   letter-spacing: 0.3px;
+}
+/* Delete Dialog */
+.delete-dialog {
+  border-radius: 16px !important;
+}
+
+.dialog-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: #171717;
+  padding: 24px 24px 16px;
+}
+
+.dialog-text {
+  font-size: 15px;
+  color: #525252;
+  padding: 0 24px 16px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
 }
 
 .bookings-table {
