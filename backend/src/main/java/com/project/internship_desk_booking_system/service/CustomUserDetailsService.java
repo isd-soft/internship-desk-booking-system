@@ -24,6 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getPasswordHash(),
                 user.getRole()
         );
+
+
     }
 
 
