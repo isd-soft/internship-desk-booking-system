@@ -6,157 +6,271 @@
         :close-on-content-click="false"
         transition="scale-transition"
         offset="10"
-        max-width="340"
+        max-width="360"
       >
         <template #activator="{ props }">
-          <VBtn
-            v-bind="props"
-            color="primary"
-            variant="outlined"
-            class="text-none date-btn"
-            prepend-icon="mdi-calendar"
-          >
-            <span class="date-text">{{ displayDate }}</span>
-          </VBtn>
+          <div class="date-selector" v-bind="props">
+            <v-icon size="20" class="calendar-icon"
+              >mdi-calendar-outline</v-icon
+            >
+            <span class="date-value">{{ displayDate }}</span>
+            <v-icon size="18" class="chevron-icon">mdi-chevron-down</v-icon>
+          </div>
         </template>
 
-        <VDatePicker
-          v-model.date="selectedDate"
-          :min="todayISO"
-          :max="maxDateISO"
-          show-adjacent-months
-          @update:model-value="onDateSelected"
-          class="clean-picker"
-        />
+        <div class="calendar-card">
+          <VDatePicker
+            v-model.date="selectedDate"
+            :min="todayISO"
+            :max="maxDateISO"
+            show-adjacent-months
+            @update:model-value="onDateSelected"
+            class="elegant-picker"
+            color="black"
+          />
+        </div>
       </VMenu>
     </VCol>
   </VRow>
 </template>
 
 <script setup>
-import { ref, computed, watch, onActivated } from 'vue'
+import { ref, computed, onActivated } from "vue";
 
-const emit = defineEmits(['update:date'])
+const emit = defineEmits(["update:date"]);
 
-const menu = ref(false)
-const selectedDate = ref(null)
+const menu = ref(false);
+const selectedDate = ref(null);
 
 const getTodayDate = () => {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d
-}
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
 const toISO = (date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-
-const todayISO = computed(() => toISO(getTodayDate()))
-console.log(todayISO);
+const todayISO = computed(() => toISO(getTodayDate()));
 
 const maxDateISO = computed(() => {
-  const d = new Date()
-  d.setDate(d.getDate() + 30)
-  d.setHours(0, 0, 0, 0)
-  return toISO(d)
-})
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  d.setHours(0, 0, 0, 0);
+  return toISO(d);
+});
 
 const displayDate = computed(() => {
-  if (!selectedDate.value) return ''
-  const d = selectedDate.value
-  const day = String(d.getDate()).padStart(2, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  return `${day}.${month}.${d.getFullYear()}`
-})
+  if (!selectedDate.value) return "Select a date";
+  const d = selectedDate.value;
+  return d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+});
 
 const resetToToday = () => {
-  selectedDate.value = getTodayDate()
-}
+  selectedDate.value = getTodayDate();
+};
 
 onActivated(() => {
-  resetToToday()
-  emitISO()
-})
+  resetToToday();
+  emitISO();
+});
 
 const onDateSelected = () => {
-  menu.value = false
-  emitISO()
-}
+  menu.value = false;
+  emitISO();
+};
 
 const emitISO = () => {
   if (selectedDate.value) {
-    emit('update:date', toISO(selectedDate.value))
+    emit("update:date", toISO(selectedDate.value));
   }
-}
+};
 
-resetToToday()
-emitISO()
+resetToToday();
+emitISO();
 </script>
 
 <style scoped>
-.date-btn {
-  min-width: 180px;
-  max-width: 260px;
-  width: fit-content;
-  padding: 0 16px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  height: 48px;
-  font-size: 16px;
-}
-.date-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-  display: inline-block;
-}
-:deep(.v-col) { padding: 0; }
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
-.clean-picker :deep(.v-date-picker-controls__month-btn),
-.clean-picker :deep(.v-date-picker-controls__mode-btn) {
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+
+:deep(.v-col) {
+  padding: 0;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  min-width: 280px;
+}
+
+.date-selector:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.date-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #171717 0%, #404040 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.date-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.date-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.2px;
+}
+
+.chevron-icon {
+  color: #9ca3af;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.date-selector:hover .chevron-icon {
+  transform: translateY(2px);
+}
+
+.calendar-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+/* Стилизация календаря */
+.elegant-picker {
+  background: white !important;
+}
+
+.elegant-picker :deep(.v-picker-title) {
   display: none !important;
 }
-.clean-picker :deep(.v-date-picker-controls__month) {
-  display: flex !important;
-  justify-content: space-between;
-  flex: 1;
+
+.elegant-picker :deep(.v-date-picker-header) {
+  padding: 20px 20px 16px !important;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-bottom: 1px solid #f0f0f0;
 }
-.clean-picker :deep(.v-picker-title) {
-  display: block !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  line-height: 0 !important;
-  font-size: 0 !important;
+
+.elegant-picker :deep(.v-date-picker-header__content) {
+  font-weight: 800 !important;
+  font-size: 18px !important;
+  letter-spacing: -0.3px !important;
+  color: #171717 !important;
 }
-.clean-picker :deep(.v-date-picker-header__content){
-  font-weight: 800;
-  font-size: 20px;
-  letter-spacing: 1px;
+
+.elegant-picker :deep(.v-date-picker-controls) {
+  padding: 16px 20px !important;
 }
-.clean-picker :deep(.v-date-picker-month__day),
-.clean-picker :deep(.v-date-picker-month__weekday) {
-  font-weight: 800;
-  font-size: 15px;
+
+.elegant-picker :deep(.v-btn--icon) {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  transition: all 0.25s ease !important;
 }
-.clean-picker :deep(.v-btn__content){
-  font-size: 18px;
+
+.elegant-picker :deep(.v-btn--icon:hover) {
+  background: #f3f4f6 !important;
+  transform: scale(1.05);
 }
-.clean-picker :deep(.v-date-picker-controls) {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(0,0,0,.12);
+
+.elegant-picker :deep(.v-date-picker-month) {
+  padding: 12px 20px 20px !important;
 }
-* {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+.elegant-picker :deep(.v-date-picker-month__weekday) {
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  color: #6b7280 !important;
+  padding: 8px 0 !important;
+}
+
+.elegant-picker :deep(.v-date-picker-month__day) {
+  margin: 2px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.elegant-picker :deep(.v-date-picker-month__day .v-btn) {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.elegant-picker :deep(.v-date-picker-month__day:hover .v-btn) {
+  background: #f3f4f6 !important;
+  transform: scale(1.08);
+}
+
+.elegant-picker :deep(.v-date-picker-month__day--selected .v-btn) {
+  background: #171717 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.elegant-picker :deep(.v-date-picker-month__day--adjacent) {
+  opacity: 0.3 !important;
+}
+
+.elegant-picker :deep(.v-date-picker-month__day--disabled) {
+  opacity: 0.2 !important;
+}
+
+.elegant-picker :deep(.v-btn__content) {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+.elegant-picker :deep(*) {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

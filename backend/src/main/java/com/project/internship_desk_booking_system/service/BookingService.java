@@ -25,12 +25,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -40,7 +44,6 @@ public class BookingService {
     private final UserRepository userRepository;
     private final DeskRepository deskRepository;
     private final BookingMapper bookingMapper;
-    private final EmailService emailService;
     private final BookingTimeLimitsService bookingTimeLimitsService;
     private final BookingProperties bookingProperties;
 
@@ -56,7 +59,7 @@ public class BookingService {
                         .desk(desk)
                         .startTime(request.getStartTime())
                         .endTime(request.getEndTime())
-                        .status(BookingStatus.CONFIRMED)
+                        .status(resolveStatus(request.getStartTime()))
                         .build());
     }
 
@@ -68,11 +71,10 @@ public class BookingService {
         validateMaxDaysInAdvance(start);
         checkDeskAvailability(request.getDeskId(), start, end);
         checkUserAvailability(user.getId(), start, end);
-       validateWeeklyHoursLimit(user.getId(), start, end);
+        validateWeeklyHoursLimit(user.getId(), start, end);
 
-        log.info("✅ Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
+        log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
     }
-
 
     private void validateDeskType(Desk desk) {
         if (desk.getType() == DeskType.ASSIGNED || desk.getType() == DeskType.UNAVAILABLE) {
@@ -90,9 +92,13 @@ public class BookingService {
         int officeStart = bookingProperties.getOfficeStartHour();
         int officeEnd = bookingProperties.getOfficeEndHour();
 
-        if (start.getHour() < officeStart || end.getHour() >= officeEnd) {
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "OUTSIDE_OFFICE_HOURS",
-                    String.format("Booking must be within office hours (%02d:00–%02d:00)", officeStart, officeEnd));
+        if (start.getHour() < bookingProperties.getOfficeStartHour() || (end.getHour() > officeEnd ||
+                (end.getHour() == officeEnd && end.getMinute() > 0))) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "OUTSIDE_OFFICE_HOURS",
+                    String.format("Booking must be within office hours (%02d:00–%02d:00)", officeStart, officeEnd)
+            );
         }
         log.debug("Booking is within office hours ({}–{})", officeStart, officeEnd);
     }
@@ -133,14 +139,16 @@ public class BookingService {
         return Math.max(hours, 0);
     }
 
-    private void checkDeskAvailability(Long deskId, LocalDateTime startTime, LocalDateTime endTime) {
-        bookingRepository.findOverlappingBookings(deskId, startTime, endTime)
-                .stream()
-                .findAny()
-                .ifPresent(b -> {
-                    throw new ExceptionResponse(HttpStatus.CONFLICT, "DESK_NOT_AVAILABLE", "Desk already booked in this period");
-                });
+    private void checkDeskAvailability(Long deskId, LocalDateTime start, LocalDateTime end) {
+        if (!bookingRepository.findOverlappingBookings(deskId, start, end).isEmpty()) {
+            throw new ExceptionResponse(
+                    HttpStatus.CONFLICT,
+                    "DESK_NOT_AVAILABLE",
+                    "Desk already booked in this period"
+            );
+        }
     }
+
 
     private void validateMaxDaysInAdvance(LocalDateTime startTime) {
         BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
@@ -199,60 +207,50 @@ public class BookingService {
         log.debug("Weekly hours limit validated successfully for user {}", userId);
     }
 
-    public void checkUserAvailability(Long user_id, LocalDateTime startTime, LocalDateTime endTime) {
-        log.debug("Checking user availability for user id: {} between {} and {}", user_id, startTime, endTime);
-
-        List<Booking> userBookings = bookingRepository.findUserBookings(
-                user_id,
-                startTime,
-                endTime
-        );
-
-        if (!userBookings.isEmpty()) {
-            log.error("User id: {} already has {} booking(s) in the requested time period", user_id, userBookings.size());
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE", "Already have a booking in this time period");
-        }
-
-        log.debug("User id: {} is available for booking", user_id);
+    public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        if (!bookingRepository.findAnyUserConflict(userId, startTime, endTime).isEmpty())
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have a booking");
     }
 
-    public void cancelBooking(String email, Long id) {
-        log.info("Attempting to cancel booking id: {} for user: {}", id, email);
+    private BookingStatus resolveStatus(LocalDateTime start) {
+        LocalDateTime now = LocalDateTime.now();
 
-        Booking booking = bookingRepository.findById(id).orElseThrow(() -> {
-            log.error("Booking not found with id: {}", id);
-            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_BOOKING_FOUND", "Cannot find booking id");
-        });
-
-        if (!booking.getUser().getEmail().equals(email)) {
-            log.error("User {} attempted to cancel booking {} belonging to another user", email, id);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_CANCEL_BOOKING", "Cannot find user email");
+        if (now.isBefore(start)) {
+            return BookingStatus.SCHEDULED;
         }
-
-        if (booking.getStartTime().isBefore(LocalDateTime.now())) {
-            log.error("Cannot cancel booking id: {} as it has already started", id);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_ALREADY_STARTED", "Cannot cancel booking that has already started");
-        }
-
-        booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-        Desk desk = booking.getDesk();
-        updateDeskStatus(desk, DeskStatus.ACTIVE);
-        log.info("Booking id: {} cancelled successfully by user: {}", id, email);
-
-        emailService.sendCancelledBookingEmail(
-                email,
-                booking.getId(),
-                booking.getDesk().getDeskName(),
-                booking.getDesk().getZone().getZoneName(),
-                OffsetDateTime.now()
-        );
+        return BookingStatus.ACTIVE;
     }
 
-    public void deleteBooking(Long id) {
-        bookingRepository.deleteById(id);
-        log.info("Booking id: {} deleted successfully", id);
+
+    @Transactional
+    public void cancelBooking(String email, Long bookingId) {
+        Booking bookingToCancel = bookingRepository.findByUserEmailAndId(email, bookingId)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found"));
+        if (bookingToCancel.getStatus() != BookingStatus.ACTIVE) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_BOOKING_STATUS",
+                    "Only active bookings can be cancelled"
+            );
+        }
+        bookingToCancel.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(bookingToCancel);
     }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getUpcomingBookings(String email) {
+
+        List<Booking> active = bookingRepository
+                .findByUserEmailAndStatusOrderByStartTimeAsc(email, BookingStatus.ACTIVE);
+
+        List<Booking> scheduled = bookingRepository
+                .findByUserEmailAndStatusOrderByStartTimeAsc(email, BookingStatus.SCHEDULED);
+
+        return Stream.concat(active.stream(), scheduled.stream())
+                .map(bookingMapper::toResponse)
+                .toList();
+    }
+
 
     private void updateDeskStatus(Desk desk, DeskStatus status) {
         log.debug("Updating desk id: {} status to {}", desk.getId(), status);
@@ -285,26 +283,6 @@ public class BookingService {
         return responses;
     }
 
-
-    public List<BookingResponse> getUpcomingBookingsR(String email) {
-        log.info("Fetching upcoming bookings for user: {}", email);
-
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
-            log.error("User not found with email: {}", email);
-            return new ExceptionResponse(HttpStatus.BAD_REQUEST, "NO_USERID_FOUND", "Cannot find user");
-        });
-
-        List<Booking> bookings = bookingRepository.findUpcomingBookingsWithin8Hours(
-                user.getId(),
-                LocalDateTime.now(),
-                LocalDateTime.now().plusHours(8)
-        );
-
-        log.info("Found {} upcoming bookings for user: {}", bookings.size(), email);
-        return bookings.stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
 
     public BookingResponseDto getBookingById(String email, Long booking_id) {
         log.info("Fetching booking id: {} for user: {}", booking_id, email);
