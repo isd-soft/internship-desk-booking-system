@@ -49,7 +49,9 @@ async function getColors() {
 
 async function getBlue() {
   try {
-    const response = await api.get("/desk/blue");
+    const response = await api.get(
+      `/desk/blue?localDate=${selectedDate.value}`
+      );
     const data = Array.isArray(response.data) ? response.data : [];
 
     const colors = data.map((item) => ({
@@ -66,7 +68,9 @@ async function getBlue() {
 
 async function getGray() {
   try {
-    const response = await api.get("/desk/gray");
+    const response = await api.get(
+      `/desk/gray?localDate=${selectedDate.value}`
+      );
     const data = Array.isArray(response.data) ? response.data : [];
 
     const colors = data.map((item) => ({
