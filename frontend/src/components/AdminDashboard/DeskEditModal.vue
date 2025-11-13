@@ -1,6 +1,6 @@
 <script setup lang="ts" xmlns="http://www.w3.org/1999/html">
 import { reactive, watch, computed } from "vue";
-import api from '../../plugins/axios';
+import api from '@/plugins/axios';
 import {tr} from "vuetify/locale";
 
 
@@ -221,6 +221,7 @@ function closeModal() {
           <div class="header-info">
             <div class="workspace-label">DESK</div>
             <div class="desk-title">Edit Desk</div>
+
           </div>
           <v-btn
               icon
@@ -237,6 +238,9 @@ function closeModal() {
       <v-card-text class="card-body">
         <div class="section">
           <div class="section-title">Desk Name</div>
+          <div class="id-label">Desk_ID: {{ desk?.id }}</div>
+
+
           <input
               v-model="deskForm.displayName"
               type="text"
@@ -247,6 +251,8 @@ function closeModal() {
 
         <div class="section">
           <div class="section-title">Zone</div>
+          <div class="id-label">Zone_ID: {{ desk?.zoneId }}</div>
+
           <input
               v-model="deskForm.zoneName"
               type="text"
@@ -389,6 +395,14 @@ function closeModal() {
 }
 
 .workspace-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #737373;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.id-label {
   font-size: 11px;
   font-weight: 700;
   color: #737373;
