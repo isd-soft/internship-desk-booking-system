@@ -12,7 +12,6 @@ import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
-import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
@@ -59,7 +58,7 @@ public class BookingService {
                 .status(resolveStatus(request.getStartTime()))
                 .build();
         bookingRepository.save(newBooking);
-        emailService.sendBookingConfirmationEmail(email,newBooking.getId(),newBooking.getDesk().getDeskName(), newBooking.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
+        emailService.sendBookingConfirmationEmail(email, newBooking.getId(), newBooking.getDesk().getDeskName(), newBooking.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
     }
 
     private void validateBookingLogic(User user, BookingCreateRequest request) {
@@ -235,7 +234,7 @@ public class BookingService {
         }
         bookingToCancel.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(bookingToCancel);
-        emailService.sendCancelledBookingEmail(email,bookingToCancel.getId(),bookingToCancel.getDesk().getDeskName(), bookingToCancel.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
+        emailService.sendCancelledBookingEmail(email, bookingToCancel.getId(), bookingToCancel.getDesk().getDeskName(), bookingToCancel.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -251,15 +250,6 @@ public class BookingService {
                 .map(bookingMapper::toResponse)
                 .toList();
     }
-
-
-    private void updateDeskStatus(Desk desk, DeskStatus status) {
-        log.debug("Updating desk id: {} status to {}", desk.getId(), status);
-        desk.setStatus(status);
-        deskRepository.save(desk);
-        log.info("Desk id: {} status updated to {}", desk.getId(), status);
-    }
-
 
     @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(String email) {
