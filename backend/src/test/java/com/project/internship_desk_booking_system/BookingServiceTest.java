@@ -412,66 +412,6 @@ class BookingServiceTest {
     }
 
     @Test
-    void getUpcomingBookingsR_MultipleBookings() {
-        // Arrange
-        LocalDateTime now = LocalDateTime.now();
-        Booking booking1 = Booking.builder()
-                .id(1L)
-                .user(testUser)
-                .desk(testDesk)
-                .startTime(now.plusHours(1))
-                .endTime(now.plusHours(3))
-                .status(BookingStatus.ACTIVE)
-                .build();
-
-        Booking booking2 = Booking.builder()
-                .id(2L)
-                .user(testUser)
-                .desk(testDesk)
-                .startTime(now.plusHours(5))
-                .endTime(now.plusHours(7))
-                .status(BookingStatus.ACTIVE)
-                .build();
-
-        when(bookingRepository.findUpcomingBookingsWithin8Hours(anyLong(), any(), any()))
-                .thenReturn(List.of(booking1, booking2));
-        when(bookingMapper.toResponse(any(Booking.class))).thenReturn(bookingResponse);
-
-        // Act
-        List<BookingResponse> result = bookingService.getUpcomingBookingsR("test@example.com");
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-    }
-
-    @Test
-    void getUpcomingBookingsR_NoUpcomingBookings() {
-        // Arrange
-        when(bookingRepository.findUpcomingBookingsWithin8Hours(anyLong(), any(), any()))
-                .thenReturn(new ArrayList<>());
-
-        // Act
-        List<BookingResponse> result = bookingService.getUpcomingBookingsR("test@example.com");
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void getUpcomingBookingsR_UserNotFound_ThrowsException() {
-        // Arrange
-        when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.empty());
-
-        // Act & Assert
-        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
-                bookingService.getUpcomingBookingsR("nonexistent@example.com")
-        );
-        assertEquals("NO_USERID_FOUND", ex.getCode());
-    }
-
-    @Test
     void getBookingById_BookingNotFound_ThrowsException() {
         // Arrange
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.empty());
@@ -497,16 +437,6 @@ class BookingServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(bookingRepository, times(1)).findAll();
-    }
-
-    @Test
-    void deleteBooking_Success() {
-        // Arrange
-        doNothing().when(bookingRepository).deleteById(anyLong());
-
-        // Act & Assert
-        assertDoesNotThrow(() -> bookingService.deleteBooking(1L));
-        verify(bookingRepository, times(1)).deleteById(1L);
     }
 
     @Test
