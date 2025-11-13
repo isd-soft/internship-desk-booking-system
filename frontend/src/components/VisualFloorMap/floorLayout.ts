@@ -121,6 +121,8 @@ export const loadDesksFromBackend = async () => {
         const colorMatch = DeskColors.value.find((c) => c.deskId === desk.id);
         const current_color = colorMatch ? colorMatch.deskColor : "GREEN";
 
+        const isStatic = ["GRAY", "BLUE"].includes(current_color);
+
         layout.push({
           x: Math.round(desk.x),
           y: Math.round(desk.y),
@@ -129,7 +131,8 @@ export const loadDesksFromBackend = async () => {
           i: String(desk.id),
           static: false,
           deskName: desk.deskName,
-          color: current_color
+          color: current_color,
+          isNonInteractive: isStatic
         });
       }
     });
