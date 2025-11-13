@@ -158,18 +158,19 @@ items.value = data.map((b: any) => ({
 }));
     }
 
-    if (type === "favourites") {
-      currentTitle.value = "Favorites";
-      const response = await api.get("/favourites");
-      const data = response.data || [];
+if (type === "favourites") {
+  currentTitle.value = "Favorites";
+  const response = await api.get("/favourites");
+  const data = response.data || [];
 
 items.value = data.map((d: any, idx: number) => ({
   id: d.deskId ?? idx,
-  desk: d.displayName || "Desk",
-  zone: d.zoneDto?.name || "Unknown zone",
+  desk: d.displayName || d.deskName || "Desk",
+  zone: d.zoneDto?.zoneName || d.zone || "Unknown zone",
+  zoneAbv: d.zoneDto?.zoneAbv || "",
   favourite: d.isFavourite,
-  status: "",
-  statusColor: "primary",
+  status: "FAVOURITE",
+  statusColor: "yellow-darken-2",
   date: "",
   time: "",
   duration: "",

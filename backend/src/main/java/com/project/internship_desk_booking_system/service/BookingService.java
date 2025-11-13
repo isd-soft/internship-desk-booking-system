@@ -6,7 +6,10 @@ import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.config.BookingProperties;
 import com.project.internship_desk_booking_system.dto.BookingDTO;
 import com.project.internship_desk_booking_system.dto.DeskColorDTO;
-import com.project.internship_desk_booking_system.entity.*;
+import com.project.internship_desk_booking_system.entity.Booking;
+import com.project.internship_desk_booking_system.entity.BookingTimeLimits;
+import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -22,10 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +43,7 @@ public class BookingService {
     private final BookingMapper bookingMapper;
     private final BookingTimeLimitsService bookingTimeLimitsService;
     private final BookingProperties bookingProperties;
+    private final EmailService emailService;
 
     @Transactional
     public void createBooking(String email, BookingCreateRequest request) {
@@ -50,14 +51,15 @@ public class BookingService {
         Desk desk = deskRepository.findById(request.getDeskId()).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with thah id"));
         validateDeskType(desk);
         validateBookingLogic(user, request);
-        bookingRepository.save(
-                Booking.builder()
-                        .user(user)
-                        .desk(desk)
-                        .startTime(request.getStartTime())
-                        .endTime(request.getEndTime())
-                        .status(resolveStatus(request.getStartTime()))
-                        .build());
+        Booking newBooking = Booking.builder()
+                .user(user)
+                .desk(desk)
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .status(resolveStatus(request.getStartTime()))
+                .build();
+        bookingRepository.save(newBooking);
+        emailService.sendBookingConfirmationEmail(email,newBooking.getId(),newBooking.getDesk().getDeskName(), newBooking.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
     }
 
     private void validateBookingLogic(User user, BookingCreateRequest request) {
@@ -233,6 +235,7 @@ public class BookingService {
         }
         bookingToCancel.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(bookingToCancel);
+        emailService.sendCancelledBookingEmail(email,bookingToCancel.getId(),bookingToCancel.getDesk().getDeskName(), bookingToCancel.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -380,14 +383,14 @@ public class BookingService {
     public List<BookingResponse> getAllUserBookingsByDate(
             String email,
             LocalDate localDate
-    ){
+    ) {
         log.info(
                 "Looking for user with email {}",
                 email
         );
         User user = userRepository
                 .findByEmailIgnoreCase(email)
-                .orElseThrow(()-> new ExceptionResponse(
+                .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "USER_NOT_FOUND",
                         String.format("User with email: %s is not found", email)
@@ -405,7 +408,7 @@ public class BookingService {
                         localDate
                 );
 
-        if(bookings == null || bookings.isEmpty()){
+        if (bookings == null || bookings.isEmpty()) {
             log.warn(
                     "Bookings with user_id {} and start date {} was not found",
                     user.getId(),

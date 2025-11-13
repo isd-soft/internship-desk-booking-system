@@ -28,9 +28,20 @@
             <div class="item-content">
               <div class="item-header">
 <div class="item-title">
-  {{ item.desk }} 
-  <span v-if="item.zoneAbv" style="opacity: 0.6;">({{ item.zoneAbv }})</span>
+  {{ item.desk }}
+  <span v-if="item.zoneAbv" class="desk-zone-small">
+    ({{ item.zoneAbv }})
+  </span>
 </div>
+
+<div class="fav-zone">
+  Zone: {{ item.zone }} 
+  <span v-if="item.zoneAbv" class="small-zone">
+    ({{ item.zoneAbv }})
+  </span>
+</div>
+
+
 
                 <div class="item-actions">
                   <v-btn
@@ -839,4 +850,16 @@ const typeChipColor = computed(() => "grey-darken-1");
     transform: none;
   }
 }
+.fav-zone {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #6b7280;
+}
+
+.desk-zone-small {
+  opacity: 0.6;
+  font-size: 0.88em;
+}
+
 </style>
