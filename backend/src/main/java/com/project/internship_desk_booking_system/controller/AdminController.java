@@ -38,6 +38,16 @@ public class AdminController {
         return ResponseEntity
                 .ok(adminService.deactivateDesk(deskId));
     }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/activateDesk/{id}")
+    public ResponseEntity<DeskDto> activateDesk(
+            @PathVariable("id") Long deskId
+    ) {
+
+        return ResponseEntity
+                .ok(adminService.activateDesk(deskId));
+    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/edit/desk/{id}")

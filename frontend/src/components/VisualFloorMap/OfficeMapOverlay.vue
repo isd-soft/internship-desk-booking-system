@@ -43,7 +43,7 @@ function isDeskFavourite(id: string | number) {
 }
 
 function handleDeskClick(item: any) {
-  if (item.static) return;
+  if (item.isNonInteractive) return;
   console.log("Clicked desk:", item.i);
   selectedDesk.value = item;
   showBookingModal.value = true;
@@ -102,12 +102,16 @@ function handleCancelBooking() {
         <div
           class="desk"
           :class="{
-            static: item.static,
+            static: item.isNonInteractive,
             favourite: isDeskFavourite(item.i),
             vertical: !horizontalDesks.includes(Number(item.i)),
+            'non-interactive': item.isNonInteractive
           }"
           @click="handleDeskClick(item)"
-          :style="{ backgroundColor: getDeskColor(item.color) }"
+          :style="{
+            backgroundColor: getDeskColor(item.color),
+            cursor: item.isNonInteractive ? 'default' : 'pointer'
+          }"
         >
           <span class="text">{{ item.deskName || item.i }}</span>
           <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
@@ -140,6 +144,23 @@ function handleCancelBooking() {
 </template>
 
 <style scoped>
+.desk.non-interactive {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+:deep(.vgl-item:has(.desk.non-interactive)) {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+:deep(.vgl-item:has(.desk.non-interactive):hover) {
+  transform: none !important;
+  border-color: #d1d5db !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
+}
+
 .floorplan-container {
   width: 987px;
   height: 643px;
@@ -153,11 +174,6 @@ function handleCancelBooking() {
 
 .no-anim :deep(.vgl-item) {
   transition: none !important;
-}
-
-:deep(.vgl-item--static) {
-  border: none !important;
-  background-color: #333 !important;
 }
 
 :deep(.vgl-item:not(.vgl-item--static)) {
@@ -182,6 +198,7 @@ function handleCancelBooking() {
   border: 2px solid #d1d5db;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .desk.vertical .text {

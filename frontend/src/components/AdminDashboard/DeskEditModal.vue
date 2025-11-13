@@ -1,5 +1,8 @@
-<script setup lang="ts">
-import { reactive, watch } from "vue";
+<script setup lang="ts" xmlns="http://www.w3.org/1999/html">
+import { reactive, watch, computed } from "vue";
+import api from '../../plugins/axios';
+import {tr} from "vuetify/locale";
+
 
 interface Props {
   modelValue: boolean;
@@ -11,8 +14,8 @@ interface Props {
     type: string;
     status: string;
     isTemporarilyAvailable: boolean;
-    tempFrom: string | null;   // Add this
-    tempUntil: string | null;  // Add this
+    tempFrom: string | null;
+    tempUntil: string | null;
     rawData?: any;
   };
 }
@@ -24,6 +27,8 @@ interface Emits {
     type: string;
     deskStatus: string;
     isTemporarilyAvailable: boolean;
+    temporaryAvailableFrom: string | null;
+    temporaryAvailableUntil: string | null;
   }): void;
 }
 
@@ -38,8 +43,8 @@ const deskForm = reactive({
   type: "",
   status: "ACTIVE",
   isTemporarilyAvailable: false,
-  temporaryAvailableFrom: null,  // Add this
-  temporaryAvailableUntil: null, // Add this
+  temporaryAvailableFrom: null as string | null,
+  temporaryAvailableUntil: null as string | null,
 });
 
 const statusOptions = [
@@ -53,6 +58,101 @@ const typeOptions = [
   { value: "UNAVAILABLE", label: "Unavailable" }
 ];
 
+// Computed: Can temporary availability be enabled?
+const canEnableTemporaryAvailability = computed(() => {
+  // Only allow for SHARED desks that are ACTIVE
+  return deskForm.type === "SHARED" && deskForm.status === "ACTIVE";
+});
+
+// Computed: Validation message
+const tempAvailabilityHint = computed(() => {
+  if (!deskForm.type) {
+    return "Select a desk type first";
+  }
+  if (deskForm.type !== "SHARED") {
+    return "Only available for Shared desks";
+  }
+  if (deskForm.status === "DEACTIVATED") {
+    return "Cannot set temporary availability on deactivated desks";
+  }
+  return "Make this desk temporarily available for booking";
+});
+
+// Computed: Date validation
+const dateRangeValid = computed(() => {
+  if (!deskForm.isTemporarilyAvailable) return true;
+  if (!deskForm.temporaryAvailableFrom || !deskForm.temporaryAvailableUntil) return false;
+
+  const from = new Date(deskForm.temporaryAvailableFrom);
+  const until = new Date(deskForm.temporaryAvailableUntil);
+
+  return until > from;
+});
+
+const dateValidationMessage = computed(() => {
+  if (!deskForm.isTemporarilyAvailable) return "";
+  if (!deskForm.temporaryAvailableFrom || !deskForm.temporaryAvailableUntil) {
+    return "Both dates are required";
+  }
+  if (!dateRangeValid.value) {
+    return "End date must be after start date";
+  }
+  return "";
+});
+
+// Watch for type changes - disable temp availability if type becomes incompatible
+watch(() => deskForm.type, (newType) => {
+  if (newType !== "SHARED" && deskForm.isTemporarilyAvailable) {
+    deskForm.isTemporarilyAvailable = false;
+    deskForm.temporaryAvailableFrom = null;
+    deskForm.temporaryAvailableUntil = null;
+  }
+});
+
+// Watch for status changes - disable temp availability if deactivated
+watch(() => deskForm.status, (newStatus) => {
+  if (newStatus === "DEACTIVATED" && deskForm.isTemporarilyAvailable) {
+    deskForm.isTemporarilyAvailable = false;
+    deskForm.temporaryAvailableFrom = null;
+    deskForm.temporaryAvailableUntil = null;
+  }
+});
+
+async function deactivateDesk() {
+  try{
+    await api.patch(`/admin/deactivateDesk/${deskForm.id}`);
+  }catch (error) {
+    console.error("Failed to deactivate desk:", error);
+  }
+}
+async function activateDesk() {
+  try {
+    await api.patch(`/admin/activateDesk/${deskForm.id}`);
+  }catch (error) {
+    console.error("Failed to activate desk:", error);
+  }
+}
+
+async function handleStatusClick(option) {
+  console.log("deskForm is", deskForm); // debug
+  deskForm.status = option.value;
+  if (option.value === "DEACTIVATED") {
+    await deactivateDesk();
+  } else if (option.value === "ACTIVE") {
+    await activateDesk();
+  }
+}
+
+
+
+// Watch for temporary availability toggle - clear dates when disabled
+watch(() => deskForm.isTemporarilyAvailable, (enabled) => {
+  if (!enabled) {
+    deskForm.temporaryAvailableFrom = null;
+    deskForm.temporaryAvailableUntil = null;
+  }
+});
+
 // Sync with existing desk
 watch(
     () => props.desk,
@@ -65,8 +165,8 @@ watch(
         deskForm.type = desk.type;
         deskForm.status = desk.status;
         deskForm.isTemporarilyAvailable = desk.isTemporarilyAvailable;
-        deskForm.temporaryAvailableFrom = desk.tempFrom;    // Add this
-        deskForm.temporaryAvailableUntil = desk.tempUntil;  // Add this
+        deskForm.temporaryAvailableFrom = desk.tempFrom;
+        deskForm.temporaryAvailableUntil = desk.tempUntil;
       } else {
         resetForm();
       }
@@ -87,7 +187,11 @@ function resetForm() {
 }
 
 function handleSave() {
-  // Send data in the format expected by backend
+  // Validate before saving
+  if (deskForm.isTemporarilyAvailable && !dateRangeValid.value) {
+    return;
+  }
+
   emit("save", {
     displayName: deskForm.displayName,
     type: deskForm.type,
@@ -169,12 +273,12 @@ function closeModal() {
         </div>
 
         <div class="section">
-          <div class="section-title">Status</div>
+          <div class="section-title">Desk Status</div>
           <div class="status-grid">
             <button
                 v-for="option in statusOptions"
                 :key="option.value"
-                @click.stop="deskForm.status = option.value"
+                @click.stop="handleStatusClick(option)"
                 :class="['status-btn', { active: deskForm.status === option.value }]"
             >
               {{ option.label }}
@@ -184,14 +288,21 @@ function closeModal() {
 
         <div class="section">
           <div class="section-title">Temporary Availability</div>
-          <label class="checkbox-container">
+          <label
+              :class="['checkbox-container', { disabled: !canEnableTemporaryAvailability }]"
+              @click.prevent="canEnableTemporaryAvailability && (deskForm.isTemporarilyAvailable = !deskForm.isTemporarilyAvailable)"
+          >
             <input
                 type="checkbox"
                 v-model="deskForm.isTemporarilyAvailable"
                 class="custom-checkbox"
+                :disabled="!canEnableTemporaryAvailability"
             />
             <span class="checkbox-label">Enable temporary availability</span>
           </label>
+          <div class="input-hint" :class="{ 'hint-warning': !canEnableTemporaryAvailability }">
+            {{ tempAvailabilityHint }}
+          </div>
 
           <!-- Show date/time pickers when checkbox is checked -->
           <transition name="slide-fade">
@@ -215,6 +326,10 @@ function closeModal() {
                     placeholder="Select end date & time"
                 />
               </div>
+
+              <div v-if="dateValidationMessage" class="validation-message">
+                {{ dateValidationMessage }}
+              </div>
             </div>
           </transition>
         </div>
@@ -232,6 +347,7 @@ function closeModal() {
             class="confirm-button"
             size="x-large"
             @click.stop="handleSave"
+            :disabled="deskForm.isTemporarilyAvailable && !dateRangeValid"
         >
           Save Changes
         </v-btn>
@@ -357,6 +473,10 @@ function closeModal() {
   font-weight: 500;
 }
 
+.hint-warning {
+  color: #d97706;
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -401,9 +521,15 @@ function closeModal() {
   transition: all 0.3s ease;
 }
 
-.checkbox-container:hover {
+.checkbox-container:hover:not(.disabled) {
   border-color: #a3a3a3;
   background: #fafafa;
+}
+
+.checkbox-container.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f5f5f5;
 }
 
 .custom-checkbox {
@@ -413,11 +539,19 @@ function closeModal() {
   accent-color: #171717;
 }
 
+.custom-checkbox:disabled {
+  cursor: not-allowed;
+}
+
 .checkbox-label {
   font-size: 14px;
   font-weight: 600;
   color: #171717;
   cursor: pointer;
+}
+
+.disabled .checkbox-label {
+  cursor: not-allowed;
 }
 
 .card-actions {
@@ -452,11 +586,69 @@ function closeModal() {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.confirm-button:hover {
+.confirm-button:hover:not(:disabled) {
   background: #262626 !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24) !important;
   transform: translateY(-2px);
 }
+
+.confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.date-range-section {
+  margin-top: 16px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 2px solid #e5e5e5;
+}
+
+.date-input-group {
+  margin-bottom: 16px;
+}
+
+.date-input-group:last-child {
+  margin-bottom: 0;
+}
+
+.date-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #171717;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.date-input {
+  cursor: pointer;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0);
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.validation-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
 
 :deep(.v-overlay__scrim) {
   backdrop-filter: blur(8px);
@@ -476,68 +668,5 @@ function closeModal() {
 :deep(.dialog-bottom-transition-leave-to) {
   opacity: 0;
   transform: translateY(30px) scale(0.96);
-
-  /* Add these styles: */
-
-  .date-range-section {
-    margin-top: 16px;
-    padding: 20px;
-    background: #fafafa;
-    border-radius: 12px;
-    border: 2px solid #e5e5e5;
-  }
-
-  .date-input-group {
-    margin-bottom: 16px;
-  }
-
-  .date-input-group:last-child {
-    margin-bottom: 0;
-  }
-
-  .date-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #171717;
-    margin-bottom: 8px;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-  }
-
-  .date-input {
-    cursor: pointer;
-  }
-
-  .date-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    filter: invert(0);
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
-  }
-
-  .date-input::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-  }
-
-  /* Transition animation */
-
-  .slide-fade-enter-active {
-    transition: all 0.3s ease-out;
-  }
-
-  .slide-fade-leave-active {
-    transition: all 0.3s ease-in;
-  }
-
-  .slide-fade-enter-from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  .slide-fade-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
 }
 </style>
