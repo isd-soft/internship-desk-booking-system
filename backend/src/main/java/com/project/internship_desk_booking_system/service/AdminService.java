@@ -507,4 +507,10 @@ public class AdminService {
                 ));
         booking.setDesk(desk);
     }
+    public List<DeskDto> getAllDeletedDesks() {
+        List<Desk> deletedDesks = deskRepository.findAllDeleted();
+        return deletedDesks.stream()
+                .map(deskMapper::toDto)
+                .toList();
+    }
 }

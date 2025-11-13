@@ -113,5 +113,18 @@ public class AdminController {
                 adminService.changeCurrentCoordinates(coordinatesUpdateCommand)
         );
     }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/restore/desk/{id}")
+    public ResponseEntity<Void> restoreDesk(
+            @PathVariable("id") Long deskId
+    ) {
+        adminService.restoreDesk(deskId);
+        return ResponseEntity.ok().build();
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/desks/deleted")
+    public ResponseEntity<List<DeskDto>> getDeletedDesks() {
+        return ResponseEntity.ok(adminService.getAllDeletedDesks());
+    }
 
 }
