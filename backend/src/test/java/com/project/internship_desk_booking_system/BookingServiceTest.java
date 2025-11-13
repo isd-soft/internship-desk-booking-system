@@ -6,10 +6,7 @@ import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.config.BookingProperties;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.ZoneDto;
-import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.Desk;
-import com.project.internship_desk_booking_system.entity.User;
-import com.project.internship_desk_booking_system.entity.Zone;
+import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
@@ -28,7 +25,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -173,6 +172,24 @@ class BookingServiceTest {
     @Test
     void createBooking_Success() {
         // Arrange
+        BookingTimeLimits mockPolicy = new BookingTimeLimits();
+        mockPolicy.setMaxDaysInAdvance(7);
+        mockPolicy.setMaxHoursPerWeek(40);
+        mockPolicy.setIsActive(true);
+
+        when(bookingTimeLimitsService.getActivePolicy()).thenReturn(mockPolicy);
+
+        LocalDateTime validStart = LocalDateTime.now()
+                .plusDays(2)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        LocalDateTime validEnd = validStart.plusHours(2);
+
+        bookingRequest.setStartTime(validStart);
+        bookingRequest.setEndTime(validEnd);
+
         when(bookingRepository.findOverlappingBookings(anyLong(), any(), any()))
                 .thenReturn(new ArrayList<>());
         when(bookingRepository.findUserBookings(anyLong(), any(), any()))
@@ -264,6 +281,89 @@ class BookingServiceTest {
                 bookingService.validateBookingTimes(start, end)
         );
         assertEquals("TOO_LONG", ex.getCode());
+    }
+
+    @Test
+    void createBooking_TooFarInAdvance_ThrowsException() {
+        BookingTimeLimits mockPolicy = new BookingTimeLimits();
+        mockPolicy.setMaxDaysInAdvance(7);
+        mockPolicy.setMaxHoursPerWeek(40);
+        mockPolicy.setIsActive(true);
+
+        when(bookingTimeLimitsService.getActivePolicy()).thenReturn(mockPolicy);
+
+        LocalDateTime farFutureStart = LocalDateTime.now().plusDays(10).withHour(9);
+        LocalDateTime farFutureEnd = farFutureStart.plusHours(4);
+        bookingRequest.setStartTime(farFutureStart);
+        bookingRequest.setEndTime(farFutureEnd);
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                bookingService.createBooking("test@example.com", bookingRequest)
+        );
+
+        assertEquals("BOOKING_TOO_FAR_AHEAD", ex.getCode());
+        verify(bookingRepository, never()).save(any());
+    }
+
+    @Test
+    void createBooking_ExceedsWeeklyHoursLimit_ThrowsException() {
+
+        BookingTimeLimits mockPolicy = new BookingTimeLimits();
+        mockPolicy.setMaxDaysInAdvance(30);
+        mockPolicy.setMaxHoursPerWeek(20);
+        mockPolicy.setIsActive(true);
+
+        when(bookingTimeLimitsService.getActivePolicy()).thenReturn(mockPolicy);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nextMonday = now.plusWeeks(1)
+                .with(DayOfWeek.MONDAY)
+                .withHour(10).withMinute(0).withSecond(0).withNano(0);
+
+        Booking existingBooking1 = Booking.builder()
+                .id(2L)
+                .user(testUser)
+                .desk(testDesk)
+                .startTime(nextMonday.withHour(9))
+                .endTime(nextMonday.withHour(17))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+
+        Booking existingBooking2 = Booking.builder()
+                .id(3L)
+                .user(testUser)
+                .desk(testDesk)
+                .startTime(nextMonday.plusDays(1).withHour(9))
+                .endTime(nextMonday.plusDays(1).withHour(17))
+                .status(BookingStatus.CONFIRMED)
+                .build();
+
+        when(bookingRepository.findUserBookings(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(new ArrayList<>())
+                .thenReturn(List.of(existingBooking1, existingBooking2));
+
+        when(bookingRepository.findOverlappingBookings(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(new ArrayList<>());
+
+        LocalDateTime newBookingStart = nextMonday.plusDays(4).withHour(10);
+        LocalDateTime newBookingEnd = newBookingStart.plusHours(6);
+
+        BookingCreateRequest newRequest = BookingCreateRequest.builder()
+                .deskId(1L)
+                .startTime(newBookingStart)
+                .endTime(newBookingEnd)
+                .build();
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                bookingService.createBooking("test@example.com", newRequest)
+        );
+
+        assertEquals("WEEKLY_HOURS_EXCEEDED", ex.getCode());
+        assertTrue(ex.getMessage().contains("Cannot exceed 20 hours per week"));
+        assertTrue(ex.getMessage().contains("16 hours booked"));
+        assertTrue(ex.getMessage().contains("6 more hours"));
+
+        verify(bookingRepository, never()).save(any(Booking.class));
     }
 
     @Test
