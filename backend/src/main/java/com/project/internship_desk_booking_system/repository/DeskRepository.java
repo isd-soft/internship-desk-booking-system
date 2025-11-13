@@ -6,6 +6,7 @@ import com.project.internship_desk_booking_system.entity.Zone;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -53,6 +54,17 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
     long countByZoneId(Long zoneId);
 
     long countByType(DeskType type);
+
+
+    @Query("SELECT d FROM Desk d WHERE d.id = :id")
+    Optional<Desk> findByIdIncludingDeleted(@Param("id") Long id);
+
+    @Query("SELECT d FROM Desk d WHERE d.isDeleted = true")
+    List<Desk> findAllDeleted();
+
+    @Modifying
+    @Query("DELETE FROM Desk d WHERE d.id = :id")
+    void permanentlyDelete(@Param("id") Long id);
 
     @Query("SELECT DISTINCT d.zone FROM Desk d ORDER BY d.zone.zoneName")
     List<Zone> findAllDistinctZones();

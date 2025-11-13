@@ -20,6 +20,7 @@ public class StatisticsDTO {
     private Long monthlyUsers;
     private DeskStatsDTO mostBookedDesk;
     private DeskStatsDTO leastBookedDesk;
-    private List<BookingResponseDto> bookingHoursPerDay;
-    private List<BookingResponseDto> bookingHoursPerWeek;
+
+    private List<BookingChartDataDTO> bookingHoursPerDay;
+    private List<BookingChartDataDTO> bookingHoursPerWeek;
 }
