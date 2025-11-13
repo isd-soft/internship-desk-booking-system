@@ -149,4 +149,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findBookingsByDate(
             @Param("localDate") LocalDate localDate
     );
+
+    @Query("""
+            SELECT b
+            FROM Booking b
+            WHERE DATE(b.startTime) = :localDate AND b.user.id = :userId
+            """)
+    List<Booking> findUserBookingsByDate(
+            @Param("userId") Long userId,
+            @Param("localDate") LocalDate localDate
+    );
 }

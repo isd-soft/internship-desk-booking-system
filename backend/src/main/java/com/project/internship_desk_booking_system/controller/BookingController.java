@@ -74,4 +74,18 @@ public class BookingController {
                 bookingService.getBookingsByDate(localDate)
         );
     }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my/byDate")
+    public ResponseEntity<List<BookingResponse>> getAllMyBookingsByDate(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam LocalDate localDate
+    ) {
+        return ResponseEntity.ok(bookingService
+                .getAllUserBookingsByDate(
+                        principal.getEmail(),
+                        localDate
+                )
+        );
+    }
 }
