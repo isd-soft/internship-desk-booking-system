@@ -74,8 +74,12 @@ function isDeskBooked(id: string) {
   return bookedDesks.value.has(id);
 }
 
-function handleCreated() {
-  // тут можно перезагрузить данные/цвета/лист букингов
+function handleCreated(data: { deskId: number; success: boolean }) {
+  const desk = layout.find((d: any) => Number(d.i) === data.deskId);
+
+  if(desk){
+    desk.color = "PURPLE";
+  }
   console.log("[Map] booking created → refresh data");
   showBookingModal.value = false;
 }

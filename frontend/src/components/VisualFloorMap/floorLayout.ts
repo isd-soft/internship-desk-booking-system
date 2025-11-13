@@ -115,7 +115,7 @@ export const loadAllColors = async () => {
     DeskColors.value = [];
   }
 };
-}
+
 
 async function getPurpleBookedDesks() {
   try {
