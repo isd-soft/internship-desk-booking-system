@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -18,9 +19,6 @@ import java.util.Map;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
-
-
-
 
     private void sendHtml(String to, String subject, String htmlBody) {
         try {
@@ -53,6 +51,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
         String formattedDate = dateTime.toLocalDate().toString();
         String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
@@ -77,6 +76,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
         String formattedDate = dateTime.toLocalDate().toString();
         String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
@@ -99,6 +99,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
         String formattedDate = dateTime.toLocalDate().toString();
         String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();

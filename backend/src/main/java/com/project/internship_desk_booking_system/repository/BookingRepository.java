@@ -44,12 +44,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     int confirmBookings(@Param("now") LocalDateTime now);
 
     @Query("""
-        SELECT b FROM Booking b
-        WHERE b.user.id = :userId
-          AND b.startTime < :endTime
-          AND b.endTime > :startTime
-    """)
-    List<Booking> findAnyUserConflict(
+                SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END
+                FROM Booking b
+                WHERE b.user.id = :userId
+                  AND b.startTime < :endTime
+                  AND b.endTime > :startTime
+            """)
+    boolean existsUserConflict(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime

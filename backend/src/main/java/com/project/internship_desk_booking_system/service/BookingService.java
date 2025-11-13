@@ -12,6 +12,7 @@ import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
@@ -66,10 +67,10 @@ public class BookingService {
         LocalDateTime end = request.getEndTime();
         validateBookingTimes(start, end);
         validateOfficeHours(start, end);
-        validateMaxDaysInAdvance(start);
+       validateMaxDaysInAdvance(start);
         checkDeskAvailability(request.getDeskId(), start, end);
         checkUserAvailability(user.getId(), start, end);
-        validateWeeklyHoursLimit(user.getId(), start, end);
+       validateWeeklyHoursLimit(user.getId(), start, end);
 
         log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
     }
@@ -206,7 +207,7 @@ public class BookingService {
     }
 
     public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        if (!bookingRepository.findAnyUserConflict(userId, startTime, endTime).isEmpty())
+        if (bookingRepository.existsUserConflict(userId, startTime, endTime))
             throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have a booking");
     }
 
