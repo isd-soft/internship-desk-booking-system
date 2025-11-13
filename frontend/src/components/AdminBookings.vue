@@ -262,7 +262,7 @@ const filteredBookings = computed(() => {
   return filtered.map(b => ({
     id: b.bookingId ?? '—',
     deskId: b.desk?.id ?? null,
-    userId: b.user_id ?? null,
+    userId: b.userId ?? 'N/A',
     deskName: b.desk?.displayName ?? 'N/A',
     zoneId: b.desk?.zoneDto?.id ?? '0',
     zoneName: b.desk?.zoneDto?.zoneName ?? 'N/A',
@@ -384,19 +384,6 @@ async function cancelBooking(item) {
 }
 
 onMounted(() => {
-  const initial = String(route.query?.status || 'ALL').toUpperCase();
-  if (!['ALL', 'ACTIVE', 'CANCELLED', 'CONFIRMED'].includes(initial)) {
-    router.replace({ query: { ...route.query, status: undefined } });
-    statusFilter.value = 'ALL';
-  } else {
-    statusFilter.value = initial;
-  }
-  fetchBookings();
-});
-
-watch(statusFilter, (val) => {
-  const nextQuery = { ...route.query, status: val === 'ALL' ? undefined : val };
-  router.replace({ query: nextQuery });
   fetchBookings();
 });
 </script>
