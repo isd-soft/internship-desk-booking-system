@@ -37,6 +37,18 @@
                   >
                     {{ item.status }}
                   </v-chip>
+                    <v-btn
+    v-if="item.status === 'ACTIVE'"
+    size="small"
+    variant="text"
+    color="red"
+    class="more-btn"
+    @click="cancelItem(item)"
+  >
+    Cancel
+    <v-icon size="16" class="ml-1">mdi-close</v-icon>
+  </v-btn>
+
                   <v-btn
                     size="small"
                     variant="text"
@@ -107,6 +119,12 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import api from "@/plugins/axios";
+
+const emit = defineEmits<{
+  (e: "page", page: number): void;
+  (e: "details", item: any): void;
+}>();
 
 const props = defineProps<{
   title: string;
@@ -116,22 +134,34 @@ const props = defineProps<{
   currentType: string;
 }>();
 
-defineEmits<{
-  (e: "page", page: number): void;
-  (e: "details", item: any): void;
-}>();
+async function cancelItem(item: any) {
+  try {
+    await api.post(`/booking/${item.id}/cancel`);
+    console.log("Booking cancelled");
+
+    // обновляем текущую страницу
+    emit("page", props.page);
+
+  } catch (e: any) {
+    console.error("Failed to cancel booking", e);
+  }
+}
 
 const totalPages = computed(() =>
   Math.ceil((props.items?.length ?? 0) / props.perPage)
 );
+
 const startIndex = computed(() => (props.page - 1) * props.perPage + 1);
+
 const endIndex = computed(() =>
   Math.min(props.page * props.perPage, props.items.length)
 );
+
 const paginated = computed(() => {
   const start = (props.page - 1) * props.perPage;
   return props.items.slice(start, start + props.perPage);
 });
+
 const typeChipColor = computed(() => "grey-darken-1");
 </script>
 

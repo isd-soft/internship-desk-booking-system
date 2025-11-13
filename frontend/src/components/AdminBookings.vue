@@ -9,101 +9,118 @@
         </div>
         <div class="header-actions">
           <v-text-field
-              v-model="searchQuery"
-              density="compact"
-              variant="outlined"
-              hide-details
-              clearable
-              placeholder="Search bookings..."
-              style="max-width: 250px;"
-              :disabled="loading"
-              class="search-field"
+            v-model="searchQuery"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            placeholder="Search bookings..."
+            style="max-width: 250px"
+            :disabled="loading"
+            class="search-field"
           />
 
           <v-select
-              v-model="statusFilter"
-              :items="STATUS_OPTIONS"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              variant="outlined"
-              style="max-width: 180px"
-              :disabled="loading"
-              :clearable="false"
-              hide-details
-              label="Filter by status"
-              class="filter-select"
+            v-model="statusFilter"
+            :items="STATUS_OPTIONS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            style="max-width: 180px"
+            :disabled="loading"
+            :clearable="false"
+            hide-details
+            label="Filter by status"
+            class="filter-select"
           />
 
           <v-select
-              v-model="typeFilter"
-              :items="TYPE_OPTIONS"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              variant="outlined"
-              style="max-width: 180px"
-              :disabled="loading"
-              :clearable="false"
-              hide-details
-              label="Filter by desk type"
-              class="filter-select"
+            v-model="typeFilter"
+            :items="TYPE_OPTIONS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            style="max-width: 180px"
+            :disabled="loading"
+            :clearable="false"
+            hide-details
+            label="Filter by desk type"
+            class="filter-select"
           />
 
           <v-btn
-              color="#171717"
-              variant="flat"
-              @click="resetFilters"
-              class="reset-btn"
+            color="#171717"
+            variant="flat"
+            @click="resetFilters"
+            class="reset-btn"
           >
             Reset Filters
           </v-btn>
 
-          <v-chip size="small" color="#171717" variant="flat" class="count-chip">
+          <v-chip
+            size="small"
+            color="#171717"
+            variant="flat"
+            class="count-chip"
+          >
             {{ filteredBookings.length }}
           </v-chip>
         </div>
       </div>
 
       <v-alert
-          v-if="error"
-          type="error"
-          variant="tonal"
-          class="mb-4"
-          density="compact"
+        v-if="error"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        density="compact"
       >
         {{ error }}
       </v-alert>
 
       <div v-if="loading" class="loading-wrap">
-        <v-progress-circular indeterminate size="48" width="4" color="#171717" />
+        <v-progress-circular
+          indeterminate
+          size="48"
+          width="4"
+          color="#171717"
+        />
         <p class="loading-text mt-3">Loading bookings…</p>
       </div>
 
       <template v-else>
         <v-data-table
-            :headers="headers"
-            :items="filteredBookings"
-            item-key="id"
-            density="compact"
-            class="elevated-table"
-            :items-per-page="15"
-            fixed-header
-            height="70vh"
+          :headers="headers"
+          :items="filteredBookings"
+          item-key="id"
+          density="compact"
+          class="elevated-table"
+          :items-per-page="15"
+          fixed-header
+          height="70vh"
         >
           <template #item.userId="{ item }">
-            <span class="cell-strong">{{ item.userId ?? '—' }}</span>
+            <span class="cell-strong">{{ item.userId ?? "—" }}</span>
           </template>
 
           <template #item.deskName="{ item }">
             <div class="cell-main">
               <div class="desk-name">{{ item.deskName }}</div>
-              <div class="desk-meta">{{ item.zoneName }} • {{ item.zoneId }}</div>
+              <div class="desk-meta">
+                {{ item.zoneName }} • {{ item.zoneId }}
+              </div>
             </div>
           </template>
 
           <template #item.deskType="{ item }">
-            <v-chip size="x-small" :color="getColor(item.deskType)" variant="flat" class="status-chip">
+            <v-chip
+              size="x-small"
+              :color="getColor(item.deskType)"
+              variant="flat"
+              class="status-chip"
+            >
               {{ item.deskType }}
             </v-chip>
           </template>
@@ -123,7 +140,12 @@
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="getColor(item.status)" variant="flat" class="status-chip">
+            <v-chip
+              size="x-small"
+              :color="getColor(item.status)"
+              variant="flat"
+              class="status-chip"
+            >
               {{ item.status }}
             </v-chip>
           </template>
@@ -132,34 +154,38 @@
             <v-menu :close-on-content-click="true" location="bottom end">
               <template #activator="{ props }">
                 <v-btn
-                    v-bind="props"
-                    icon
-                    variant="text"
-                    size="small"
-                    color="#171717"
-                    :loading="cancellingId === item.id"
-                    :disabled="cancellingId === item.id"
-                    class="action-btn"
+                  v-bind="props"
+                  icon
+                  variant="text"
+                  size="small"
+                  color="#171717"
+                  :loading="cancellingId === item.id"
+                  :disabled="cancellingId === item.id"
+                  class="action-btn"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
               <v-list density="compact" class="action-menu">
                 <v-list-item
-                    @click="viewBooking(item)"
-                    prepend-icon="mdi-eye"
-                    title="View">
+                  @click="viewBooking(item)"
+                  prepend-icon="mdi-eye"
+                  title="View"
+                >
                 </v-list-item>
                 <v-list-item
-                    @click="editBooking(item)"
-                    prepend-icon="mdi-pencil"
-                    title="Edit">
+                  @click="editBooking(item)"
+                  prepend-icon="mdi-pencil"
+                  title="Edit"
+                >
                 </v-list-item>
                 <v-list-item
-                    @click="cancelBooking(item)"
-                    prepend-icon="mdi-cancel"
-                    title="Cancel booking"
-                    :disabled="cancellingId === item.id || item.status === 'CANCELLED'"
+                  @click="cancelBooking(item)"
+                  prepend-icon="mdi-cancel"
+                  title="Cancel booking"
+                  :disabled="
+                    cancellingId === item.id || item.status === 'CANCELLED'
+                  "
                 ></v-list-item>
               </v-list>
             </v-menu>
@@ -167,24 +193,28 @@
 
           <template #no-data>
             <div class="empty-state">
-              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-calendar-blank</v-icon>
+              <v-icon size="48" color="#a3a3a3" class="mb-3"
+                >mdi-calendar-blank</v-icon
+              >
               <div class="empty-title">No bookings found</div>
-              <div class="empty-sub">Try adjusting your filters or check back later.</div>
+              <div class="empty-sub">
+                Try adjusting your filters or check back later.
+              </div>
             </div>
           </template>
         </v-data-table>
 
         <BookingViewModal
-            :show="showViewModal"
-            v-model="showViewModal"
-            :booking="selectedBooking"
+          :show="showViewModal"
+          v-model="showViewModal"
+          :booking="selectedBooking"
         />
 
         <BookingEditModal
-            :show="showEditModal"
-            :booking="selectedBooking"
-            @close="showEditModal = false"
-            @save="saveBooking"
+          :show="showEditModal"
+          :booking="selectedBooking"
+          @close="showEditModal = false"
+          @save="saveBooking"
         />
       </template>
     </div>
@@ -192,9 +222,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api from '../plugins/axios';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
 
@@ -205,62 +235,63 @@ const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const cancellingId = ref(null);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
 
 const STATUS_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Active', value: 'ACTIVE' },
-  { title: 'Cancelled', value: 'CANCELLED' },
-  { title: 'Confirmed', value: 'CONFIRMED' },
+  { title: "All", value: "ALL" },
+  { title: "Active", value: "ACTIVE" },
+  { title: "Cancelled", value: "CANCELLED" },
+  { title: "Confirmed", value: "CONFIRMED" },
 ];
 
 const TYPE_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Shared', value: 'SHARED' },
-  { title: 'Assigned', value: 'ASSIGNED' },
-  { title: 'Unavailable', value: 'UNAVAILABLE' },
+  { title: "All", value: "ALL" },
+  { title: "Shared", value: "SHARED" },
+  { title: "Assigned", value: "ASSIGNED" },
+  { title: "Unavailable", value: "UNAVAILABLE" },
 ];
 
-const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
-const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
+const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
+const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
 
 const headers = [
-  { title: 'Booking ID', key: 'id', width: 100, align: 'start' },
-  { title: 'Desk ID', key: 'deskId', width: 100 },
-  { title: 'User ID', key: 'userId', width: 100 },
-  { title: 'Desk', key: 'deskName', width: 220 },
-  { title: 'Desk Type', key: 'deskType', width: 100 },
-  { title: 'Start', key: 'startTime', width: 150 },
-  { title: 'End', key: 'endTime', width: 150 },
-  { title: 'Duration', key: 'duration', width: 110 },
-  { title: 'Status', key: 'status', width: 120 },
-  { title: '', key: 'actions', width: 56, align: 'end', sortable: false },
+  { title: "Booking ID", key: "id", width: 100, align: "start" },
+  { title: "Desk ID", key: "deskId", width: 100 },
+  { title: "User ID", key: "userId", width: 100 },
+  { title: "Desk", key: "deskName", width: 220 },
+  { title: "Desk Type", key: "deskType", width: 100 },
+  { title: "Start", key: "startTime", width: 150 },
+  { title: "End", key: "endTime", width: 150 },
+  { title: "Duration", key: "duration", width: 110 },
+  { title: "Status", key: "status", width: 120 },
+  { title: "", key: "actions", width: 56, align: "end", sortable: false },
 ];
 
 const filteredBookings = computed(() => {
   let filtered = bookings.value;
 
-  if (statusFilter.value !== 'ALL') {
-    filtered = filtered.filter(b => b.status === statusFilter.value);
+  if (statusFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.status === statusFilter.value);
   }
 
-  if (typeFilter.value !== 'ALL') {
-    filtered = filtered.filter(b => b.desk?.type === typeFilter.value);
+  if (typeFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.desk?.type === typeFilter.value);
   }
 
   if (searchQuery.value) {
     const search = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(b =>
+    filtered = filtered.filter(
+      (b) =>
         b.desk?.displayName?.toLowerCase().includes(search) ||
         b.user_id?.toString().includes(search)
     );
   }
 
-  return filtered.map(b => ({
-    id: b.bookingId ?? '—',
+  return filtered.map((b) => ({
+    id: b.bookingId ?? "—",
     deskId: b.desk?.id ?? null,
     userId: b.userId ?? 'N/A',
     deskName: b.desk?.displayName ?? 'N/A',
@@ -270,26 +301,28 @@ const filteredBookings = computed(() => {
     startTime: b.startTime,
     endTime: b.endTime,
     duration: formatDuration(b.startTime, b.endTime),
-    status: b.status ?? '—',
+    status: b.status ?? "—",
   }));
 });
 
 function resetFilters() {
-  statusFilter.value = 'ALL';
-  typeFilter.value = 'ALL';
-  searchQuery.value = '';
+  statusFilter.value = "ALL";
+  typeFilter.value = "ALL";
+  searchQuery.value = "";
 }
 
 const fetchBookings = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const params = statusFilter.value !== 'ALL' ? { status: statusFilter.value } : {};
-    const response = await api.get('/booking/all', { params });
+    const params =
+      statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
+    const response = await api.get("/booking/all", { params });
     bookings.value = response.data;
   } catch (err) {
-    console.error('Error fetching bookings:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to fetch bookings';
+    console.error("Error fetching bookings:", err);
+    error.value =
+      err.response?.data?.message || err.message || "Failed to fetch bookings";
   } finally {
     loading.value = false;
   }
@@ -311,25 +344,37 @@ function getColor(status: string): string {
 
 function toDatetimeLocalValue(dateStr) {
   const date = new Date(dateStr);
-  const pad = n => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const pad = (n) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatDate(dateStr) {
-  return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+  return dateStr
+    ? new Date(dateStr).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
 }
 
 function formatTime(dateStr) {
-  return dateStr ? new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+  return dateStr
+    ? new Date(dateStr).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
 }
 
 function formatDuration(startStr, endStr) {
-  if (!startStr || !endStr) return '—';
+  if (!startStr || !endStr) return "—";
   const diff = new Date(endStr) - new Date(startStr);
   const min = Math.max(0, Math.round(diff / 60000));
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
+  return h > 0 ? `${h}h ${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
 function viewBooking(item) {
@@ -344,7 +389,7 @@ function editBooking(item) {
     deskId: item.deskId,
     startTime: toDatetimeLocalValue(item.startTime),
     endTime: toDatetimeLocalValue(item.endTime),
-    status: item.status
+    status: item.status,
   };
   showEditModal.value = true;
 }
@@ -356,15 +401,18 @@ async function saveBooking(updatedData) {
       deskId: updatedData.deskId,
       startTime: updatedData.startTime,
       endTime: updatedData.endTime,
-      status: updatedData.status
+      status: updatedData.status,
     };
 
-    await api.patch(`/admin/edit/booking/${selectedBooking.value.id}`, bookingUpdateCommand);
+    await api.patch(
+      `/admin/edit/booking/${selectedBooking.value.id}`,
+      bookingUpdateCommand
+    );
     await fetchBookings();
     showEditModal.value = false;
   } catch (err) {
     console.error("Error updating booking:", err);
-    error.value = err.response?.data?.message || 'Failed to update booking';
+    error.value = err.response?.data?.message || "Failed to update booking";
   }
 }
 
@@ -376,8 +424,9 @@ async function cancelBooking(item) {
     await api.patch(`/admin/cancel/booking/${item.id}`);
     await fetchBookings();
   } catch (err) {
-    console.error('Cancel booking failed:', err);
-    error.value = err.response?.data?.message || `Failed to cancel booking #${item.id}`;
+    console.error("Cancel booking failed:", err);
+    error.value =
+      err.response?.data?.message || `Failed to cancel booking #${item.id}`;
   } finally {
     cancellingId.value = null;
   }
@@ -392,7 +441,8 @@ onMounted(() => {
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 * {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
