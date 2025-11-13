@@ -31,7 +31,6 @@ function isDeskFavourite(id: string | number) {
   return favStore.isFav(Number(id));
 }
 
-
 function handleDeskClick(item: any) {
   if (item.isNonInteractive) return;
   console.log("Clicked desk:", item.i);
@@ -51,6 +50,8 @@ function getDeskColor(color: string){
       return "#7393B3";
     case "GRAY":
       return "#818589	";
+    case "PURPLE":
+      return "#E1BEE7";
     case "NOT A COLOR":
       return "";
   }

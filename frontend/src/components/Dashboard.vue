@@ -39,11 +39,15 @@ onMounted(() => {
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #7393B3;"></span>
-          <span class="legend-label">Assigned (not a shared desk)</span>
+          <span class="legend-label">Assigned</span>
         </div>
         <div class="legend-item">
           <span class="legend-circle" style="background-color: #818589;"></span>
           <span class="legend-label">Unavailable</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-circle" style="background-color: #E1BEE7;"></span>
+          <span class="legend-label">Your booking</span>
         </div>
       </div>
     </div>
