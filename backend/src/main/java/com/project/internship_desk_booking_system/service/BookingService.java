@@ -223,7 +223,8 @@ public class BookingService {
     public void cancelBooking(String email, Long bookingId) {
         Booking bookingToCancel = bookingRepository.findByUserEmailAndId(email, bookingId)
                 .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found"));
-        if (bookingToCancel.getStatus() != BookingStatus.ACTIVE) {
+        if (bookingToCancel.getStatus() != BookingStatus.ACTIVE
+                && bookingToCancel.getStatus() != BookingStatus.SCHEDULED) {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "INVALID_BOOKING_STATUS",

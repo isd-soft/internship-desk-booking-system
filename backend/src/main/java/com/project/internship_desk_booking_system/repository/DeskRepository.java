@@ -59,8 +59,6 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
     @Query("SELECT d FROM Desk d WHERE d.id = :id")
     Optional<Desk> findByIdIncludingDeleted(@Param("id") Long id);
 
-    @Query("SELECT d FROM Desk d WHERE d.isDeleted = true")
-    List<Desk> findAllDeleted();
 
     @Modifying
     @Query("DELETE FROM Desk d WHERE d.id = :id")

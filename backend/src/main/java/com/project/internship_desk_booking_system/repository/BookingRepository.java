@@ -44,13 +44,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     int confirmBookings(@Param("now") LocalDateTime now);
 
     @Query("""
-                SELECT b FROM Booking b
-                WHERE b.user.id = :userId
-                  AND (
-                        (b.startTime < :endTime AND b.endTime > :startTime)
-                     OR DATE(b.startTime) = DATE(:startTime)
-                  )
-            """)
+        SELECT b FROM Booking b
+        WHERE b.user.id = :userId
+          AND b.startTime < :endTime
+          AND b.endTime > :startTime
+    """)
     List<Booking> findAnyUserConflict(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,
@@ -228,14 +226,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     Optional<Booking> findByDeskId(Long deskId);
-
-    @Modifying
-    @Query("""
-            UPDATE Booking b 
-            SET b.status = 'CANCELLED' 
-            WHERE b.desk.id = :deskId 
-            AND b.status = 'ACTIVE' 
-            AND b.endTime > CURRENT_TIMESTAMP
-            """)
-    void cancelAllActiveBookingsForDesk(@Param("deskId") Long deskId);
 }

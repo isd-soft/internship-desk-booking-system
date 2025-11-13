@@ -27,8 +27,24 @@
 
             <div class="item-content">
               <div class="item-header">
-                <div class="item-title">{{ item.desk }}</div>
+<div class="item-title">
+  {{ item.desk }} 
+  <span v-if="item.zoneAbv" style="opacity: 0.6;">({{ item.zoneAbv }})</span>
+</div>
+
                 <div class="item-actions">
+                  <v-btn
+  v-if="currentType === 'upcoming' && (item.status === 'ACTIVE' || item.status === 'SCHEDULED')"
+  size="small"
+  color="red"
+  variant="text"
+  class="more-btn"
+  @click.stop="cancelItem(item)"
+>
+  Cancel
+  <v-icon size="16" class="ml-1">mdi-close</v-icon>
+</v-btn>
+
                   <v-chip
                     class="status-chip mr-1"
                     size="x-small"
@@ -38,18 +54,6 @@
                     {{ item.status }}
                   </v-chip>
                     <v-btn
-    v-if="item.status === 'ACTIVE'"
-    size="small"
-    variant="text"
-    color="red"
-    class="more-btn"
-    @click="cancelItem(item)"
-  >
-    Cancel
-    <v-icon size="16" class="ml-1">mdi-close</v-icon>
-  </v-btn>
-
-                  <v-btn
                     size="small"
                     variant="text"
                     class="more-btn"
@@ -139,7 +143,6 @@ async function cancelItem(item: any) {
     await api.post(`/booking/${item.id}/cancel`);
     console.log("Booking cancelled");
 
-    // обновляем текущую страницу
     emit("page", props.page);
 
   } catch (e: any) {
