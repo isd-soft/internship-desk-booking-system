@@ -130,6 +130,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.desk.id = :deskId " +
+            "AND b.status = 'SCHEDULED' " +
+            "AND b.endTime > :now")
+    boolean existsScheduledBookingsByDeskId(
+            @Param("deskId") Long deskId,
+            @Param("now") LocalDateTime now
+    );
+
+
     long countBookingByStartTimeAfter(LocalDateTime startTime);
 
     long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
@@ -236,5 +245,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             AND b.endTime > CURRENT_TIMESTAMP
             """)
     void cancelAllActiveBookingsForDesk(@Param("deskId") Long deskId);
+
+    @Modifying
+    @Query("""
+            UPDATE Booking b 
+            SET b.status = 'CANCELLED' 
+            WHERE b.desk.id = :deskId 
+            AND b.status = 'SCHEDULED' 
+            AND b.endTime > CURRENT_TIMESTAMP
+            """)
+    void cancelAllPendingBookingsForDesk(@Param("deskId") Long deskId);
 
 }

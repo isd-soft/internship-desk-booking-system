@@ -58,4 +58,15 @@ public class Booking {
     public int hashCode() {
         return Objects.hashCode(id);
     }
+
+    @PostLoad
+    private void ensureDeskNotNull() {
+        if (this.desk == null) {
+            Desk placeholder = new Desk();
+            placeholder.setId(-1L);
+            placeholder.setDeskName("Deleted DESK");
+            placeholder.setType(null);
+            this.desk = placeholder;
+        }
+    }
 }

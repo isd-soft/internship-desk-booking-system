@@ -185,7 +185,7 @@ public class BookingService {
                 bookingDTO.setStartDate(booking.getStartTime());
                 bookingDTO.setEndDate(booking.getEndTime());
 
-                if(booking.getDesk().getStatus() == DeskStatus.DEACTIVATED){
+                if (booking.getDesk().getStatus() == DeskStatus.DEACTIVATED) {
                     log.info(
                             "The desk {} is {}",
                             booking.getDesk().getId(),
@@ -196,7 +196,7 @@ public class BookingService {
                     continue;
                 }
 
-                if(booking.getStatus().equals(BookingStatus.CANCELLED)){
+                if (booking.getStatus().equals(BookingStatus.CANCELLED)) {
                     log.info(
                             "The booking with id {} is {}",
                             booking.getId(),
@@ -230,7 +230,8 @@ public class BookingService {
         }
         return resultList;
     }
-
+}
+/*
     @Transactional(readOnly = true)
     public List<BookingResponse> getAllUserBookingsByDate(
             String email,
@@ -281,4 +282,4 @@ public class BookingService {
                 .map(bookingMapper::toResponse)
                 .toList();
     }
-}
+}*/
