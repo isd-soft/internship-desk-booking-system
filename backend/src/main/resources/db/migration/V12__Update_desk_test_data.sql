@@ -1,14 +1,16 @@
 UPDATE desk
-SET type = 'ASSIGNED', is_temporarily_available = false
+SET type = 'UNAVAILABLE',
+is_temporarily_available = false,
+status = 'DEACTIVATED'
 WHERE desk_name IN
 (
-'MARK-01',
-'MARK-02',
-'MARK-03',
-'MARK-04',
-'MARK-05',
-'MARK-06',
-'MARK-07',
-'MARK-08',
-'MARK-09'
+'ADM-01',
+'ADM-02',
+'ADM-03',
+'ADM-04',
+'ADM-05',
+'ADM-06',
+'ADM-07',
+'ADM-08',
+'ADM-09'
 );
