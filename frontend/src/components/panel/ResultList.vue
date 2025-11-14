@@ -4,7 +4,7 @@
       <div class="results-header">
         <div class="results-title-wrap">
           <div class="results-title">{{ title }}</div>
-          <div class="results-sub">{{ items.length }} items</div>
+          <div class="results-sub">{{ items.length }} itemа аs</div>
         </div>
 
         <v-chip
@@ -143,12 +143,13 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import {layout} from "../VisualFloorMap/floorLayout";
 import api from "@/plugins/axios";
 
 const emit = defineEmits<{
   (e: "page", page: number): void;
   (e: "details", item: any): void;
-  (e: "refresh"): void;
+  (e: "refresh", item: any): void;
 }>();
 
 const props = defineProps<{
@@ -162,9 +163,8 @@ const props = defineProps<{
 async function cancelItem(item: any) {
   try {
     await api.post(`/booking/${item.id}/cancel`);
-    console.log("Booking cancelled");
 
-    emit("refresh"); 
+    emit("refresh", { deskId: item.raw.desk.id, color: "GREEN" }); 
 
   } catch (e: any) {
     console.error("Failed to cancel booking", e);

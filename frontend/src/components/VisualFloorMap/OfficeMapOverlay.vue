@@ -66,6 +66,14 @@ function isDeskBooked(id: string) {
   return bookedDesks.value.has(id);
 }
 
+function handeCancelItem(data: { deskId: number; color: string }){
+  const desk = layout.find((d: any) => Number(d.i) === data.deskId);
+
+  if(desk){
+    desk.color = data.color;
+  }
+}
+
 function handleCreated(data: { deskId: number; success: boolean }) {
   const desk = layout.find((d: any) => Number(d.i) === data.deskId);
 

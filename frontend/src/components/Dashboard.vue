@@ -8,6 +8,7 @@ import {
   loadDesksFromBackend,
   resetLayout,
   DeskColors,
+  layout
 } from "../components/VisualFloorMap/floorLayout.ts";
 
 const reloadColors = async () => {
@@ -22,6 +23,13 @@ onMounted(() => {
   reloadColors();
 });
 
+function handleCancelItem(data) {
+  const desk = layout.find((d) => Number(d.i) === data.deskId);
+  if (desk) {
+    desk.color = data.color;
+  }
+}
+
 const legends = [
   { color: "#50c878", label: "Available", icon: "mdi-check-circle" },
   { color: "#ee4b2b", label: "Fully booked", icon: "mdi-close-circle" },
@@ -34,7 +42,7 @@ const legends = [
 
 <template>
   <div class="layout">
-    <SidePanel />
+    <SidePanel @cancel-item="handleCancelItem"/>
     <div class="map-holder">
       <DatePicker
         @update:date="

@@ -83,8 +83,6 @@ public class BookingController {
                 bookingService.getBookingsByDate(localDate)
         );
     }
-
-/*
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/my/byDate")
     public ResponseEntity<List<BookingResponse>> getAllMyBookingsByDate(
@@ -98,6 +96,5 @@ public class BookingController {
                 )
         );
     }
-    */
 }
 
