@@ -44,7 +44,6 @@ public class BookingService {
 
     @Transactional
     public void createBooking(String email, BookingCreateRequest request) {
-
         User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NO_FOUND", "user not found with that email"));
 
