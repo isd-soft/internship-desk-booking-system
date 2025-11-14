@@ -37,7 +37,7 @@ public class BookingServiceValidation {
         validateOfficeHours(start, end);
         validateMaxDaysInAdvance(start);
         checkDeskAvailability(request.getDeskId(), start, end);
-        checkUserAvailability(user.getId(), start, end);
+        //checkUserAvailability(user.getId(), start, end);
         validateWeeklyHoursLimit(user.getId(), start, end);
 
         log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
@@ -199,10 +199,10 @@ public class BookingServiceValidation {
         log.debug("Weekly hours limit validated successfully for user {}", userId);
     }
 
-    public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+    /*public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
         if (bookingRepository.existsUserConflict(userId, startTime, endTime))
             throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have a booking");
-    }
+    }*/
 
     public BookingStatus resolveStatus(LocalDateTime start) {
         LocalDateTime now = LocalDateTime.now();

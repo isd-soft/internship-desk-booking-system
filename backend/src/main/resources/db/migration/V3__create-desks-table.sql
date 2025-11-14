@@ -8,6 +8,8 @@ CREATE TABLE desk (
                       is_temporarily_available BOOLEAN NOT NULL DEFAULT true,
                       temporary_available_from TIMESTAMP,
                       temporary_available_until TIMESTAMP,
+                      is_deleted BOOLEAN DEFAULT 'false',
+                      deleted_at TIMESTAMP,
                       current_x DOUBLE PRECISION NOT NULL,
                       current_y DOUBLE PRECISION NOT NULL,
                       base_x DOUBLE PRECISION NOT NULL,
