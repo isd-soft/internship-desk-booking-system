@@ -68,7 +68,7 @@ import {
   formatTime,
   formatDuration,
   statusToColor,
-} from "../utils/format";
+} from "@/utils/format";
 import AdminActionSections from "../components/panel/AdminActionSections.vue";
 
 const router = useRouter();
@@ -109,7 +109,7 @@ const details = ref<{ open: boolean; item: any | null }>({
   item: null,
 });
 
-function openAdmin(page: "bookings" | "desks" | "statistics" | "map" | "settings") {
+function openAdmin(page: "bookings" | "desks" | "statistics" | "map" | "settings"| "deleted-desks") {
   const role = localStorage.getItem("role");
 
   if (String(role).toUpperCase() !== "ADMIN") {
@@ -121,7 +121,7 @@ function openAdmin(page: "bookings" | "desks" | "statistics" | "map" | "settings
     return;
   }
 
-  const validPages = ["bookings", "desks", "statistics", "map", "settings"];
+  const validPages = ["bookings", "desks", "statistics", "map", "settings", "deleted-desks"];
   const path = validPages.includes(page)
       ? `/admin-dashboard/${page}`
       : "/admin-dashboard";
