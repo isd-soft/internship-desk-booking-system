@@ -347,7 +347,24 @@ public class BookingService {
                 bookingDTO.setEndDate(booking.getEndTime());
 
                 if(booking.getDesk().getStatus() == DeskStatus.DEACTIVATED){
+                    log.info(
+                            "The desk {} is {}",
+                            booking.getDesk().getId(),
+                            booking.getDesk().getStatus()
+                    );
+
                     deskColorDTO.setDeskColor(DeskColor.GRAY);
+                    continue;
+                }
+
+                if(booking.getStatus().equals(BookingStatus.CANCELLED)){
+                    log.info(
+                            "The booking with id {} is {}",
+                            booking.getId(),
+                            booking.getStatus()
+                    );
+
+                    deskColorDTO.setDeskColor(DeskColor.GREEN);
                     continue;
                 }
 
@@ -399,7 +416,7 @@ public class BookingService {
         );
 
         List<Booking> bookings = bookingRepository
-                .findUserBookingsByDate(
+                .findUserBookingsByDateNotCancelled(
                         user.getId(),
                         localDate
                 );
