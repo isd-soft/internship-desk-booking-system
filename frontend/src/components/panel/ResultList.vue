@@ -164,7 +164,10 @@ async function cancelItem(item: any) {
   try {
     await api.post(`/booking/${item.id}/cancel`);
 
-    emit("refresh", { deskId: item.raw.desk.id, color: "GREEN" }); 
+    console.log(item);
+
+    const isoTime = item.raw.startTime.split("T")[0];
+    emit("refresh", { deskId: item.raw.desk.id, date: isoTime}); 
 
   } catch (e: any) {
     console.error("Failed to cancel booking", e);
