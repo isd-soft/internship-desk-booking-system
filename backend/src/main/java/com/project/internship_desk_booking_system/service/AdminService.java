@@ -42,6 +42,8 @@ public class AdminService {
     private final UserRepository userRepository;
     private final DeskMapper deskMapper;
     private final BookingTimeLimitsService bookingTimeLimitsService;
+    private final BookingServiceValidation bookingValidation;
+
 
     private void applyTemporaryAvailability(
             Desk desk,
@@ -52,12 +54,15 @@ public class AdminService {
         boolean enabled = Boolean.TRUE.equals(isTemporarilyAvailable);
         desk.setIsTemporarilyAvailable(enabled);
         if(enabled){
-            if(from.isAfter(until)){
-                log.warn(
-                        "Temporary availability start date {} is after end date {}",
-                        from,
-                        until
+            if (from == null || until == null) {
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_DATE_RANGE",
+                        "Start and end date must be provided when temporary availability is enabled"
+
                 );
+            }
+            if(from.isAfter(until)){
                 throw new ExceptionResponse(
                         HttpStatus.BAD_REQUEST,
                         "INVALID_DATE_RANGE",
@@ -74,12 +79,16 @@ public class AdminService {
                 );
             }
 
+
             desk.setTemporaryAvailableFrom(from);
             desk.setTemporaryAvailableUntil(until);
         } else {
+            log.info("Desk {} is no longer temporarily available", desk.getId());
             desk.setTemporaryAvailableFrom(null);
             desk.setTemporaryAvailableUntil(null);
         }
+
+
     }
     public DeskDto addDesk(
             DeskDto deskDto
@@ -212,10 +221,8 @@ public class AdminService {
             applyTemporaryAvailability(
                     desk,
                     updates.isTemporarilyAvailable(),
-                    updates.temporaryAvailableFrom() != null ?
-                            updates.temporaryAvailableFrom() : LocalDateTime.now(),
-                    updates.temporaryAvailableUntil() != null ?
-                            updates.temporaryAvailableUntil() : LocalDateTime.now().plusDays(20)
+                    updates.temporaryAvailableFrom(),
+                    updates.temporaryAvailableUntil()
             );
         }
         if(updates.currentX() != null){
@@ -408,7 +415,8 @@ public class AdminService {
                 );
             }
         }
-
+        bookingValidation.validateOfficeHours(finalStartTime, finalEndTime);
+        bookingValidation.validateBookingTimes(finalStartTime,finalEndTime);
         if (bookingUpdateCommand.endTime() != null) {
             if (finalEndTime.isBefore(finalStartTime)) {
                 throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE",

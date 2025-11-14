@@ -83,9 +83,7 @@ public class BookingServiceValidation {
             );
         }
     }
-
-
-    private void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
+    public void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
         int officeStart = bookingProperties.getOfficeStartHour();
         int officeEnd = bookingProperties.getOfficeEndHour();
 
@@ -204,7 +202,7 @@ public class BookingServiceValidation {
     }
 
     /*public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        if (bookingRepository.existsUserConflict(userId, startTime, endTime))
+        if (bookingRepository.findAnyUserConflict(userId, startTime, endTime))
             throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have a booking");
     }*/
 

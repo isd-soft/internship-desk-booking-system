@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue";
+import {reactive, ref, watch} from "vue";
+
 
 interface Props {
   show: boolean;
@@ -9,6 +10,7 @@ interface Props {
     endTime: string;
     status: string;
   };
+  error: String;
 }
 
 interface Emits {
@@ -33,7 +35,7 @@ const bookingForm = reactive({
 
 const statusOptions = [
   { value: "ACTIVE", label: "Active" },
-  { value: "COMPLETED", label: "Completed" },
+  { value: "CONFIRMED", label: "Confirmed" },
   { value: "CANCELLED", label: "Cancelled" },
   { value: "SCHEDULED", label: "Scheduled" },
 ];
@@ -111,6 +113,16 @@ function formatDateTime(dateStr: string): string {
       </v-card-title>
 
       <v-card-text class="card-body">
+        <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+            density="compact"
+            closable
+        >
+          {{error}}
+        </v-alert>
         <div class="section">
           <div class="section-title">Desk ID</div>
           <input

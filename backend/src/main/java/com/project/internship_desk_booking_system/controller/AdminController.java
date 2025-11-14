@@ -66,14 +66,14 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllDesks());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/delete/desk/{id}")
-    public ResponseEntity<Void> deleteDesk(
-            @PathVariable("id") Long deskId
-    ) {
-        adminService.deleteDesk(deskId);
-        return ResponseEntity.ok().build();
-    }
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @DeleteMapping("/delete/desk/{id}")
+//    public ResponseEntity<Void> deleteDesk(
+//            @PathVariable("id") Long deskId
+//    ) {
+//        adminService.deleteDesk(deskId);
+//        return ResponseEntity.ok().build();
+//    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("cancel/booking/{id}")
@@ -119,13 +119,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllDeletedDesks());
     }
 
-    //@PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/restore/desk/{id}")
-    public ResponseEntity<Void> restoreDesk(
-            @PathVariable("id") Long deskId
-    ) {
-        adminService.restoreDesk(deskId);
-        return ResponseEntity.ok().build();
-    }
+//    //@PreAuthorize("hasRole('ADMIN')")
+//    @PatchMapping("/restore/desk/{id}")
+//    public ResponseEntity<Void> restoreDesk(
+//            @PathVariable("id") Long deskId
+//    ) {
+//        adminService.restoreDesk(deskId);
+//        return ResponseEntity.ok().build();
+//    }
 
 }

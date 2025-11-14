@@ -67,7 +67,6 @@
           class="mb-4"
           density="compact"
           closable
-          @click:close="error = null"
       >
         {{ error }}
       </v-alert>
@@ -194,6 +193,7 @@
         <DeskEditModal
             v-model="showEditModal"
             :desk="selectedDesk"
+            :error="error"
             @close="showEditModal = false"
             @save="handleSave"
         />
@@ -277,7 +277,7 @@ const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 // Table headers
 const headers = [
   { title: 'ID', key: 'id', width: 80, align: 'start' },
-  { title: 'Desk', key: 'name', minWidth: 220 },
+  { title: 'Desk', key: 'name', width: 150 },
   { title: 'Zone Id', key: 'zoneId', width: 140 },
   { title: 'Zone Name', key: 'zoneName', width: 140 },
   { title: 'Type', key: 'type', width: 120 },
@@ -321,8 +321,8 @@ const filteredDesks = computed(() => {
     type: d.type ?? 'N/A',
     status: d.deskStatus ?? 'N/A',
     isTemporarilyAvailable: d.isTemporarilyAvailable ?? false,
-    tempFrom: d.temporaryAvailableFrom ?? 'N/A',
-    tempUntil: d.temporaryAvailableUntil ?? 'N/A',
+    tempFrom: d.temporaryAvailableFrom,
+    tempUntil: d.temporaryAvailableUntil,
     rawData: d // Keep original data for editing
   }));
 });
@@ -468,7 +468,7 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 700;
   color: #737373;
-  letter-spacing: 1.5px;
+  letter-spacing: -0.5px;
   text-transform: uppercase;
 }
 

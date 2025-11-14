@@ -56,18 +56,6 @@ public class BookingController {
 
     }
 
-/*
-    @DeleteMapping("/{bookingId}")
-    public ResponseEntity<Void> cancelBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long bookingId) {
-        String email = principal.getEmail();
-        bookingService.cancelBooking(email, bookingId);
-        return ResponseEntity.ok().build();
-    }
-*/
-
-
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long id) {
         bookingService.cancelBooking(principal.getEmail(), id);
