@@ -67,19 +67,6 @@
       <span class="btn-text">Settings</span>
     </v-btn>
 
-    <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'deleted-desks')"
-    >
-      <v-icon class="mr-2" size="20">mdi-cog</v-icon>
-      <span class="btn-text">Deleted Desks</span>
-    </v-btn>
-
     <v-divider class="my-2"></v-divider>
 
     <v-btn
@@ -106,7 +93,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: "openMap"): void;
-  (e: "openAdmin", page: "bookings" | "desks" | "settings" | "statistics"| "map"|"deleted-desks"): void;
+  (e: "openAdmin", page: "bookings" | "desks" | "settings" | "statistics"| "map"): void;
   (e: "logout"): void;
 }>();
 
