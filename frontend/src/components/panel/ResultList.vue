@@ -163,9 +163,7 @@ const props = defineProps<{
 async function cancelItem(item: any) {
   try {
     await api.post(`/booking/${item.id}/cancel`);
-
-    console.log(item);
-
+    
     const isoTime = item.raw.startTime.split("T")[0];
     emit("refresh", { deskId: item.raw.desk.id, date: isoTime}); 
 
