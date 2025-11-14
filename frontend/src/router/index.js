@@ -9,7 +9,6 @@ import AdminDesks from "../components/AdminDesks.vue";
 import AdminBookings from "../components/AdminBookings.vue";
 import AdminDashboard from "../components/AdminDashboard.vue";
 import SettingsPage from "../components/SettingsPage.vue";
-
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "Login", component: LoginPage },
@@ -19,6 +18,16 @@ const routes = [
         path: "/admin-dashboard",
         component: AdminDashboard,
         meta: {requiresAdmin: true},
+            beforeEnter: (to, from, next) => {
+            const userRole = localStorage.getItem('role');
+            const isAdmin = userRole === 'ADMIN';
+
+            if (isAdmin) {
+                next();
+            } else {
+                next("/dashboard");
+            }
+        },
         children: [
             {path: "bookings", name: "AdminBookings", component: AdminBookings},
             {path: "desks", name: "AdminDesks", component: AdminDesks},
@@ -29,8 +38,8 @@ const routes = [
     },
 ];
 
-const router = createRouter({ history: createWebHistory(), routes });
 
+const router = createRouter({ history: createWebHistory(), routes });
 router.beforeEach((to, from, next) => {
   const publicPages = ["/login", "/register"];
   const isAuth = isAuthenticated();
