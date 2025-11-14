@@ -55,25 +55,11 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
 
     long countByType(DeskType type);
 
-
-    @Query("SELECT d FROM Desk d WHERE d.id = :id")
+    @Query(value = "SELECT * FROM desk WHERE id = :id", nativeQuery = true)
     Optional<Desk> findByIdIncludingDeleted(@Param("id") Long id);
 
-    @Query("SELECT d FROM Desk d WHERE d.isDeleted = true")
+    @Query(value = "SELECT * FROM desk WHERE is_deleted = true", nativeQuery = true)
     List<Desk> findAllDeleted();
-
-    @Modifying
-    @Query("DELETE FROM Desk d WHERE d.id = :id")
-    void permanentlyDelete(@Param("id") Long id);
-
-    @Query("SELECT DISTINCT d.zone FROM Desk d ORDER BY d.zone.zoneName")
-    List<Zone> findAllDistinctZones();
-
-    @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId ORDER BY d.deskName DESC LIMIT 1")
-    Optional<Desk> findLastDeskInZone(@Param("zoneId") Long zoneId);
-
-    @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId ORDER BY d.deskName ASC")
-    List<Desk> findAllByZoneIdOrderByDeskNumber(@Param("zoneId") Long zoneId);
 
     @Query("SELECT d FROM Desk d WHERE d.zone.id = :zoneId " +
             "AND d.status = 'ACTIVE' " +
@@ -96,4 +82,5 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             FROM Desk d
             """)
     List<DeskCoordinatesDTO> findBaseCoordinates();
+
 }

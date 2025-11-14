@@ -1,10 +1,7 @@
 package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
-import com.project.internship_desk_booking_system.dto.BookingDTO;
-import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
-import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -194,7 +191,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("localDate") LocalDate localDate
     );
 
-    List<Booking> userId(Long userId);
     @Query("""
             SELECT b
             FROM Booking b
@@ -241,6 +237,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             """)
     void cancelAllActiveBookingsForDesk(@Param("deskId") Long deskId);
 
-    @Query("SELECT d FROM Desk d WHERE d.id = :id")
-    Optional<Desk> findByIdIncludingDeleted(@Param("id") Long id);
 }
