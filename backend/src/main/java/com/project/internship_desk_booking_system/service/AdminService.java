@@ -23,12 +23,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -341,120 +340,107 @@ public class AdminService {
 
     @Transactional
     public BookingResponse editBooking(
-        Long bookingId,
-        BookingUpdateCommand bookingUpdateCommand
-    ){
-        log.info("Looking for a booking with id:{{}}", bookingId);
+            Long bookingId,
+            BookingUpdateCommand bookingUpdateCommand
+    ) {
+        log.info("Looking for a booking with id: {}", bookingId);
 
         Booking existingBooking = findBookingById(bookingId);
 
-        if (bookingUpdateCommand.userId() != null) {
-            //check user availability
-            LocalDateTime startTime = bookingUpdateCommand.startTime() != null
-                    ? bookingUpdateCommand.startTime()
-                    : existingBooking.getStartTime();
+        Long newUserId = bookingUpdateCommand.userId();
+        Long currentUserId = existingBooking.getUser().getId();
 
-            LocalDateTime endTime = bookingUpdateCommand.endTime() != null
-                    ? bookingUpdateCommand.endTime()
-                    : existingBooking.getEndTime();
+        // Determine final start/end times (use existing if not provided)
+        LocalDateTime finalStartTime = bookingUpdateCommand.startTime() != null
+                ? bookingUpdateCommand.startTime()
+                : existingBooking.getStartTime();
 
+        LocalDateTime finalEndTime = bookingUpdateCommand.endTime() != null
+                ? bookingUpdateCommand.endTime()
+                : existingBooking.getEndTime();
+
+        // check user availability when user changes
+        boolean userIsChanging = newUserId != null && !newUserId.equals(currentUserId);
+        if (userIsChanging) {
             List<Booking> userBookings = bookingRepository.findUserBookings(
-                    bookingUpdateCommand.userId(),
-                    startTime,
-                    endTime
+                    newUserId,
+                    finalStartTime,
+                    finalEndTime
             );
 
             if (!userBookings.isEmpty()) {
                 log.error("User id: {} already has {} booking(s) in the requested time period",
-                        bookingUpdateCommand.userId(), userBookings.size());
-                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "USER_NOT_AVAILABLE",
-                        "Already have a booking in this time period");
+                        newUserId, userBookings.size());
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "USER_NOT_AVAILABLE",
+                        "User already has a booking in this time period"
+                );
+            }
+        }
+        if (bookingUpdateCommand.startTime() != null) {
+            if (finalStartTime.isBefore(LocalDateTime.now())) {
+                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE",
+                        "Cannot start booking before current time");
             }
 
-            log.info(
-                    "Editing user with id {} for booking with id {}",
-                    bookingUpdateCommand.userId(),
-                    bookingId
+            BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
+            long daysInAdvance = ChronoUnit.DAYS.between(
+                    LocalDate.now(),
+                    finalStartTime.toLocalDate()
             );
-            changeUser(bookingUpdateCommand.userId(), existingBooking);
+
+            if (daysInAdvance > policy.getMaxDaysInAdvance()) {
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "BOOKING_TOO_FAR_AHEAD",
+                        String.format(
+                                "Cannot book more than %d days in advance. You are trying to book %d days ahead.",
+                                policy.getMaxDaysInAdvance(), daysInAdvance
+                        )
+                );
+            }
         }
-        if(bookingUpdateCommand.deskId() != null){
-            //booking validation for sharred desks only
+
+        if (bookingUpdateCommand.endTime() != null) {
+            if (finalEndTime.isBefore(finalStartTime)) {
+                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE",
+                        "End time must be after start time");
+            }
+        }
+
+            if (bookingUpdateCommand.deskId() != null) {
             Desk desk = deskRepository.findById(bookingUpdateCommand.deskId())
                     .orElseThrow(() -> new ExceptionResponse(
                             HttpStatus.NOT_FOUND,
                             "DESK_NOT_FOUND",
                             "Desk with id " + bookingUpdateCommand.deskId() + " not found"
                     ));
-
-            if (desk.getType() != DeskType.SHARED) {
-                log.error("Desk {} is not available for booking (type: {})", desk.getId(), desk.getType());
-                throw new ExceptionResponse(
-                        HttpStatus.BAD_REQUEST,
-                        "DESK_NOT_BOOKABLE",
-                        String.format("Desk %d cannot be booked because it is %s", desk.getId(), desk.getType())
-                );
-            }
-
-            log.info(
-                    "Editing desk with id {} for booking with id {}",
-                    bookingUpdateCommand.deskId(),
-                    bookingId
-            );
-            changeDesk(
-                    bookingUpdateCommand.deskId(),
-                    existingBooking
-            );
+                    }
+        if (userIsChanging) {
+            log.info("Changing user from {} to {} for booking {}", currentUserId, newUserId, bookingId);
+            changeUser(newUserId, existingBooking);
         }
-        if(bookingUpdateCommand.startTime() != null){
-            if (bookingUpdateCommand.startTime().isBefore(LocalDateTime.now())) {
-                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before current time");
-            }
-            BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
-            long daysInAdvance = ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), bookingUpdateCommand.startTime().toLocalDate());
 
-            if (daysInAdvance > policy.getMaxDaysInAdvance()) {
-                log.error("Booking {} days in advance exceeds maximum of {} days",
-                        daysInAdvance, policy.getMaxDaysInAdvance());
-                throw new ExceptionResponse(
-                        HttpStatus.BAD_REQUEST,
-                        "BOOKING_TOO_FAR_AHEAD",
-                        String.format("Cannot book more than %d days in advance. You are trying to book %d days ahead.",
-                                policy.getMaxDaysInAdvance(), daysInAdvance)
-                );
-            }
-            log.info(
-                    "Editing start time {} for booking with id {}",
-                    bookingUpdateCommand.startTime(),
-                    bookingId
-
-            );
-            existingBooking.setStartTime(bookingUpdateCommand.startTime());
+        if (bookingUpdateCommand.deskId() != null) {
+            log.info("Editing desk with id {} for booking with id {}", bookingUpdateCommand.deskId(), bookingId);
+            changeDesk(bookingUpdateCommand.deskId(), existingBooking);
         }
-        if(bookingUpdateCommand.endTime() != null){
-            if (bookingUpdateCommand.endTime() .isBefore(bookingUpdateCommand.startTime())) {
-                throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
-            }
-            log.info(
-                    "Editing end time {} for booking with id {}",
-                    bookingUpdateCommand.endTime(),
-                    bookingId
 
-            );
-            existingBooking.setEndTime(bookingUpdateCommand.endTime());
-        }
-        if(bookingUpdateCommand.status() != null){
-            log.info(
-                    "Editing status {} for booking with id {}",
-                    bookingUpdateCommand.status(),
-                    bookingId
+        existingBooking.setStartTime(finalStartTime);
+        existingBooking.setEndTime(finalEndTime);
 
-            );
+        if (bookingUpdateCommand.status() != null) {
+            log.info("Editing status {} for booking with id {}", bookingUpdateCommand.status(), bookingId);
             existingBooking.setStatus(bookingUpdateCommand.status());
         }
 
-        return  bookingMapper.toResponse(existingBooking);
+        Booking saved = bookingRepository.save(existingBooking);
+        return bookingMapper.toResponse(saved);
     }
+
+
+
     private boolean hasActiveBookings(Desk desk) {
         return bookingRepository.existsActiveBookingsByDeskId(desk.getId(), LocalDateTime.now());
 
