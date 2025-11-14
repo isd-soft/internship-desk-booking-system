@@ -6,6 +6,7 @@
           <div class="results-title">{{ title }}</div>
           <div class="results-sub">{{ items.length }} items</div>
         </div>
+
         <v-chip
           size="small"
           :color="typeChipColor"
@@ -27,8 +28,35 @@
 
             <div class="item-content">
               <div class="item-header">
-                <div class="item-title">{{ item.desk }}</div>
+
+                <div class="item-title">
+                  {{ item.desk }}
+                  <span v-if="item.zoneAbv" class="desk-zone-small">
+                    ({{ item.zoneAbv }})
+                  </span>
+                </div>
+
+                <div class="fav-zone" v-if="item.zone">
+                  Zone: {{ item.zone }}
+                  <span v-if="item.zoneAbv" class="small-zone">
+                    ({{ item.zoneAbv }})
+                  </span>
+                </div>
+
                 <div class="item-actions">
+                  <v-btn
+                    v-if="currentType === 'upcoming'
+                    && (item.status === 'ACTIVE' || item.status === 'SCHEDULED')"
+                    size="small"
+                    color="red"
+                    variant="text"
+                    class="more-btn"
+                    @click.stop="cancelItem(item)"
+                  >
+                    Cancel
+                    <v-icon size="16" class="ml-1">mdi-close</v-icon>
+                  </v-btn>
+
                   <v-chip
                     class="status-chip mr-1"
                     size="x-small"
@@ -37,17 +65,6 @@
                   >
                     {{ item.status }}
                   </v-chip>
-                    <v-btn
-    v-if="item.status === 'ACTIVE'"
-    size="small"
-    variant="text"
-    color="red"
-    class="more-btn"
-    @click="cancelItem(item)"
-  >
-    Cancel
-    <v-icon size="16" class="ml-1">mdi-close</v-icon>
-  </v-btn>
 
                   <v-btn
                     size="small"
@@ -61,23 +78,28 @@
                 </div>
               </div>
 
-              <div class="item-meta">
+              <div class="item-meta" v-if="item.date">
                 <div class="meta-row">
                   <v-icon size="16" class="meta-ic">mdi-calendar</v-icon>
                   <span class="meta">{{ item.date }}</span>
                 </div>
+
                 <span class="dot">•</span>
+
                 <div class="meta-row">
                   <v-icon size="16" class="meta-ic">mdi-clock-outline</v-icon>
                   <span class="meta">{{ item.time }}</span>
                 </div>
+
                 <span class="dot">•</span>
+
                 <div class="meta-row">
                   <v-icon size="16" class="meta-ic">mdi-timer-outline</v-icon>
                   <span class="meta">{{ item.duration }}</span>
                 </div>
               </div>
             </div>
+
           </div>
         </transition-group>
       </div>
@@ -96,9 +118,9 @@
           </v-btn>
 
           <div class="pagination-info">
-            <span class="page-text"
-              >{{ startIndex }}-{{ endIndex }} of {{ items.length }}</span
-            >
+            <span class="page-text">
+              {{ startIndex }}-{{ endIndex }} of {{ items.length }}
+            </span>
           </div>
 
           <v-btn
@@ -113,9 +135,11 @@
           </v-btn>
         </div>
       </div>
+
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { computed } from "vue";
@@ -124,6 +148,7 @@ import api from "@/plugins/axios";
 const emit = defineEmits<{
   (e: "page", page: number): void;
   (e: "details", item: any): void;
+  (e: "refresh"): void;
 }>();
 
 const props = defineProps<{
@@ -139,8 +164,7 @@ async function cancelItem(item: any) {
     await api.post(`/booking/${item.id}/cancel`);
     console.log("Booking cancelled");
 
-    // обновляем текущую страницу
-    emit("page", props.page);
+    emit("refresh"); 
 
   } catch (e: any) {
     console.error("Failed to cancel booking", e);
@@ -836,4 +860,16 @@ const typeChipColor = computed(() => "grey-darken-1");
     transform: none;
   }
 }
+.fav-zone {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #6b7280;
+}
+
+.desk-zone-small {
+  opacity: 0.6;
+  font-size: 0.88em;
+}
+
 </style>

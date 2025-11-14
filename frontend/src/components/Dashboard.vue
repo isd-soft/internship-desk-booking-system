@@ -2,7 +2,6 @@
 import SidePanel from "../components/SidePanel.vue";
 import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import DatePicker from "../components/DatePicker.vue";
-import { ref } from "vue";
 import {
   selectedDate,
   loadAllColors,
@@ -159,7 +158,6 @@ const legends = [
   z-index: 1;
 }
 
-/* Tablet */
 @media (max-width: 1024px) {
   .layout > :first-child {
     width: 280px;
@@ -190,7 +188,6 @@ const legends = [
   }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
@@ -233,7 +230,6 @@ const legends = [
   }
 }
 
-/* Small Mobile */
 @media (max-width: 480px) {
   .map-holder {
     padding: 12px 8px;

@@ -9,8 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -40,13 +42,19 @@ public class DeskController {
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/gray")
-    public ResponseEntity<List<DeskColorDTO>> getGrayDesks(){
-        return ResponseEntity.ok(deskService.getGrayDesks());
+    public ResponseEntity<List<DeskColorDTO>> getGrayDesks(
+            @RequestParam("localDate")LocalDate localDate
+            ){
+        return ResponseEntity
+                .ok(deskService.getGrayDesks(localDate));
     }
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/blue")
-    public ResponseEntity<List<DeskColorDTO>> getBlueDesks(){
-        return ResponseEntity.ok(deskService.getBlueDesks());
+    public ResponseEntity<List<DeskColorDTO>> getBlueDesks(
+            @RequestParam("localDate") LocalDate localDate
+    ){
+        return ResponseEntity
+                .ok(deskService.getBlueDesks(localDate));
     }
 }

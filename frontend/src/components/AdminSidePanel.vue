@@ -163,18 +163,18 @@ async function loadData(type) {
                   new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
           );
 
-      items.value = data.map((b: any, idx: number) => ({
-        id: b.id ?? idx,
-        desk: b.desk?.deskName || "Desk",
-        zone: b.desk?.zone || "Unknown zone",
-        type: b.desk?.deskType || "—",
-        date: formatDate(b.startTime),
-        time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
-        duration: formatDuration(b.startTime, b.endTime),
-        status: b.status,
-        statusColor: statusToColor(b.status),
-        raw: b,
-      }));
+items.value = data.map((b: any) => ({
+  id: b.bookingId,
+  desk: b.desk?.displayName || "Desk",
+  zone: b.desk?.zoneDto?.zoneName || "Unknown zone",
+  type: b.desk?.type || "—",
+  date: formatDate(b.startTime),
+  time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+  duration: formatDuration(b.startTime, b.endTime),
+  status: b.status,
+  statusColor: statusToColor(b.status),
+  raw: b,
+}));
     }
 
     if (type === "favourites") {

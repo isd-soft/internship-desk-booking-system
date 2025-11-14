@@ -7,8 +7,6 @@ import {
   totalRows,
   IMAGE_WIDTH_PX,
   loadDesksFromBackend,
-  loadAllColors,
-  DeskColors,
   resetLayout,
   horizontalDesks,
 } from "../VisualFloorMap/floorLayout";
@@ -33,12 +31,6 @@ onMounted(async () => {
 const showBookingModal = ref(false);
 const selectedDesk = ref<any>(null);
 const bookedDesks = ref<Set<string>>(new Set());
-
-// Дата из календаря (ISO): по умолчанию сегодня
-// const selectedDateISO = ref<string>(new Date().toISOString().slice(0, 10));
-
-// Если у тебя есть отдельный DatePicker, просто привяжи его так:
-// <DatePicker @update:date="(v:string)=> selectedDateISO.value = v" />
 
 function isDeskFavourite(id: string | number) {
   return favStore.isFav(Number(id));
@@ -220,7 +212,6 @@ function handleCancelBooking() {
   white-space: nowrap;
 }
 
-/* Улучшенный hover эффект */
 :deep(.vgl-item:not(.vgl-item--static):hover) {
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
@@ -252,7 +243,6 @@ function handleCancelBooking() {
   transition: transform 0.1s ease;
 }
 
-/* Улучшенная иконка избранного - над десками */
 .favourite-badge {
   position: absolute;
   top: -10px;
@@ -278,7 +268,6 @@ function handleCancelBooking() {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
 }
 
-/* Мягкое свечение для избранных десков */
 .desk.favourite::before {
   content: "";
   position: absolute;
