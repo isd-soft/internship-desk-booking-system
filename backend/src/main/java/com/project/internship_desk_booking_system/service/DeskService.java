@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -55,23 +57,27 @@ public class DeskService {
         return coordinates;
     }
 
-    public List<DeskColorDTO> getGrayDesks(){
+    public List<DeskColorDTO> getGrayDesks(
+            LocalDate localDate
+    ){
         List<Desk> desks = getDesksByType(DeskType.UNAVAILABLE);
 
-
-
-        return toDeskColorDTO(
+        return toDeskColorDTOCheckAvailability(
                 desks,
-                DeskColor.GRAY
+                DeskColor.GRAY,
+                localDate
         );
     }
 
-    public List<DeskColorDTO> getBlueDesks(){
+    public List<DeskColorDTO> getBlueDesks(
+            LocalDate localDate
+    ){
         List<Desk> desks = getDesksByType(DeskType.ASSIGNED);
 
-        return toDeskColorDTO(
+        return toDeskColorDTOCheckAvailability(
                 desks,
-                DeskColor.BLUE
+                DeskColor.BLUE,
+                localDate
         );
     }
 
@@ -97,15 +103,30 @@ public class DeskService {
         return desks;
     }
 
-    private List<DeskColorDTO> toDeskColorDTO(
+    private List<DeskColorDTO> toDeskColorDTOCheckAvailability(
             List<Desk> desks,
-            DeskColor deskColor){
-        return desks
-                .stream()
-                .map(
-                        desk -> new DeskColorDTO(
-                                desk.getId(),
-                                deskColor))
-                .toList();
+            DeskColor defaultDeskColor,
+            LocalDate localDate
+    ){
+
+        List<DeskColorDTO> resultList = new ArrayList<>();
+
+        for(Desk desk : desks){
+            DeskColorDTO deskColorDTO = new DeskColorDTO();
+            deskColorDTO.setDeskId(desk.getId());
+
+            if(desk.getIsTemporarilyAvailable()){
+                if(localDate.isBefore(desk.getTemporaryAvailableUntil().toLocalDate())){
+                    deskColorDTO.setDeskColor(DeskColor.GREEN);
+                }
+                if(deskColorDTO.getDeskColor() == null){
+                    deskColorDTO.setDeskColor(defaultDeskColor);
+                }
+            } else {
+                deskColorDTO.setDeskColor(defaultDeskColor);
+            }
+            resultList.add(deskColorDTO);
+        }
+        return resultList;
     }
 }

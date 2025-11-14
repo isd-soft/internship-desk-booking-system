@@ -1,5 +1,5 @@
 UPDATE desk
-SET type = 'ASSIGNED'
+SET type = 'ASSIGNED', is_temporarily_available = false
 WHERE desk_name IN
 (
 'MARK-01',

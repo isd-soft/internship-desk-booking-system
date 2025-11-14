@@ -144,11 +144,11 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
 
-items.value = data.map((b: any, idx: number) => ({
-  id: b.id ?? idx,
-  desk: b.desk?.deskName || "Desk",
+items.value = data.map((b: any) => ({
+  id: b.bookingId,
+  desk: b.desk?.displayName || "Desk",
   zone: b.desk?.zoneDto?.zoneName || "Unknown zone",
-  type: b.desk?.deskType || "—",
+  type: b.desk?.type || "—",
   date: formatDate(b.startTime),
   time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
   duration: formatDuration(b.startTime, b.endTime),
@@ -158,23 +158,25 @@ items.value = data.map((b: any, idx: number) => ({
 }));
     }
 
-    if (type === "favourites") {
-      currentTitle.value = "Favorites";
-      const response = await api.get("/favourites");
-      const data = response.data || [];
+if (type === "favourites") {
+  currentTitle.value = "Favorites";
+  const response = await api.get("/favourites");
+  const data = response.data || [];
 
-      items.value = data.map((d: any, idx: number) => ({
-        id: d.deskId ?? idx,
-        desk: d.deskName || "Desk",
-        zone: d.zone || "Unknown zone",
-        favourite: d.isFavourite,
-        status: "",
-        statusColor: "primary",
-        date: "",
-        time: "",
-        duration: "",
-        raw: d,
-      }));
+items.value = data.map((d: any, idx: number) => ({
+  id: d.deskId ?? idx,
+  desk: d.displayName || d.deskName || "Desk",
+  zone: d.zoneDto?.zoneName || d.zone || "Unknown zone",
+  zoneAbv: d.zoneDto?.zoneAbv || "",
+  favourite: d.isFavourite,
+  status: "FAVOURITE",
+  statusColor: "yellow-darken-2",
+  date: "",
+  time: "",
+  duration: "",
+  raw: d,
+}));
+
     }
 
     if (type === "upcoming") {
@@ -189,18 +191,18 @@ items.value = data.map((b: any, idx: number) => ({
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
 
-      items.value = data.map((b: any, idx: number) => ({
-        id: b.id ?? idx,
-        desk: b.desk?.deskName || "Desk",
-        zone: b.desk?.zone || "Unknown zone",
-        type: b.desk?.deskType || "—",
-        date: formatDate(b.startTime),
-        time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
-        duration: formatDuration(b.startTime, b.endTime),
-        status: b.status,
-        statusColor: statusToColor(b.status),
-        raw: b,
-      }));
+items.value = data.map((b: any) => ({
+  id: b.bookingId,
+  desk: b.desk?.displayName || "Desk",
+  zone: b.desk?.zoneDto?.zoneName || "Unknown zone",
+  type: b.desk?.type || "—",
+  date: formatDate(b.startTime),
+  time: `${formatTime(b.startTime)} - ${formatTime(b.endTime)}`,
+  duration: formatDuration(b.startTime, b.endTime),
+  status: b.status,
+  statusColor: statusToColor(b.status),
+  raw: b,
+}));
     }
   } catch (err) {
     console.error(err);

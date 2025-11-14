@@ -1,5 +1,7 @@
 UPDATE desk
-SET type = 'UNAVAILABLE'
+SET type = 'UNAVAILABLE',
+is_temporarily_available = false,
+status = 'DEACTIVATED'
 WHERE desk_name IN
 (
 'ADM-01',
