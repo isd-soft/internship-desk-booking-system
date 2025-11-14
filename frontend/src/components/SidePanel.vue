@@ -18,7 +18,7 @@
     :currentType="currentType"
     @page="(p) => (currentPage = p)"
     @details="openDetails"
-    @refresh="refreshList"
+    @refresh="handleCancelItem"
   />
 </v-slide-y-transition>
 
@@ -77,6 +77,8 @@ const currentTitle = ref("Data");
 const currentType = ref<string>("");
 const loading = ref(false);
 const currentPage = ref(1);
+
+const emit = defineEmits(['cancel-item']);
 
 const winW = ref(window.innerWidth);
 const itemsPerPage = ref(3);
@@ -215,6 +217,11 @@ items.value = data.map((b: any) => ({
   } finally {
     loading.value = false;
   }
+}
+
+function handleCancelItem(data: { deskId: number; color: string }) {
+  emit('cancel-item', data);
+  refreshList();
 }
 
 function openDetails(item: any) {
