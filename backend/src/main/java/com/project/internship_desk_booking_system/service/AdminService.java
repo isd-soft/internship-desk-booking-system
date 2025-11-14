@@ -251,6 +251,11 @@ public class AdminService {
             bookingRepository.cancelAllActiveBookingsForDesk(id);
             log.info("All active bookings for desk {} have been cancelled", id);
         }
+        if (hasScheduledBookings(desk)) {
+            log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
+            bookingRepository.cancelAllPendingBookingsForDesk(id);
+            log.info("All active bookings for desk {} have been cancelled", id);
+        }
 
 
         desk.setIsDeleted(true);
@@ -457,7 +462,9 @@ public class AdminService {
     }
     private boolean hasActiveBookings(Desk desk) {
         return bookingRepository.existsActiveBookingsByDeskId(desk.getId(), LocalDateTime.now());
-
+    }
+    private boolean hasScheduledBookings(Desk desk) {
+        return bookingRepository.existsScheduledBookingsByDeskId(desk.getId(), LocalDateTime.now());
     }
 
     private Booking findBookingById(
