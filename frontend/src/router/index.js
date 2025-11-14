@@ -25,10 +25,8 @@ const routes = [
             {path: "statistics", name: "Statistics", component: StatisticsPage},
             {path: "settings", name: "Settings", component: SettingsPage},
             {path: "map", name: "Map", component: Map},
-
         ],
     },
-  { path: "/map", name: "Map", component: Map },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });
