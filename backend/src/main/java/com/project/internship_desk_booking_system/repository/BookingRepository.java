@@ -1,8 +1,6 @@
 package com.project.internship_desk_booking_system.repository;
 
 import com.project.internship_desk_booking_system.dto.DeskStatsProjection;
-import com.project.internship_desk_booking_system.dto.BookingDTO;
-import com.project.internship_desk_booking_system.dto.DeskStatsDTO;
 import com.project.internship_desk_booking_system.entity.Booking;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
@@ -44,13 +42,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     int confirmBookings(@Param("now") LocalDateTime now);
 
     @Query("""
-                SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END
-                FROM Booking b
+                SELECT b FROM Booking b
                 WHERE b.user.id = :userId
-                  AND b.startTime < :endTime
-                  AND b.endTime > :startTime
+                  AND (
+                        (b.startTime < :endTime AND b.endTime > :startTime)
+                     OR DATE(b.startTime) = DATE(:startTime)
+                  )
             """)
-    boolean existsUserConflict(
+    List<Booking> findAnyUserConflict(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
@@ -131,6 +130,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.desk.id = :deskId " +
+            "AND b.status = 'SCHEDULED' " +
+            "AND b.endTime > :now")
+    boolean existsScheduledBookingsByDeskId(
+            @Param("deskId") Long deskId,
+            @Param("now") LocalDateTime now
+    );
+
+
     long countBookingByStartTimeAfter(LocalDateTime startTime);
 
     long countByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
@@ -192,15 +200,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("localDate") LocalDate localDate
     );
 
-    List<Booking> userId(Long userId);
     @Query("""
             SELECT b
             FROM Booking b
-            WHERE DATE(b.startTime) = :localDate
-                AND b.user.id = :userId
-                AND b.status != 'CANCELLED'
+            WHERE DATE(b.startTime) = :localDate AND b.user.id = :userId
             """)
-    List<Booking> findUserBookingsByDateNotCancelled(
+    List<Booking> findUserBookingsByDate(
             @Param("userId") Long userId,
             @Param("localDate") LocalDate localDate
     );
@@ -230,4 +235,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     Optional<Booking> findByDeskId(Long deskId);
+
+    @Modifying
+    @Query("""
+            UPDATE Booking b 
+            SET b.status = 'CANCELLED' 
+            WHERE b.desk.id = :deskId 
+            AND b.status = 'ACTIVE' 
+            AND b.endTime > CURRENT_TIMESTAMP
+            """)
+    void cancelAllActiveBookingsForDesk(@Param("deskId") Long deskId);
+
+    @Modifying
+    @Query("""
+            UPDATE Booking b 
+            SET b.status = 'CANCELLED' 
+            WHERE b.desk.id = :deskId 
+            AND b.status = 'SCHEDULED' 
+            AND b.endTime > CURRENT_TIMESTAMP
+            """)
+    void cancelAllPendingBookingsForDesk(@Param("deskId") Long deskId);
+
 }

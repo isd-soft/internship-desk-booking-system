@@ -9,6 +9,8 @@ import AdminDesks from "../components/AdminDesks.vue";
 import AdminBookings from "../components/AdminBookings.vue";
 import AdminDashboard from "../components/AdminDashboard.vue";
 import SettingsPage from "../components/SettingsPage.vue";
+import DeletedDesksPage from "@/components/DeletedDesksPage.vue";
+
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "Login", component: LoginPage },
@@ -33,6 +35,7 @@ const routes = [
             {path: "desks", name: "AdminDesks", component: AdminDesks},
             {path: "statistics", name: "Statistics", component: StatisticsPage},
             {path: "settings", name: "Settings", component: SettingsPage},
+            {path: "deleted-desks", name:"b Deleted Desks", component: DeletedDesksPage },
             {path: "map", name: "Map", component: Map},
         ],
     },
@@ -40,6 +43,7 @@ const routes = [
 
 
 const router = createRouter({ history: createWebHistory(), routes });
+
 router.beforeEach((to, from, next) => {
   const publicPages = ["/login", "/register"];
   const isAuth = isAuthenticated();
