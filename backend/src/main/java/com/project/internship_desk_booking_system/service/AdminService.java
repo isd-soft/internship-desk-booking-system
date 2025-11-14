@@ -41,6 +41,8 @@ public class AdminService {
     private final UserRepository userRepository;
     private final DeskMapper deskMapper;
     private final BookingTimeLimitsService bookingTimeLimitsService;
+    private final BookingServiceValidation bookingValidation;
+
 
 
     @Value("${app.default-admin-id}")
@@ -69,6 +71,8 @@ public class AdminService {
                         from,
                         until
                 );
+            }
+            if(from.isAfter(until)){
                 throw new ExceptionResponse(
                         HttpStatus.BAD_REQUEST,
                         "INVALID_DATE_RANGE",
@@ -85,12 +89,16 @@ public class AdminService {
                 );
             }
 
+
             desk.setTemporaryAvailableFrom(from);
             desk.setTemporaryAvailableUntil(until);
         } else {
+            log.info("Desk {} is no longer temporarily available", desk.getId());
             desk.setTemporaryAvailableFrom(null);
             desk.setTemporaryAvailableUntil(null);
         }
+
+
     }
 
     public DeskDto addDesk(
@@ -224,10 +232,8 @@ public class AdminService {
             applyTemporaryAvailability(
                     desk,
                     updates.isTemporarilyAvailable(),
-                    updates.temporaryAvailableFrom() != null ?
-                            updates.temporaryAvailableFrom() : LocalDateTime.now(),
-                    updates.temporaryAvailableUntil() != null ?
-                            updates.temporaryAvailableUntil() : LocalDateTime.now().plusDays(20)
+                    updates.temporaryAvailableFrom(),
+                    updates.temporaryAvailableUntil()
             );
         }
         if (updates.currentX() != null) {
@@ -420,7 +426,8 @@ public class AdminService {
                 );
             }
         }
-
+        bookingValidation.validateOfficeHours(finalStartTime, finalEndTime);
+        bookingValidation.validateBookingTimes(finalStartTime,finalEndTime);
         if (bookingUpdateCommand.endTime() != null) {
             if (finalEndTime.isBefore(finalStartTime)) {
                 throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE",

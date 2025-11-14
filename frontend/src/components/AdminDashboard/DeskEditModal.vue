@@ -18,6 +18,7 @@ interface Props {
     tempUntil: string | null;
     rawData?: any;
   };
+    error: String;
 }
 
 interface Emits {
@@ -88,18 +89,6 @@ const dateRangeValid = computed(() => {
 
   return until > from;
 });
-
-const dateValidationMessage = computed(() => {
-  if (!deskForm.isTemporarilyAvailable) return "";
-  if (!deskForm.temporaryAvailableFrom || !deskForm.temporaryAvailableUntil) {
-    return "Both dates are required";
-  }
-  if (!dateRangeValid.value) {
-    return "End date must be after start date";
-  }
-  return "";
-});
-
 // Watch for type changes - disable temp availability if type becomes incompatible
 watch(() => deskForm.type, (newType) => {
   if (newType !== "SHARED" && deskForm.isTemporarilyAvailable) {
@@ -187,11 +176,6 @@ function resetForm() {
 }
 
 function handleSave() {
-  // Validate before saving
-  if (deskForm.isTemporarilyAvailable && !dateRangeValid.value) {
-    return;
-  }
-
   emit("save", {
     displayName: deskForm.displayName,
     type: deskForm.type,
@@ -236,6 +220,16 @@ function closeModal() {
       </v-card-title>
 
       <v-card-text class="card-body">
+        <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+            density="compact"
+            closable
+        >
+          {{error}}
+        </v-alert>
         <div class="section">
           <div class="section-title">Desk Name</div>
           <div class="id-label">Desk_ID: {{ desk?.id }}</div>
@@ -332,10 +326,6 @@ function closeModal() {
                     placeholder="Select end date & time"
                 />
               </div>
-
-              <div v-if="dateValidationMessage" class="validation-message">
-                {{ dateValidationMessage }}
-              </div>
             </div>
           </transition>
         </div>
@@ -353,7 +343,6 @@ function closeModal() {
             class="confirm-button"
             size="x-large"
             @click.stop="handleSave"
-            :disabled="deskForm.isTemporarilyAvailable && !dateRangeValid"
         >
           Save Changes
         </v-btn>

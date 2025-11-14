@@ -180,6 +180,7 @@
         <BookingEditModal
             :show="showEditModal"
             :booking="selectedBooking"
+            :error="error"
             @close="showEditModal = false"
             @save="handleSaveBooking"
         />
@@ -340,7 +341,8 @@ function formatDate(dateStr: string | null): string {
 
 function formatTime(dateStr: string | null): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Date(dateStr).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', hour12: false  // This forces 24-hour format
+  });
 }
 
 function formatDateTimeLocal(dateStr: string): string {
