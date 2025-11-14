@@ -7,7 +7,6 @@
     persistent
   >
     <v-card class="booking-card">
-      <!-- 🔹 Header -->
       <v-card-title class="card-header">
         <div class="header-content">
           <div class="header-info">
@@ -16,7 +15,6 @@
               {{ desk?.deskName || `Desk ${desk?.i}` }}
             </div>
 
-            <!-- 📅 Вывод даты -->
             <div class="date-badge">
               <v-icon size="16" class="date-icon">mdi-calendar</v-icon>
               <div class="date-content">
@@ -31,19 +29,16 @@
         </div>
       </v-card-title>
 
-      <!-- 🔹 Time Selection -->
       <v-card-text class="card-body">
         <div class="section dark-slider">
           <div class="section-title">Select Time Range</div>
 
-          <!-- Интерактивная временная шкала -->
           <div class="timeline-container">
             <div
               ref="timelineRef"
               class="timeline-track"
               @mousedown="handleTrackClick"
             >
-              <!-- Выбранный диапазон -->
               <div
                 class="timeline-range"
                 :style="{
@@ -52,7 +47,6 @@
                 }"
               />
 
-              <!-- Ручка начала -->
               <div
                 class="timeline-handle"
                 :style="{ left: `${startPosition}%` }"
@@ -61,7 +55,6 @@
                 <div class="handle-time">{{ bookingForm.startHour }}:00</div>
               </div>
 
-              <!-- Ручка конца -->
               <div
                 class="timeline-handle"
                 :style="{ left: `${endPosition}%` }"
@@ -71,7 +64,6 @@
               </div>
             </div>
 
-            <!-- Часовые метки -->
             <div class="timeline-labels">
               <div
                 v-for="hour in hours"
@@ -84,7 +76,6 @@
             </div>
           </div>
 
-          <!-- Отображение выбранного времени -->
           <div class="time-range-display">
             <div class="time-range-label">Selected</div>
             <div class="time-range-value">{{ formattedTimeRange }}</div>
@@ -92,13 +83,31 @@
               {{ duration }} {{ duration === 1 ? "hour" : "hours" }}
             </div>
           </div>
+
+          <transition name="slide-fade">
+            <div v-if="lunchOverlap" class="modern-alert lunch-alert">
+              <div class="alert-icon lunch-icon">
+                <v-icon size="20">mdi-information-outline</v-icon>
+              </div>
+              <div class="alert-content">
+                <div class="alert-title">Lunch Hours</div>
+                <div class="alert-message">
+                  This time includes lunch hours (13:00 - 14:00). Workspace may
+                  be less available.
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
 
-        <!-- ❤️ Favourite button -->
         <button
-          @click.stop="toggleFavourite"
-          :disabled="isProcessing || !deskId"
-          :class="['favourite-button', { active: isFavourite }]"
+          type="button"
+          @click.stop.prevent="toggleFavourite"
+          :disabled="isFavouriteProcessing || !deskId"
+          :class="[
+            'favourite-button',
+            { active: isFavourite, loading: isFavouriteProcessing },
+          ]"
         >
           <v-icon size="20">
             {{ isFavourite ? "mdi-heart" : "mdi-heart-outline" }}
@@ -106,25 +115,86 @@
           <span>
             {{ isFavourite ? "Remove from Favourites" : "Add to Favourites" }}
           </span>
+          <v-progress-circular
+            v-if="isFavouriteProcessing"
+            indeterminate
+            size="16"
+            width="2"
+            class="fav-spinner"
+          />
         </button>
       </v-card-text>
 
-      <!-- 🔹 Actions -->
       <v-card-actions class="card-actions">
-        <v-btn
-          class="confirm-button"
-          size="x-large"
-          @click.stop="confirmBooking"
-        >
-          {{ isBooked ? "Update Booking" : "Confirm Booking" }}
-        </v-btn>
+        <div style="width: 100%">
+          <div
+            v-if="bookingErrors.length"
+            class="error-list"
+            style="margin-bottom: 12px"
+          >
+            <div
+              ref="errorContainer"
+              class="modern-alert error-alert"
+              role="alert"
+              aria-live="assertive"
+              tabindex="-1"
+            >
+              <div class="alert-icon error-icon">
+                <v-icon size="20">mdi-close-circle-outline</v-icon>
+              </div>
+              <div class="alert-content">
+                <div class="alert-title">Unable to Book</div>
+                <div
+                  v-for="(m, idx) in bookingErrors"
+                  :key="idx"
+                  class="alert-message"
+                >
+                  <div v-if="m.length <= 200 || expandedMessages.has(idx)">
+                    {{ m }}
+                  </div>
+                  <div v-else>
+                    {{ m.slice(0, 200) }}…
+                    <a href="#" @click.prevent="toggleExpand(idx)">Show more</a>
+                  </div>
+                </div>
+
+                <div class="error-actions"></div>
+              </div>
+            </div>
+          </div>
+
+          <v-btn
+            :disabled="isProcessing"
+            class="confirm-button"
+            size="x-large"
+            @click.stop="confirmBooking"
+          >
+            {{ isBooked ? "Update Booking" : "Confirm Booking" }}
+            <template v-if="isProcessing">
+              <v-progress-circular
+                indeterminate
+                size="18"
+                width="3"
+                class="ml-3"
+              />
+            </template>
+          </v-btn>
+        </div>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
+import {
+  ref,
+  reactive,
+  computed,
+  watch,
+  onMounted,
+  onUnmounted,
+  nextTick,
+} from "vue";
 import api from "@/plugins/axios";
 import { useFavouritesStore } from "@/stores/favourites";
 
@@ -140,8 +210,87 @@ const emit = defineEmits(["update:modelValue", "created", "cancel"]);
 
 const favStore = useFavouritesStore();
 const isProcessing = ref(false);
+const isFavouriteProcessing = ref(false);
+const bookingErrors = ref<string[]>([]);
+const errorContainer = ref<HTMLElement | null>(null);
+const expandedMessages = ref<Set<number>>(new Set());
+
+function mapBackendCode(code: string) {
+  const map: Record<string, string> = {
+    TIME_CONFLICT: "Selected time conflicts with an existing booking.",
+    INVALID_HOURS: "Selected hours are outside office hours.",
+    DESK_UNAVAILABLE: "The desk is currently unavailable.",
+    TEMPORARY_WINDOW:
+      "This desk has temporary availability windows — please choose another time.",
+    WEEKEND_RESTRICTION: "Bookings are not allowed on weekends.",
+    MIN_DURATION: "Booking duration is too short.",
+    MAX_DURATION: "Booking duration is too long.",
+  };
+
+  return map[code] || null;
+}
+
+function parseBookingError(err: any): string[] {
+  try {
+    const res = err?.response?.data;
+    const out: string[] = [];
+    if (!res) {
+      out.push("Network error. Please check your connection and try again.");
+      return out;
+    }
+
+    if (res.message && typeof res.message === "string") {
+      out.push(res.message);
+      return Array.from(new Set(out));
+    }
+
+    if (typeof res === "string") {
+      out.push(res);
+      return Array.from(new Set(out));
+    }
+
+    if (res.code) {
+      const friendly = mapBackendCode(String(res.code));
+      out.push(friendly || String(res.code));
+      return Array.from(new Set(out));
+    }
+
+    if (Array.isArray(res.errors)) {
+      res.errors.forEach((e: any) =>
+        out.push(typeof e === "string" ? e : JSON.stringify(e))
+      );
+      if (out.length > 0) return Array.from(new Set(out));
+    }
+
+    if (res.validation && typeof res.validation === "object") {
+      Object.values(res.validation).forEach((arr: any) => {
+        if (Array.isArray(arr)) out.push(...arr.map((s) => String(s)));
+      });
+      if (out.length > 0) return Array.from(new Set(out));
+    }
+
+    if (
+      res.errors &&
+      typeof res.errors === "object" &&
+      !Array.isArray(res.errors)
+    ) {
+      Object.values(res.errors).forEach((arr: any) => {
+        if (Array.isArray(arr)) out.push(...arr.map((s) => String(s)));
+      });
+      if (out.length > 0) return Array.from(new Set(out));
+    }
+
+    if (out.length === 0)
+      out.push("Booking failed. Please try again or contact support.");
+    return Array.from(new Set(out));
+  } catch (e) {
+    return ["Booking failed. Please try again."];
+  }
+}
 const bookingForm = reactive({ startHour: 9, endHour: 18 });
 
+const LUNCH_START = 13;
+const LUNCH_END = 14;
 const MIN_HOUR = 9;
 const MAX_HOUR = 18;
 const hours = Array.from(
@@ -165,10 +314,24 @@ const endPosition = computed(
   () => ((bookingForm.endHour - MIN_HOUR) / (MAX_HOUR - MIN_HOUR)) * 100
 );
 
+const lunchOverlap = computed(() => {
+  return bookingForm.startHour < LUNCH_END && bookingForm.endHour > LUNCH_START;
+});
+
 watch(
   () => props.modelValue,
   async (open) => {
-    if (open) await favStore.ensureLoaded();
+    if (open) {
+      bookingErrors.value = [];
+      await favStore.ensureLoaded();
+    }
+  }
+);
+
+watch(
+  () => [bookingForm.startHour, bookingForm.endHour],
+  () => {
+    if (bookingErrors.value.length) bookingErrors.value = [];
   }
 );
 
@@ -246,10 +409,13 @@ function closeModal() {
 }
 
 async function toggleFavourite() {
-  if (!deskId.value) return;
-  isProcessing.value = true;
-  await favStore.toggle(deskId.value);
-  isProcessing.value = false;
+  if (!deskId.value || isFavouriteProcessing.value) return;
+  isFavouriteProcessing.value = true;
+  try {
+    await favStore.toggle(deskId.value);
+  } finally {
+    isFavouriteProcessing.value = false;
+  }
 }
 
 const formattedDate = computed(() => {
@@ -295,17 +461,59 @@ async function confirmBooking() {
   ).padStart(2, "0")}:00:00`;
 
   try {
+    isProcessing.value = true;
+    bookingErrors.value = [];
+
     await api.post("/booking", {
       deskId: deskId.value,
       startTime,
       endTime,
     });
-    
+
     emit("created", { deskId: deskId.value, success: true });
     closeModal();
   } catch (err) {
     console.error("Booking error:", err);
+    bookingErrors.value = parseBookingError(err);
+    // focus the error container for accessibility
+    await nextTick();
+    if (errorContainer.value) {
+      try {
+        errorContainer.value.focus();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  } finally {
+    isProcessing.value = false;
   }
+}
+
+function toggleExpand(idx: number) {
+  const s = new Set(expandedMessages.value);
+  if (s.has(idx)) s.delete(idx);
+  else s.add(idx);
+  expandedMessages.value = s;
+}
+
+function retryBooking() {
+  if (isProcessing.value) return;
+  confirmBooking();
+}
+
+function contactSupport() {
+  const deskLabel = props.desk?.deskName || `Desk ${props.desk?.i || "?"}`;
+  const subject = encodeURIComponent(
+    `Booking support: ${deskLabel} on ${props.selectedDateISO}`
+  );
+  const body = encodeURIComponent(
+    `Attempted booking:\nDesk: ${deskLabel}\nDate: ${
+      props.selectedDateISO
+    }\nTime: ${bookingForm.startHour}:00 - ${
+      bookingForm.endHour
+    }:00\n\nErrors:\n${bookingErrors.value.join("\n")}`
+  );
+  window.location.href = `mailto:support@yourcompany.com?subject=${subject}&body=${body}`;
 }
 </script>
 
@@ -520,16 +728,78 @@ async function confirmBooking() {
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   font-weight: 600;
   color: #171717;
   cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  position: relative;
+  overflow: hidden;
+}
+
+.favourite-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.02) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: none;
+}
+
+.favourite-button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.favourite-button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.favourite-button.loading {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.fav-spinner {
+  margin-left: 6px;
 }
 
 .favourite-button:hover:not(:disabled) {
   border-color: #a3a3a3;
   background: #fafafa;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.favourite-button:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.favourite-button:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.favourite-button:active:not(:disabled)::before {
+  opacity: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.04) 0%,
+    transparent 70%
+  );
 }
 
 .favourite-button:disabled {
@@ -538,13 +808,32 @@ async function confirmBooking() {
 }
 
 .favourite-button.active {
-  background: #fef2f2;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   border-color: #fca5a5;
   color: #dc2626;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.favourite-button.active::before {
+  background: radial-gradient(
+    circle at center,
+    rgba(220, 38, 38, 0.03) 0%,
+    transparent 70%
+  );
 }
 
 .favourite-button.active:hover:not(:disabled) {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #f87171;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  transform: translateY(-1.5px);
+}
+
+.favourite-button.active:active:not(:disabled) {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  transform: translateY(0px) scale(0.98);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.1);
 }
 
 .card-actions {
@@ -569,5 +858,111 @@ async function confirmBooking() {
   background: #262626 !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.lunch-warning-alert {
+  margin-top: 20px !important;
+  background: rgba(249, 188, 30, 0.08) !important;
+  border-color: rgba(249, 188, 30, 0.3) !important;
+}
+
+.lunch-warning-alert :deep(.v-alert__content) {
+  color: #92400e;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.modern-alert {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fafafa;
+}
+
+.alert-icon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.error-icon {
+  background: #f3e8e8;
+  color: #7f1d1d;
+}
+
+.lunch-alert {
+  background: #f8f9fb;
+  border-color: rgba(30, 58, 138, 0.08);
+}
+
+.lunch-alert .alert-icon {
+  background: #e8f0fd;
+  color: #1e3a8a;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.alert-title {
+  font-weight: 800;
+  color: #1f2937;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.alert-message {
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.error-actions :deep(.v-btn) {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  padding: 6px 12px !important;
+  height: auto !important;
+  color: #7f1d1d !important;
+}
+
+.error-actions :deep(.v-btn:hover:not(:disabled)) {
+  background: #ede9e9 !important;
+}
+
+.error-alert {
+  background: linear-gradient(135deg, #faf9f8 0%, #f5f3f2 100%);
+  border-color: rgba(127, 29, 29, 0.1);
 }
 </style>

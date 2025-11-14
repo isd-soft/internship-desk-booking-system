@@ -37,7 +37,7 @@ public class BookingServiceValidation {
         validateOfficeHours(start, end);
         validateMaxDaysInAdvance(start);
         checkDeskAvailability(request.getDeskId(), start, end);
-        //checkUserAvailability(user.getId(), start, end);
+        checkUserAvailability(user.getId(), start, end);
         validateWeeklyHoursLimit(user.getId(), start, end);
 
         log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
@@ -71,7 +71,7 @@ public class BookingServiceValidation {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "TEMPORARY_WINDOW_INVALID",
-                    "Temporary availability window is not configured for this desk"
+                    "This desk’s temporary availability is not configured."
             );
         }
 
@@ -83,6 +83,8 @@ public class BookingServiceValidation {
             );
         }
     }
+
+
     public void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
         int officeStart = bookingProperties.getOfficeStartHour();
         int officeEnd = bookingProperties.getOfficeEndHour();
@@ -102,11 +104,11 @@ public class BookingServiceValidation {
         LocalDateTime now = LocalDateTime.now();
 
         if (startTime.isBefore(now)) {
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "Cannot start booking before current time");
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "You can’t book a desk in the past.");
         }
 
         if (endTime.isBefore(startTime)) {
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "End time must be after start time");
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "WRONG_TIME_DATE", "The end time must be later than the start time.");
         }
 
         long effectiveHours = effectiveHoursExcludingLunch(startTime, endTime);
@@ -138,7 +140,7 @@ public class BookingServiceValidation {
         if (!bookingRepository.findOverlappingBookings(deskId, start, end).isEmpty()) {
             throw new ExceptionResponse(
                     HttpStatus.CONFLICT,
-                    "DESK_NOT_AVAILABLE",
+                    "This desk is already booked for the selected time.",
                     "Desk already booked in this period"
             );
         }
@@ -201,10 +203,10 @@ public class BookingServiceValidation {
         log.debug("Weekly hours limit validated successfully for user {}", userId);
     }
 
-    /*public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        if (bookingRepository.findAnyUserConflict(userId, startTime, endTime))
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have a booking");
-    }*/
+    public void checkUserAvailability(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        if (bookingRepository.existsUserConflict(userId, startTime, endTime))
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_CONFLICT", "You already have another booking during this time.");
+    }
 
     public BookingStatus resolveStatus(LocalDateTime start) {
         LocalDateTime now = LocalDateTime.now();

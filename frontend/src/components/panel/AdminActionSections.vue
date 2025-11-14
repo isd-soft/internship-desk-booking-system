@@ -2,79 +2,78 @@
   <div class="actions-section px-6 pb-4">
     <!-- Admin only buttons -->
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'map')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'map')"
     >
       <v-icon class="mr-2" size="20">mdi-clipboard-text-clock</v-icon>
       <span class="btn-text">Map Settings</span>
     </v-btn>
 
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'bookings')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'bookings')"
     >
       <v-icon class="mr-2" size="20">mdi-clipboard-text-clock</v-icon>
       <span class="btn-text">All Bookings</span>
     </v-btn>
 
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'desks')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'desks')"
     >
       <v-icon class="mr-2" size="20">mdi-desk</v-icon>
       <span class="btn-text">All Desks</span>
     </v-btn>
 
-
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'statistics')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'statistics')"
     >
       <v-icon class="mr-2" size="20">mdi-chart-bar</v-icon>
       <span class="btn-text">Statistics</span>
     </v-btn>
 
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'settings')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'settings')"
     >
       <v-icon class="mr-2" size="20">mdi-cog</v-icon>
       <span class="btn-text">Settings</span>
     </v-btn>
 
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
-        size="large"
-        @click="$emit('openAdmin', 'deleted-desks')"
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'deleted-desks')"
     >
       <v-icon class="mr-2" size="20">mdi-cog</v-icon>
       <span class="btn-text">Deleted Desks</span>
@@ -83,12 +82,12 @@
     <v-divider class="my-2"></v-divider>
 
     <v-btn
-        block
-        variant="text"
-        class="neo-btn danger"
-        elevation="0"
-        size="large"
-        @click="$emit('logout')"
+      block
+      variant="text"
+      class="neo-btn danger"
+      elevation="0"
+      size="large"
+      @click="$emit('logout')"
     >
       <v-icon class="mr-2" size="20">mdi-logout</v-icon>
       <span class="btn-text">Logout</span>
@@ -97,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 
 defineProps<{
   currentType: string;
@@ -106,14 +105,23 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: "openMap"): void;
-  (e: "openAdmin", page: "bookings" | "desks" | "settings" | "statistics"| "map"|"deleted-desks"): void;
+  (
+    e: "openAdmin",
+    page:
+      | "bookings"
+      | "desks"
+      | "settings"
+      | "statistics"
+      | "map"
+      | "deleted-desks"
+  ): void;
   (e: "logout"): void;
 }>();
 
 const isAdmin = ref(false);
 onMounted(() => {
-  const role = localStorage.getItem('role');
-  isAdmin.value = String(role).toUpperCase() === 'ADMIN';
+  const role = localStorage.getItem("role");
+  isAdmin.value = String(role).toUpperCase() === "ADMIN";
 });
 </script>
 
@@ -128,7 +136,7 @@ onMounted(() => {
   letter-spacing: 0.2px;
   padding: 0 14px;
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease,
-  border-color 0.16s ease;
+    border-color 0.16s ease;
   background: #fff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);

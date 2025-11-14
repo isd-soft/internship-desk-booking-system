@@ -424,8 +424,7 @@ public class AdminService {
                         )
                 );
             }
-        }
-        bookingValidation.validateOfficeHours(finalStartTime, finalEndTime);
+        }bookingValidation.validateOfficeHours(finalStartTime, finalEndTime);
         bookingValidation.validateBookingTimes(finalStartTime,finalEndTime);
         if (bookingUpdateCommand.endTime() != null) {
             if (finalEndTime.isBefore(finalStartTime)) {

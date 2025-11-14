@@ -5,56 +5,58 @@
         <div class="header-title-section">
           <div class="header-label">ADMIN PANEL</div>
           <h2 class="header-title">All Bookings</h2>
-          <span class="header-subtitle">{{ filteredBookings.length }} total bookings</span>
+          <span class="header-subtitle"
+            >{{ filteredBookings.length }} total bookings</span
+          >
         </div>
         <div class="header-controls">
           <v-text-field
-              v-model="searchQuery"
-              density="compact"
-              variant="outlined"
-              hide-details
-              clearable
-              placeholder="Search bookings..."
-              style="max-width: 250px;"
-              :disabled="loading"
-              class="control-input"
+            v-model="searchQuery"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            placeholder="Search bookings..."
+            style="max-width: 250px"
+            :disabled="loading"
+            class="control-input"
           />
 
           <v-select
-              v-model="statusFilter"
-              :items="STATUS_OPTIONS"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              variant="outlined"
-              style="max-width: 180px"
-              :disabled="loading"
-              :clearable="false"
-              hide-details
-              label="Filter by status"
-              class="control-select"
+            v-model="statusFilter"
+            :items="STATUS_OPTIONS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            style="max-width: 180px"
+            :disabled="loading"
+            :clearable="false"
+            hide-details
+            label="Filter by status"
+            class="control-select"
           />
 
           <v-select
-              v-model="typeFilter"
-              :items="TYPE_OPTIONS"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              variant="outlined"
-              style="max-width: 180px"
-              :disabled="loading"
-              :clearable="false"
-              hide-details
-              label="Filter by desk type"
-              class="control-select"
+            v-model="typeFilter"
+            :items="TYPE_OPTIONS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            style="max-width: 180px"
+            :disabled="loading"
+            :clearable="false"
+            hide-details
+            label="Filter by desk type"
+            class="control-select"
           />
 
           <v-btn
-              color="#171717"
-              variant="flat"
-              @click="resetFilters"
-              class="control-button"
+            color="#171717"
+            variant="flat"
+            @click="resetFilters"
+            class="control-button"
           >
             Reset Filters
           </v-btn>
@@ -62,57 +64,75 @@
       </div>
 
       <v-alert
-          v-if="error"
-          type="error"
-          variant="tonal"
-          class="mb-4"
-          density="compact"
-          closable
+        v-if="error"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        density="compact"
+        closable
       >
         {{ error }}
       </v-alert>
 
       <div v-if="loading" class="loading-container">
-        <v-progress-circular indeterminate size="48" width="4" color="#171717" />
+        <v-progress-circular
+          indeterminate
+          size="48"
+          width="4"
+          color="#171717"
+        />
         <p class="loading-message mt-3">Loading bookings…</p>
       </div>
 
       <template v-else>
         <v-data-table
-            :headers="headers"
-            :items="filteredBookings"
-            item-key="id"
-            density="compact"
-            class="bookings-table"
-            :items-per-page="15"
-            fixed-header
-            height="70vh"
+          :headers="headers"
+          :items="filteredBookings"
+          item-key="id"
+          density="compact"
+          class="bookings-table"
+          :items-per-page="15"
+          fixed-header
+          height="70vh"
         >
           <template #item.userId="{ item }">
-            <span class="table-text-bold">{{ item.userId ?? '—' }}</span>
+            <span class="table-text-bold">{{ item.userId ?? "—" }}</span>
           </template>
 
           <template #item.deskName="{ item }">
             <div class="table-cell-stacked">
               <div class="table-text-bold">{{ item.deskName }}</div>
-              <div class="table-text-meta">{{ item.zoneAbv }} • {{ item.zoneId }}</div>
+              <div class="table-text-meta">
+                {{ item.zoneAbv }} • {{ item.zoneId }}
+              </div>
             </div>
           </template>
 
           <template #item.deskType="{ item }">
-            <v-chip size="x-small" :color="getStatusColor(item.deskType)" variant="flat" class="table-chip">
+            <v-chip
+              size="x-small"
+              :color="getStatusColor(item.deskType)"
+              variant="flat"
+              class="table-chip"
+            >
               {{ item.deskType }}
             </v-chip>
           </template>
 
           <template #item.startTime="{ item }">
-            <div class="table-text-primary">{{ formatDate(item.startTime) }}</div>
-            <div class="table-text-secondary">{{ formatTime(item.startTime) }}</div>
+            <div class="table-text-primary">
+              {{ formatDate(item.startTime) }}
+            </div>
+            <div class="table-text-secondary">
+              {{ formatTime(item.startTime) }}
+            </div>
           </template>
 
           <template #item.endTime="{ item }">
             <div class="table-text-primary">{{ formatDate(item.endTime) }}</div>
-            <div class="table-text-secondary">{{ formatTime(item.endTime) }}</div>
+            <div class="table-text-secondary">
+              {{ formatTime(item.endTime) }}
+            </div>
           </template>
 
           <template #item.duration="{ item }">
@@ -120,7 +140,12 @@
           </template>
 
           <template #item.status="{ item }">
-            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat" class="table-chip">
+            <v-chip
+              size="x-small"
+              :color="getStatusColor(item.status)"
+              variant="flat"
+              class="table-chip"
+            >
               {{ item.status }}
             </v-chip>
           </template>
@@ -129,34 +154,38 @@
             <v-menu :close-on-content-click="true" location="bottom end">
               <template #activator="{ props }">
                 <v-btn
-                    v-bind="props"
-                    icon
-                    variant="text"
-                    size="small"
-                    color="#171717"
-                    :loading="cancellingId === item.id"
-                    :disabled="cancellingId === item.id"
-                    class="table-action-button"
+                  v-bind="props"
+                  icon
+                  variant="text"
+                  size="small"
+                  color="#171717"
+                  :loading="cancellingId === item.id"
+                  :disabled="cancellingId === item.id"
+                  class="table-action-button"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
               <v-list density="compact" class="table-action-menu">
                 <v-list-item
-                    @click="viewBooking(item)"
-                    prepend-icon="mdi-eye"
-                    title="View">
+                  @click="viewBooking(item)"
+                  prepend-icon="mdi-eye"
+                  title="View"
+                >
                 </v-list-item>
                 <v-list-item
-                    @click="editBooking(item)"
-                    prepend-icon="mdi-pencil"
-                    title="Edit">
+                  @click="editBooking(item)"
+                  prepend-icon="mdi-pencil"
+                  title="Edit"
+                >
                 </v-list-item>
                 <v-list-item
-                    @click="CancelBooking(item)"
-                    prepend-icon="mdi-cancel"
-                    title="Cancel booking"
-                    :disabled="cancellingId === item.id || item.status === 'CANCELLED'"
+                  @click="CancelBooking(item)"
+                  prepend-icon="mdi-cancel"
+                  title="Cancel booking"
+                  :disabled="
+                    cancellingId === item.id || item.status === 'CANCELLED'
+                  "
                 ></v-list-item>
               </v-list>
             </v-menu>
@@ -164,25 +193,29 @@
 
           <template #no-data>
             <div class="table-empty-state">
-              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-calendar-blank</v-icon>
+              <v-icon size="48" color="#a3a3a3" class="mb-3"
+                >mdi-calendar-blank</v-icon
+              >
               <div class="table-empty-title">No bookings found</div>
-              <div class="table-empty-subtitle">Try adjusting your filters or check back later.</div>
+              <div class="table-empty-subtitle">
+                Try adjusting your filters or check back later.
+              </div>
             </div>
           </template>
         </v-data-table>
 
         <BookingViewModal
-            :show="showViewModal"
-            v-model="showViewModal"
-            :booking="selectedBooking"
+          :show="showViewModal"
+          v-model="showViewModal"
+          :booking="selectedBooking"
         />
 
         <BookingEditModal
-            :show="showEditModal"
-            :booking="selectedBooking"
-            :error="error"
-            @close="showEditModal = false"
-            @save="handleSaveBooking"
+          :show="showEditModal"
+          :booking="selectedBooking"
+          :error="error"
+          @close="showEditModal = false"
+          @save="handleSaveBooking"
         />
         <v-dialog v-model="showCancelDialog" max-width="500">
           <v-card class="delete-dialog">
@@ -191,23 +224,24 @@
               Cancel Booking
             </v-card-title>
             <v-card-text class="dialog-text">
-              Are you sure you want to deactivate booking <strong>{{ selectedBooking?.name }}</strong>?
-              This action cannot be undone.
+              Are you sure you want to deactivate booking
+              <strong>{{ selectedBooking?.name }}</strong
+              >? This action cannot be undone.
             </v-card-text>
             <v-card-actions class="dialog-actions">
               <v-spacer></v-spacer>
               <v-btn
-                  variant="text"
-                  @click="showCancelDialog = false"
-                  :disabled="cancellingId !== null"
+                variant="text"
+                @click="showCancelDialog = false"
+                :disabled="cancellingId !== null"
               >
                 NO
               </v-btn>
               <v-btn
-                  color="error"
-                  variant="flat"
-                  @click="confirmCancelBooking"
-                  :loading="cancellingId !== null"
+                color="error"
+                variant="flat"
+                @click="confirmCancelBooking"
+                :loading="cancellingId !== null"
               >
                 YES
               </v-btn>
@@ -220,9 +254,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api from '../plugins/axios';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
 
@@ -233,28 +267,26 @@ const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const cancellingId = ref(null);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
 const showCancelDialog = ref(false);
 const successMessage = ref(null);
 
-
-
 const STATUS_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Active', value: 'ACTIVE' },
-  { title: 'Cancelled', value: 'CANCELLED' },
-  { title: 'Confirmed', value: 'CONFIRMED' },
-  { title: 'Scheduled', value: 'SCHEDULED'}
+  { title: "All", value: "ALL" },
+  { title: "Active", value: "ACTIVE" },
+  { title: "Cancelled", value: "CANCELLED" },
+  { title: "Confirmed", value: "CONFIRMED" },
+  { title: "Scheduled", value: "SCHEDULED" },
 ];
 
 const TYPE_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Shared', value: 'SHARED' },
-  { title: 'Assigned', value: 'ASSIGNED' },
-  { title: 'Unavailable', value: 'UNAVAILABLE' },
+  { title: "All", value: "ALL" },
+  { title: "Shared", value: "SHARED" },
+  { title: "Assigned", value: "ASSIGNED" },
+  { title: "Unavailable", value: "UNAVAILABLE" },
 ];
 
 const STATUS_COLOR_MAP: Record<string, string> = {
@@ -271,35 +303,82 @@ const STATUS_COLOR_MAP: Record<string, string> = {
 
 const DEFAULT_COLOR = "#737373";
 
-const statusFilter = ref(String(route.query?.status || 'ALL').toUpperCase());
-const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
+const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
+const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
 
 const headers = [
-  { title: 'ID', key: 'id', width: 80, align: 'start', sortable: true },
-  { title: 'Desk Name', key: 'deskName', width: 150, align: 'start', sortable: true },
-  { title: 'Zone', key: 'zoneName', width: 150, align: 'start', sortable: true },
-  { title: 'Type', key: 'deskType', width: 100, align: 'center', sortable: false },
-  { title: 'Start Time', key: 'startTime', width: 160, align: 'center', sortable: false },
-  { title: 'End Time', key: 'endTime', width: 160, align: 'center', sortable: false },
-  { title: 'Duration', key: 'duration', width: 120, align: 'center', sortable: false },
-  { title: 'Status', key: 'status', width: 120, align: 'center', sortable: false },
-  { title: 'Actions', key: 'actions', width: 120, align: 'center', sortable: false },
+  { title: "ID", key: "id", width: 80, align: "start", sortable: true },
+  {
+    title: "Desk Name",
+    key: "deskName",
+    width: 150,
+    align: "start",
+    sortable: true,
+  },
+  {
+    title: "Zone",
+    key: "zoneName",
+    width: 150,
+    align: "start",
+    sortable: true,
+  },
+  {
+    title: "Type",
+    key: "deskType",
+    width: 100,
+    align: "center",
+    sortable: false,
+  },
+  {
+    title: "Start Time",
+    key: "startTime",
+    width: 160,
+    align: "center",
+    sortable: false,
+  },
+  {
+    title: "End Time",
+    key: "endTime",
+    width: 160,
+    align: "center",
+    sortable: false,
+  },
+  {
+    title: "Duration",
+    key: "duration",
+    width: 120,
+    align: "center",
+    sortable: false,
+  },
+  {
+    title: "Status",
+    key: "status",
+    width: 120,
+    align: "center",
+    sortable: false,
+  },
+  {
+    title: "Actions",
+    key: "actions",
+    width: 120,
+    align: "center",
+    sortable: false,
+  },
 ] as const;
 
 const filteredBookings = computed(() => {
-  return applyFilters(bookings.value)
-      .map(transformBookingData);
+  return applyFilters(bookings.value).map(transformBookingData);
 });
 
 function applyFilters(bookingsList: any[]) {
   let filtered = bookingsList;
 
-  if (statusFilter.value !== 'ALL') {
-    filtered = filtered.filter(b => b.status === statusFilter.value);
+  if (statusFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.status === statusFilter.value);
   }
 
-  if (typeFilter.value !== 'ALL') {
-    filtered = filtered.filter(b => b.desk?.type === typeFilter.value);
+  if (typeFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.desk?.type === typeFilter.value);
   }
 
   if (searchQuery.value) {
@@ -311,7 +390,8 @@ function applyFilters(bookingsList: any[]) {
 
 function applySearchFilter(bookingsList: any[], query: string) {
   const search = query.toLowerCase();
-  return bookingsList.filter(b =>
+  return bookingsList.filter(
+    (b) =>
       b.desk?.displayName?.toLowerCase().includes(search) ||
       b.user_id?.toString().includes(search)
   );
@@ -319,47 +399,57 @@ function applySearchFilter(bookingsList: any[], query: string) {
 
 function transformBookingData(booking: any) {
   return {
-    id: booking.bookingId ?? '—',
+    id: booking.bookingId ?? "—",
     deskId: booking.desk?.id ?? null,
     userId: booking.userId ?? null,
-    deskName: booking.desk ? booking.desk.displayName : '[Deleted Desk]',
-    zoneId: booking.desk?.zoneDto?.id ?? '0',
-    zoneName: booking.desk?.zoneDto?.zoneName ?? 'N/A',
-    zoneAbv: booking.desk?.zoneDto?.zoneAbv ?? 'N/A',
-    deskType: booking.desk?.type ?? 'N/A',
+    deskName: booking.desk ? booking.desk.displayName : "[Deleted Desk]",
+    zoneId: booking.desk?.zoneDto?.id ?? "0",
+    zoneName: booking.desk?.zoneDto?.zoneName ?? "N/A",
+    zoneAbv: booking.desk?.zoneDto?.zoneAbv ?? "N/A",
+    deskType: booking.desk?.type ?? "N/A",
     startTime: booking.startTime,
     endTime: booking.endTime,
     duration: calculateDuration(booking.startTime, booking.endTime),
-    status: booking.status ?? '—',
+    status: booking.status ?? "—",
   };
 }
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatTime(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', hour12: false  // This forces 24-hour format
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false, // This forces 24-hour format
   });
 }
 
 function formatDateTimeLocal(dateStr: string): string {
   const date = new Date(dateStr);
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function calculateDuration(startStr: string, endStr: string): string {
-  if (!startStr || !endStr) return '—';
+  if (!startStr || !endStr) return "—";
 
   const diffMs = +new Date(endStr) - +new Date(startStr);
   const totalMinutes = Math.max(0, Math.round(diffMs / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  return hours > 0 ? `${hours}h ${minutes.toString().padStart(2, '0')}m` : `${minutes}m`;
+  return hours > 0
+    ? `${hours}h ${minutes.toString().padStart(2, "0")}m`
+    : `${minutes}m`;
 }
 
 function getStatusColor(status: string): string {
@@ -370,12 +460,14 @@ async function fetchBookings() {
   try {
     loading.value = true;
     error.value = null;
-    const params = statusFilter.value !== 'ALL' ? { status: statusFilter.value } : {};
-    const response = await api.get('/booking/all', { params });
+    const params =
+      statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
+    const response = await api.get("/booking/all", { params });
     bookings.value = response.data;
   } catch (err: any) {
-    console.error('Error fetching bookings:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to fetch bookings';
+    console.error("Error fetching bookings:", err);
+    error.value =
+      err.response?.data?.message || err.message || "Failed to fetch bookings";
   } finally {
     loading.value = false;
   }
@@ -385,11 +477,10 @@ async function updateBooking(bookingId: number, updateData: any) {
   await api.patch(`/admin/edit/booking/${bookingId}`, updateData);
 }
 
-
 function resetFilters() {
-  statusFilter.value = 'ALL';
-  typeFilter.value = 'ALL';
-  searchQuery.value = '';
+  statusFilter.value = "ALL";
+  typeFilter.value = "ALL";
+  searchQuery.value = "";
 }
 
 function viewBooking(item: any) {
@@ -404,7 +495,7 @@ function editBooking(item: any) {
     deskId: item.deskId,
     startTime: formatDateTimeLocal(item.startTime),
     endTime: formatDateTimeLocal(item.endTime),
-    status: item.status
+    status: item.status,
   };
   showEditModal.value = true;
 }
@@ -416,7 +507,7 @@ async function handleSaveBooking(updatedData: any) {
       deskId: updatedData.deskId,
       startTime: updatedData.startTime,
       endTime: updatedData.endTime,
-      status: updatedData.status
+      status: updatedData.status,
     };
 
     await updateBooking(selectedBooking.value.id, bookingUpdateCommand);
@@ -424,7 +515,7 @@ async function handleSaveBooking(updatedData: any) {
     showEditModal.value = false;
   } catch (err: any) {
     console.error("Error updating booking:", err);
-    error.value = err.response?.data?.message || 'Failed to update booking';
+    error.value = err.response?.data?.message || "Failed to update booking";
   }
 }
 function CancelBooking(item) {
@@ -449,8 +540,9 @@ async function confirmCancelBooking() {
     // Refresh desk list
     await fetchBookings();
   } catch (err) {
-    console.error('Error cancelling booking:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to delete desk';
+    console.error("Error cancelling booking:", err);
+    error.value =
+      err.response?.data?.message || err.message || "Failed to delete desk";
     showCancelDialog.value = false;
   } finally {
     cancellingId.value = null;
@@ -460,7 +552,7 @@ async function confirmCancelBooking() {
 function updateRouteQuery(status: string) {
   const nextQuery = {
     ...route.query,
-    status: status === 'ALL' ? undefined : status
+    status: status === "ALL" ? undefined : status,
   };
   router.replace({ query: nextQuery });
 }
@@ -479,7 +571,8 @@ watch(statusFilter, (val) => {
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 * {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -648,7 +741,6 @@ watch(statusFilter, (val) => {
 
 .bookings-table :deep(tbody tr:hover) {
   background: #fafafa !important;
-
 }
 
 .bookings-table :deep(tbody td) {

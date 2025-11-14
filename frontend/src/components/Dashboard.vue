@@ -1,5 +1,6 @@
 <script setup>
-import SidePanel from "../components/SidePanel.vue";
+import { ref } from "vue";
+import SidePanel from "./SidePanel.vue";
 import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import DatePicker from "../components/DatePicker.vue";
 import {
@@ -8,8 +9,10 @@ import {
   loadDesksFromBackend,
   resetLayout,
   DeskColors,
-  layout
+  layout,
 } from "../components/VisualFloorMap/floorLayout.ts";
+
+const sidePanelRef = ref(null);
 
 const reloadColors = async () => {
   resetLayout();
@@ -27,24 +30,32 @@ function isSameDate(date1, date2) {
   const d1 = new Date(date1);
   const d2 = new Date(date2);
 
-  console.log(`${date1} - ${date2}`)
+  console.log(`${date1} - ${date2}`);
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
   );
-
 }
 
 function handleCancelItem(data) {
   if (!isSameDate(data.date, selectedDate.value)) {
-    console.log('Booking date does not match selected date, skipping color update');
+    console.log(
+      "Booking date does not match selected date, skipping color update"
+    );
     return;
   }
 
   const desk = layout.find((d) => Number(d.i) === data.deskId);
   if (desk) {
     desk.color = "GREEN";
+  }
+}
+
+function handleBookingCreated(data) {
+  console.log("[Dashboard] Booking created, notifying SidePanel", data);
+  if (sidePanelRef.value && sidePanelRef.value.refreshUpcoming) {
+    sidePanelRef.value.refreshUpcoming();
   }
 }
 
@@ -60,24 +71,36 @@ const legends = [
 
 <template>
   <div class="layout">
-    <SidePanel @cancel-item="handleCancelItem"/>
+    <SidePanel ref="sidePanelRef" @cancel-item="handleCancelItem" />
     <div class="map-holder">
-      <DatePicker
-        @update:date="
-          selectedDate = $event;
-          reloadColors();
-        "
-      />
-      <OfficeMapOverlay :selected-date-i-s-o="selectedDate" />
-
-      <div class="legend-bar">
-        <div v-for="(item, index) in legends" :key="index" class="legend-badge">
+      <div class="map-section">
+        <div class="map-controls">
+          <DatePicker
+            @update:date="
+              selectedDate = $event;
+              reloadColors();
+            "
+          />
+        </div>
+        <div class="embedded-map">
+          <OfficeMapOverlay
+            :selectedDateISO="selectedDate"
+            @booking-created="handleBookingCreated"
+          />
+        </div>
+        <div class="legend-bar">
           <div
-            class="badge-glow"
-            :style="{ background: `${item.color}20` }"
-          ></div>
-          <div class="badge-dot" :style="{ background: item.color }"></div>
-          <span class="badge-text">{{ item.label }}</span>
+            v-for="(item, index) in legends"
+            :key="index"
+            class="legend-badge"
+          >
+            <div
+              class="badge-glow"
+              :style="{ background: `${item.color}20` }"
+            ></div>
+            <div class="badge-dot" :style="{ background: item.color }"></div>
+            <span class="badge-text">{{ item.label }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -94,53 +117,114 @@ const legends = [
 
 .layout {
   display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
   height: 100vh;
   overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
 }
 
 .layout > :first-child {
-  width: 340px;
-  border-right: 1px solid #ddd;
+  flex: 0 0 auto;
 }
 .map-holder {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 32px 20px 20px;
-  gap: 20px;
+  justify-content: center;
+  padding: 20px;
   overflow: auto;
   min-width: 0;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 1100px;
+  flex-shrink: 1;
+  background: transparent;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.map-controls {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.embedded-map {
+  width: min(1100px, 100%);
+  aspect-ratio: 987 / 643;
+  min-height: 420px;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 1;
+}
+
+.embedded-map :deep(.floorplan-container) {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.embedded-map :deep(.floorplan-inner) {
+  margin: 0 auto;
 }
 
 .legend-bar {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.7);
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
-  border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  max-width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .legend-badge {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding: 10px 16px;
+  justify-content: flex-start;
+  text-align: left;
   background: white;
   border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: default;
   overflow: hidden;
-  min-width: 0;
+  flex: 1 1 210px;
+  max-width: 220px;
+  min-width: 180px;
+  min-height: 44px;
 }
 
 .legend-badge:hover {
@@ -161,98 +245,134 @@ const legends = [
   opacity: 1;
 }
 
-.badge-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.legend-badge:hover .badge-dot {
-  transform: scale(1.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
 .badge-text {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #1f2937;
   white-space: nowrap;
   position: relative;
   z-index: 1;
 }
 
-@media (max-width: 1024px) {
-  .layout > :first-child {
-    width: 280px;
-  }
+.badge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
+/* Tablet and desktop optimizations */
+@media (min-width: 1190px) {
   .map-holder {
-    padding: 24px 16px 16px;
-    gap: 16px;
+    padding: 24px;
   }
 
-  .legend-bar {
-    gap: 6px;
-    padding: 6px;
+  .embedded-map {
+    min-height: 500px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .map-holder {
+    padding: 32px;
+  }
+
+  .embedded-map {
+    min-height: 600px;
+  }
+}
+
+/* iPad mini and smaller tablets */
+@media (max-width: 768px) and (min-width: 481px) {
+  .map-holder {
+    padding: 16px;
+    gap: 12px;
   }
 
   .legend-badge {
     padding: 8px 12px;
-    gap: 6px;
+    gap: 7px;
+    min-height: 40px;
+    flex: 1 1 45%;
+    max-width: none;
+    text-align: center;
+    justify-content: center;
   }
 
   .badge-text {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .badge-dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
   }
 }
 
-@media (max-width: 768px) {
+/* Mobile and iPad Pro - vertical layout */
+@media (max-width: 1189px) {
   .layout {
     flex-direction: column;
+    height: auto;
+    gap: 0;
+    padding: 0;
   }
 
   .layout > :first-child {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #ddd;
-    max-height: 40vh;
+    min-height: 80vh;
+    max-height: none;
     overflow-y: auto;
+    flex: 1 1 auto;
   }
 
-  .map-holder {
-    padding: 16px 12px;
-    gap: 12px;
+  .map-section {
+    gap: 10px;
+    max-width: 100%;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .embedded-map {
+    width: 100%;
+    min-height: 220px;
+    max-height: 320px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: block;
   }
 
   .legend-bar {
-    flex-direction: column;
-    width: 100%;
-    max-width: 300px;
-    gap: 4px;
-    padding: 6px;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+    max-width: 520px;
   }
 
   .legend-badge {
-    width: 100%;
-    padding: 10px 14px;
-    justify-content: flex-start;
+    padding: 8px 12px;
+    gap: 7px;
+    min-height: 38px;
+    flex: 1 1 48%;
+    max-width: none;
+    text-align: center;
+    justify-content: center;
   }
 
   .badge-text {
-    font-size: 13px;
+    font-size: 11px;
   }
 
   .badge-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
+  }
+  .map-holder {
+    display: none !important;
   }
 }
 
