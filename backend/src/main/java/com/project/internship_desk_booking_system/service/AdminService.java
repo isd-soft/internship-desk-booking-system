@@ -43,6 +43,16 @@ public class AdminService {
     private final DeskMapper deskMapper;
     private final BookingTimeLimitsService bookingTimeLimitsService;
 
+    private static final Long DEFAULT_ADMIN_ID = 1L;
+
+    public void delete_User(Long userId){
+        if(userId.equals(DEFAULT_ADMIN_ID)){
+            log.warn("Cannot delete default admin");
+            throw new ExceptionResponse(HttpStatus.UNAUTHORIZED, "CANNOT_DELETE_DEFAULT_ADMIN", "Cannot delete default admin");
+        }
+        deskRepository.deleteById(userId);
+    }
+
     private void applyTemporaryAvailability(
             Desk desk,
             Boolean isTemporarilyAvailable,
