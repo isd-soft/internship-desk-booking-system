@@ -35,6 +35,7 @@ const statusOptions = [
   { value: "ACTIVE", label: "Active" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
+  { value: "SCHEDULED", label: "Scheduled" },
 ];
 
 // Sync with existing booking

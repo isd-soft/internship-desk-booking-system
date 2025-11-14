@@ -67,6 +67,7 @@
           variant="tonal"
           class="mb-4"
           density="compact"
+          closable
       >
         {{ error }}
       </v-alert>
@@ -245,6 +246,7 @@ const STATUS_OPTIONS = [
   { title: 'Active', value: 'ACTIVE' },
   { title: 'Cancelled', value: 'CANCELLED' },
   { title: 'Confirmed', value: 'CONFIRMED' },
+  { title: 'Scheduled', value: 'SCHEDULED'}
 ];
 
 const TYPE_OPTIONS = [
@@ -263,6 +265,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   CANCELLED: "#ef4444",
   DEACTIVATED: "#ef4444",
   UNAVAILABLE: "#737373FF",
+  SCHEDULED: "#e5ff00",
 };
 
 const DEFAULT_COLOR = "#737373";
@@ -380,9 +383,6 @@ async function updateBooking(bookingId: number, updateData: any) {
   await api.patch(`/admin/edit/booking/${bookingId}`, updateData);
 }
 
-async function cancelBookingById(bookingId: number) {
-  await api.patch(`/admin/cancel/booking/${bookingId}`);
-}
 
 function resetFilters() {
   statusFilter.value = 'ALL';

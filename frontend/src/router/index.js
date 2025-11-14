@@ -20,6 +20,16 @@ const routes = [
         path: "/admin-dashboard",
         component: AdminDashboard,
         meta: {requiresAdmin: true},
+            beforeEnter: (to, from, next) => {
+            const userRole = localStorage.getItem('role');
+            const isAdmin = userRole === 'ADMIN';
+
+            if (isAdmin) {
+                next();
+            } else {
+                next("/dashboard");
+            }
+        },
         children: [
             {path: "bookings", name: "AdminBookings", component: AdminBookings},
             {path: "desks", name: "AdminDesks", component: AdminDesks},
@@ -27,11 +37,10 @@ const routes = [
             {path: "settings", name: "Settings", component: SettingsPage},
             {path: "deleted-desks", name:"b Deleted Desks", component: DeletedDesksPage },
             {path: "map", name: "Map", component: Map},
-
         ],
     },
-  { path: "/map", name: "Map", component: Map },
 ];
+
 
 const router = createRouter({ history: createWebHistory(), routes });
 
