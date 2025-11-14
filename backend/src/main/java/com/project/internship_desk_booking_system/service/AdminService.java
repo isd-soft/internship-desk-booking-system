@@ -15,10 +15,11 @@ import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
-import com.project.internship_desk_booking_system.repository.ZoneRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
-import lombok.extern.slf4j.Slf4j;
+import com.project.internship_desk_booking_system.repository.ZoneRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +29,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -45,21 +44,32 @@ public class AdminService {
     private final BookingServiceValidation bookingValidation;
 
 
+
+    @Value("${app.default-admin-id}")
+    private Long defaultAdminId;
+
+    public void deleteUser(Long userId) {
+        if (userId.equals(defaultAdminId)) {
+            log.warn("Cannot delete default admin");
+            throw new ExceptionResponse(HttpStatus.UNAUTHORIZED, "CANNOT_DELETE_DEFAULT_ADMIN", "Cannot delete default admin");
+        }
+        deskRepository.deleteById(userId);
+    }
+
     private void applyTemporaryAvailability(
             Desk desk,
             Boolean isTemporarilyAvailable,
             LocalDateTime from,
             LocalDateTime until
-    ){
+    ) {
         boolean enabled = Boolean.TRUE.equals(isTemporarilyAvailable);
         desk.setIsTemporarilyAvailable(enabled);
-        if(enabled){
-            if (from == null || until == null) {
-                throw new ExceptionResponse(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_DATE_RANGE",
-                        "Start and end date must be provided when temporary availability is enabled"
-
+        if (enabled) {
+            if (from.isAfter(until)) {
+                log.warn(
+                        "Temporary availability start date {} is after end date {}",
+                        from,
+                        until
                 );
             }
             if(from.isAfter(until)){
@@ -70,7 +80,7 @@ public class AdminService {
                 );
             }
 
-            if(until.isBefore(LocalDateTime.now())){
+            if (until.isBefore(LocalDateTime.now())) {
                 log.warn("Temporary availability end date {} is in the past", until);
                 throw new ExceptionResponse(
                         HttpStatus.BAD_REQUEST,
@@ -90,6 +100,7 @@ public class AdminService {
 
 
     }
+
     public DeskDto addDesk(
             DeskDto deskDto
     ) {
@@ -171,13 +182,13 @@ public class AdminService {
 
     public DeskDto activateDesk(
             Long id
-    ){
+    ) {
         log.info("Activating desk with id {}", id);
 
         Desk desk = deskRepository.findById(id)
                 .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND,
-                "DESK_NOT_FOUND",
-                "Desk with id: " + id + " not found"
+                        "DESK_NOT_FOUND",
+                        "Desk with id: " + id + " not found"
                 ));
         desk.setStatus(DeskStatus.ACTIVE);
         deskRepository.save(desk);
@@ -225,16 +236,16 @@ public class AdminService {
                     updates.temporaryAvailableUntil()
             );
         }
-        if(updates.currentX() != null){
+        if (updates.currentX() != null) {
             desk.setCurrentX(updates.currentX());
         }
-        if(updates.currentY() != null){
+        if (updates.currentY() != null) {
             desk.setCurrentY(updates.currentY());
         }
-        if(updates.baseX() != null){
+        if (updates.baseX() != null) {
             desk.setBaseX(updates.baseX());
         }
-        if(updates.baseY() != null){
+        if (updates.baseY() != null) {
             desk.setBaseY(updates.baseY());
         }
 
@@ -289,19 +300,19 @@ public class AdminService {
         log.info("Desk {} restored successfully", id);
     }
 
-    public List<DeskDto> getAllDesks(){
+    public List<DeskDto> getAllDesks() {
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
-        for(Desk desk : desks){
+        for (Desk desk : desks) {
             DeskDto deskDTO = deskMapper.toDto(desk);
             deskDtoList.add(deskDTO);
         }
         return deskDtoList;
     }
 
-    public List<DeskCoordinatesDTO> getBaseCoordinates(){
+    public List<DeskCoordinatesDTO> getBaseCoordinates() {
         List<DeskCoordinatesDTO> coordinates = deskRepository.findBaseCoordinates();
-        if(coordinates.isEmpty()){
+        if (coordinates.isEmpty()) {
             throw new ExceptionResponse(
                     HttpStatus.NOT_FOUND,
                     "CURRENT_DESK_COORDINATES_NOT_FOUND",
@@ -314,7 +325,7 @@ public class AdminService {
     @Transactional
     public DeskCoordinatesDTO changeCurrentCoordinates(
             CoordinatesUpdateCommand coordinatesUpdateCommand
-    ){
+    ) {
         Desk desk = deskRepository
                 .findById(coordinatesUpdateCommand.deskId())
                 .orElseThrow(() -> new ExceptionResponse(
@@ -338,10 +349,10 @@ public class AdminService {
         );
     }
 
-   @Transactional
+    @Transactional
     public BookingResponse cancelBooking(
-        Long bookingId
-    ){
+            Long bookingId
+    ) {
         Booking booking = findBookingById(bookingId);
         log.info(
                 "Cancelling booking with id {}",
@@ -424,14 +435,14 @@ public class AdminService {
             }
         }
 
-            if (bookingUpdateCommand.deskId() != null) {
+        if (bookingUpdateCommand.deskId() != null) {
             Desk desk = deskRepository.findById(bookingUpdateCommand.deskId())
                     .orElseThrow(() -> new ExceptionResponse(
                             HttpStatus.NOT_FOUND,
                             "DESK_NOT_FOUND",
                             "Desk with id " + bookingUpdateCommand.deskId() + " not found"
                     ));
-                    }
+        }
         if (userIsChanging) {
             log.info("Changing user from {} to {} for booking {}", currentUserId, newUserId, bookingId);
             changeUser(newUserId, existingBooking);
@@ -455,17 +466,17 @@ public class AdminService {
     }
 
 
-
     private boolean hasActiveBookings(Desk desk) {
         return bookingRepository.existsActiveBookingsByDeskId(desk.getId(), LocalDateTime.now());
     }
+
     private boolean hasScheduledBookings(Desk desk) {
         return bookingRepository.existsScheduledBookingsByDeskId(desk.getId(), LocalDateTime.now());
     }
 
     private Booking findBookingById(
             Long bookingId
-    ){
+    ) {
         return bookingRepository
                 .findById(bookingId)
                 .orElseThrow(() -> new ExceptionResponse(
@@ -481,10 +492,10 @@ public class AdminService {
     private void changeUser(
             Long userId,
             Booking booking
-    ){
+    ) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(()-> new ExceptionResponse(
+                .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "USER_NOT_FOUND",
                         String.format(
@@ -497,7 +508,7 @@ public class AdminService {
     private void changeDesk(
             Long deskId,
             Booking booking
-    ){
+    ) {
         Desk desk = deskRepository
                 .findById(deskId)
                 .orElseThrow(() -> new ExceptionResponse(
@@ -510,6 +521,7 @@ public class AdminService {
                 ));
         booking.setDesk(desk);
     }
+
     public List<DeskDto> getAllDeletedDesks() {
         List<Desk> deletedDesks = deskRepository.findAllDeleted();
         return deletedDesks.stream()

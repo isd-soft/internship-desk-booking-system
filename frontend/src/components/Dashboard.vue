@@ -23,10 +23,28 @@ onMounted(() => {
   reloadColors();
 });
 
+function isSameDate(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+
+  console.log(`${date1} - ${date2}`)
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+
+}
+
 function handleCancelItem(data) {
+  if (!isSameDate(data.date, selectedDate.value)) {
+    console.log('Booking date does not match selected date, skipping color update');
+    return;
+  }
+
   const desk = layout.find((d) => Number(d.i) === data.deskId);
   if (desk) {
-    desk.color = data.color;
+    desk.color = "GREEN";
   }
 }
 

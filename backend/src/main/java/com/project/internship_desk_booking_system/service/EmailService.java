@@ -1,14 +1,18 @@
-    package com.project.internship_desk_booking_system.service;
+package com.project.internship_desk_booking_system.service;
 
-    import java.time.OffsetDateTime;
+import java.time.OffsetDateTime;
 
-    public interface EmailService {
+public interface EmailService {
 
-        void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+    void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
-        void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+    void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
-        void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+    void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
+    void sendCancelBookingAdminEmail(String message, String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime
+    );
+    void sendBookingConfirmationAdminEmail(String message, String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime
+    );
 
-    }
+}
