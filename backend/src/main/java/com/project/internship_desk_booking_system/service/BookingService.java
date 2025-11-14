@@ -44,10 +44,16 @@ public class BookingService {
 
     @Transactional
     public void createBooking(String email, BookingCreateRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NO_FOUND", "user not found with that email"));
-        Desk desk = deskRepository.findById(request.getDeskId()).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with thah id"));
-        bookingValidation.validateDeskType(desk, request.getStartTime(), request.getEndTime());
+
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NO_FOUND", "user not found with that email"));
+
+        Desk desk = deskRepository.findById(request.getDeskId())
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with that id"));
         bookingValidation.validateBookingLogic(user, request);
+
+        bookingValidation.validateDeskType(desk, request.getStartTime(), request.getEndTime());
+
         Booking newBooking = Booking.builder()
                 .user(user)
                 .desk(desk)
@@ -55,8 +61,16 @@ public class BookingService {
                 .endTime(request.getEndTime())
                 .status(bookingValidation.resolveStatus(request.getStartTime()))
                 .build();
+
         bookingRepository.save(newBooking);
-        emailService.sendBookingConfirmationEmail(email, newBooking.getId(), newBooking.getDesk().getDeskName(), newBooking.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
+
+        emailService.sendBookingConfirmationEmail(
+                email,
+                newBooking.getId(),
+                newBooking.getDesk().getDeskName(),
+                newBooking.getDesk().getZone().getZoneAbv(),
+                OffsetDateTime.now()
+        );
     }
 
 
@@ -230,8 +244,7 @@ public class BookingService {
         }
         return resultList;
     }
-}
-/*
+
     @Transactional(readOnly = true)
     public List<BookingResponse> getAllUserBookingsByDate(
             String email,
@@ -282,4 +295,4 @@ public class BookingService {
                 .map(bookingMapper::toResponse)
                 .toList();
     }
-}*/
+}

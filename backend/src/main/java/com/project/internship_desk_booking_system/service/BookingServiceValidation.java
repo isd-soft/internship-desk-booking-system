@@ -44,18 +44,21 @@ public class BookingServiceValidation {
     }
 
     public void validateDeskType(Desk desk, LocalDateTime start, LocalDateTime end) {
+
+        if (desk.getType() == DeskType.SHARED) {
+            return;
+        }
+
         if (Boolean.TRUE.equals(desk.getIsTemporarilyAvailable())) {
             validateTemporaryWindow(desk, start, end);
             return;
         }
 
-        if (desk.getType() == DeskType.ASSIGNED || desk.getType() == DeskType.UNAVAILABLE) {
-            throw new ExceptionResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "DESK_NOT_BOOKABLE",
-                    "Desk " + desk.getId() + " cannot be booked because it is " + desk.getType()
-            );
-        }
+        throw new ExceptionResponse(
+                HttpStatus.BAD_REQUEST,
+                "DESK_NOT_BOOKABLE",
+                "This desk cannot be booked"
+        );
     }
 
 
@@ -68,7 +71,7 @@ public class BookingServiceValidation {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "TEMPORARY_WINDOW_INVALID",
-                    "Temporary availability window is not configured"
+                    "Temporary availability window is not configured for this desk"
             );
         }
 
@@ -80,6 +83,7 @@ public class BookingServiceValidation {
             );
         }
     }
+
 
     private void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
         int officeStart = bookingProperties.getOfficeStartHour();
