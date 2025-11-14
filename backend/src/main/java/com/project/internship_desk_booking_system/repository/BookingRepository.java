@@ -196,9 +196,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
             SELECT b
             FROM Booking b
-            WHERE DATE(b.startTime) = :localDate AND b.user.id = :userId
+            WHERE DATE(b.startTime) = :localDate
+                AND b.user.id = :userId
+                AND b.status != 'CANCELLED'
             """)
-    List<Booking> findUserBookingsByDate(
+    List<Booking> findUserBookingsByDateNotCancelled(
             @Param("userId") Long userId,
             @Param("localDate") LocalDate localDate
     );
