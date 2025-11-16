@@ -116,19 +116,19 @@ emitISO();
   align-items: center;
   gap: 14px;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border: 2px solid #e5e7eb;
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  min-width: 280px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+  width: min(100%, 320px);
 }
 
 .date-selector:hover {
   border-color: #d1d5db;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .date-icon-wrapper {
@@ -160,13 +160,17 @@ emitISO();
 
 .date-value {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: #171717;
   letter-spacing: -0.2px;
 }
 
+.calendar-icon {
+  color: #171717;
+}
+
 .chevron-icon {
-  color: #9ca3af;
+  color: #171717;
   transition: transform 0.3s ease;
   flex-shrink: 0;
 }
@@ -177,8 +181,8 @@ emitISO();
 
 .calendar-card {
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   border: 1px solid #e5e7eb;
 }
@@ -194,15 +198,15 @@ emitISO();
 
 .elegant-picker :deep(.v-date-picker-header) {
   padding: 20px 20px 16px !important;
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-  border-bottom: 1px solid #f0f0f0;
+  background: #171717;
+  border-bottom: 1px solid #262626;
 }
 
 .elegant-picker :deep(.v-date-picker-header__content) {
   font-weight: 800 !important;
   font-size: 18px !important;
   letter-spacing: -0.3px !important;
-  color: #171717 !important;
+  color: #ffffff !important;
 }
 
 .elegant-picker :deep(.v-date-picker-controls) {

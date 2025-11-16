@@ -51,7 +51,7 @@ async function getBlue() {
   try {
     const response = await api.get(
       `/desk/blue?localDate=${selectedDate.value}`
-      );
+    );
     const data = Array.isArray(response.data) ? response.data : [];
 
     const colors = data.map((item) => ({
@@ -70,7 +70,7 @@ async function getGray() {
   try {
     const response = await api.get(
       `/desk/gray?localDate=${selectedDate.value}`
-      );
+    );
     const data = Array.isArray(response.data) ? response.data : [];
 
     const colors = data.map((item) => ({
@@ -101,34 +101,36 @@ export const loadAllColors = async () => {
 
     const colorMap = new Map<number, string>();
 
-    [...general, ...blue, ...gray].forEach(c => {
+    [...general, ...blue, ...gray].forEach((c) => {
       if (c.deskId != null) colorMap.set(c.deskId, c.deskColor);
     });
 
-    purple.forEach(c => {
+    purple.forEach((c) => {
       if (c.deskId != null) colorMap.set(c.deskId, c.deskColor);
     });
 
-    DeskColors.value = Array.from(colorMap.entries()).map(([deskId, deskColor]) => ({
-      deskId,
-      deskColor
-    }));
-
-  } catch(error){
+    DeskColors.value = Array.from(colorMap.entries()).map(
+      ([deskId, deskColor]) => ({
+        deskId,
+        deskColor,
+      })
+    );
+  } catch (error) {
     console.error("Error getting data from backend", error.message);
     DeskColors.value = [];
   }
 };
 
-
 async function getPurpleBookedDesks() {
   try {
-    const response = await api.get(`/booking/my/byDate?localDate=${selectedDate.value}`);
+    const response = await api.get(
+      `/booking/my/byDate?localDate=${selectedDate.value}`
+    );
     const data = Array.isArray(response.data) ? response.data : [];
 
-    return data.map(item => ({
+    return data.map((item) => ({
       deskId: item.desk?.id,
-      deskColor: "PURPLE"
+      deskColor: "PURPLE",
     }));
   } catch (error) {
     console.error("Error getting purple desks", error.message);
@@ -173,7 +175,7 @@ export const loadDesksFromBackend = async () => {
           static: false,
           deskName: desk.deskName,
           color: current_color,
-          isNonInteractive: isStatic
+          isNonInteractive: isStatic,
         });
       }
     });

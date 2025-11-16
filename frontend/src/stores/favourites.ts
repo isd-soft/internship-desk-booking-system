@@ -25,14 +25,32 @@ export const useFavouritesStore = defineStore("favourites", () => {
 
   async function toggle(deskId: number | string) {
     const id = Number(deskId);
+    const wasFavourite = ids.value.includes(id);
+    const previous = [...ids.value];
 
-    if (ids.value.includes(id)) {
-      await api.delete(`/favourites/${id}`);
+    if (wasFavourite) {
+      ids.value = ids.value.filter((f) => f !== id);
     } else {
-      await api.post(`/favourites/${id}`);
+      ids.value = [...ids.value, id];
     }
 
-    await fetch();
+    try {
+      if (wasFavourite) {
+        await api.delete(`/favourites/${id}`);
+      } else {
+        await api.post(`/favourites/${id}`);
+      }
+      await fetch();
+    } catch (e) {
+      console.error("⚠️ Failed to toggle favourite:", e);
+      ids.value = previous;
+    }
+  }
+
+  async function remove(deskId: number | string) {
+    const id = Number(deskId);
+    if (!ids.value.includes(id)) return;
+    await toggle(id);
   }
 
   function isFav(deskId: number | null | undefined) {
@@ -44,5 +62,6 @@ export const useFavouritesStore = defineStore("favourites", () => {
     isFav,
     ensureLoaded,
     toggle,
+    remove,
   };
 });

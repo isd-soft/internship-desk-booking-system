@@ -66,12 +66,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(76px, 6.4vw, 96px);
-  height: clamp(76px, 6.4vw, 96px);
-  border-radius: 16px;
-  border: 1px solid #ffd6a3;
-  background: rgba(255, 165, 66, 0.05);
-  box-shadow: 0 6px 18px rgba(255, 138, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
@@ -83,10 +77,7 @@
   width: clamp(64px, 5.6vw, 84px);
   height: clamp(64px, 5.6vw, 84px);
   object-fit: contain;
-}
-
-.pulse {
-  animation: pulseShadow 3s ease-in-out infinite;
+  opacity: 0.9;
 }
 
 @keyframes grow {
@@ -95,16 +86,6 @@
   }
   to {
     width: 54px;
-  }
-}
-
-@keyframes pulseShadow {
-  0%,
-  100% {
-    box-shadow: 0 0 12px rgba(255, 138, 0, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 22px rgba(255, 138, 0, 0.45);
   }
 }
 

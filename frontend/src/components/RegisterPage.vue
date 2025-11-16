@@ -19,7 +19,6 @@
       >
         <div class="logo-section text-center pt-10 pb-6">
           <div class="logo-wrapper">
-            <div class="logo-glow"></div>
             <img
               src="../assets/isd-logo.webp"
               alt="ISD Logo"
@@ -384,41 +383,16 @@ const handleRegister = async () => {
   display: inline-block;
 }
 
-.logo-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 160px;
-  height: 160px;
-  background: radial-gradient(circle, rgba(255, 152, 0, 0.2), transparent 70%);
-  border-radius: 50%;
-  animation: pulse 3s infinite;
-}
-
 .logo-img {
   width: 120px;
   height: auto;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 4px 12px rgba(255, 152, 0, 0.2));
   transition: all 0.4s ease;
 }
 
 .logo-img:hover {
   transform: scale(1.05) rotate(2deg);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0.3;
-  }
 }
 
 .welcome-text {

@@ -28,7 +28,6 @@
 
             <div class="item-content">
               <div class="item-header">
-
                 <div class="item-title">
                   {{ item.desk }}
                   <span v-if="item.zoneAbv" class="desk-zone-small">
@@ -45,8 +44,22 @@
 
                 <div class="item-actions">
                   <v-btn
-                    v-if="currentType === 'upcoming'
-                    && (item.status === 'ACTIVE' || item.status === 'SCHEDULED')"
+                    v-if="currentType === 'favourites'"
+                    size="small"
+                    color="red"
+                    variant="text"
+                    class="remove-fav-btn"
+                    @click.stop="$emit('remove-favourite', item)"
+                  >
+                    Remove
+                    <v-icon size="16" class="ml-1">mdi-heart-off</v-icon>
+                  </v-btn>
+
+                  <v-btn
+                    v-if="
+                      currentType === 'upcoming' &&
+                      (item.status === 'ACTIVE' || item.status === 'SCHEDULED')
+                    "
                     size="small"
                     color="red"
                     variant="text"
@@ -99,7 +112,6 @@
                 </div>
               </div>
             </div>
-
           </div>
         </transition-group>
       </div>
@@ -135,21 +147,20 @@
           </v-btn>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
-
 <script setup lang="ts">
 import { computed } from "vue";
-import {layout} from "../VisualFloorMap/floorLayout";
+import { layout } from "../VisualFloorMap/floorLayout";
 import api from "@/plugins/axios";
 
 const emit = defineEmits<{
   (e: "page", page: number): void;
   (e: "details", item: any): void;
   (e: "refresh", item: any): void;
+  (e: "remove-favourite", item: any): void;
 }>();
 
 const props = defineProps<{
@@ -163,10 +174,9 @@ const props = defineProps<{
 async function cancelItem(item: any) {
   try {
     await api.post(`/booking/${item.id}/cancel`);
-    
-    const isoTime = item.raw.startTime.split("T")[0];
-    emit("refresh", { deskId: item.raw.desk.id, date: isoTime}); 
 
+    const isoTime = item.raw.startTime.split("T")[0];
+    emit("refresh", { deskId: item.raw.desk.id, date: isoTime });
   } catch (e: any) {
     console.error("Failed to cancel booking", e);
   }
@@ -339,6 +349,10 @@ const typeChipColor = computed(() => "grey-darken-1");
   gap: clamp(4px, 0.5vw, 8px);
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+.remove-fav-btn {
+  font-weight: 780;
 }
 
 .status-chip {
@@ -872,5 +886,4 @@ const typeChipColor = computed(() => "grey-darken-1");
   opacity: 0.6;
   font-size: 0.88em;
 }
-
 </style>
