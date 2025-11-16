@@ -3,7 +3,6 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.LoginRequestCommand;
 import com.project.internship_desk_booking_system.command.LoginResponseDto;
 import com.project.internship_desk_booking_system.command.RegisterCommandRequest;
-import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
@@ -39,21 +38,19 @@ public class AuthService {
                     )
             );
 
-            String username = authentication.getName();
-            Role role;
+            String email = authentication.getName();
 
-            Object principal = authentication.getPrincipal();
+            User user = userRepository.findByEmailIgnoreCase(email)
+                    .orElseGet(() -> {
+                        User ldapUser = User.ldapUser(email);
+                        return userRepository.save(ldapUser);
+                    });
 
-            if (principal instanceof CustomUserPrincipal customUser) {
-                role = customUser.getRole();
-            }
-            else {
-                role = Role.USER;
-            }
+            Role role = user.getRole();
 
-            String token = jwtUtill.generateToken(username, role);
+            String token = jwtUtill.generateToken(email, role);
 
-            return new LoginResponseDto(username, role, token);
+            return new LoginResponseDto(email, role, token);
 
         } catch (org.springframework.security.authentication.DisabledException e) {
             throw new ExceptionResponse(HttpStatus.UNAUTHORIZED, "AUTH_USER_DISABLED", "User account is disabled", e);

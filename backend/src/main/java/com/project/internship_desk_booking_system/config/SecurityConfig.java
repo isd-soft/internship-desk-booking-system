@@ -49,7 +49,7 @@ public class SecurityConfig {
     public AuthenticationManager ldapAuthenticationManager(LdapContextSource contextSource) {
         LdapBindAuthenticationManagerFactory factory = new LdapBindAuthenticationManagerFactory(contextSource);
 
-        factory.setUserSearchBase("cn=developer");
+        factory.setUserSearchBase("ou=developer");
         factory.setUserSearchFilter("(mail={0})");
 
         return factory.createAuthenticationManager();
@@ -57,19 +57,17 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration,
-            AuthenticationManager ldapAuthenticationManager,
-            AuthenticationProvider daoAuthProvider
-    ) throws Exception {
-        ProviderManager mainManager = (ProviderManager) configuration.getAuthenticationManager();
+            AuthenticationProvider daoAuthProvider,
+            AuthenticationManager ldapAuthenticationManager
+    ) {
         ProviderManager ldapManager = (ProviderManager) ldapAuthenticationManager;
 
-        mainManager.getProviders().addAll(ldapManager.getProviders());
-
-        mainManager.getProviders().add(daoAuthProvider);
-
-        return mainManager;
+        return new ProviderManager(
+                ldapManager.getProviders().get(0),
+                daoAuthProvider
+        );
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
