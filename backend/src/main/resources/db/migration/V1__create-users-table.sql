@@ -2,10 +2,12 @@ CREATE SEQUENCE user_id_seq START 1;
 
 CREATE TABLE users
 (
-    id            integer default nextval('user_id_seq') primary key,
-    first_name    varchar(50) not null,
-    last_name     varchar(50) not null,
-    email         varchar(50) not null unique,
-    role          varchar(50) not null,
-    password_hash varchar(150)
+    id            integer DEFAULT nextval('user_id_seq') PRIMARY KEY,
+    first_name    varchar(50),
+    last_name     varchar(50),
+    email         varchar(50) NOT NULL UNIQUE,
+    role          varchar(50) NOT NULL,
+    password_hash varchar(150),
+    auth_provider varchar(20) NOT NULL
+                          DEFAULT 'LOCAL'
 );
