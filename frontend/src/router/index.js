@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
 import RegistrationPage from "../components/RegisterPage.vue";
 import Dashboard from "../components/Dashboard.vue";
-import Map from "../components/VisualFloorMap/OfficeMapOverlay.vue";
+import Map from "../components/VisualFloorMap/AdminOfficeMapOverlay.vue";
 import { isAuthenticated } from "../utils/auth";
 import StatisticsPage from "../components/StatisticsPage.vue";
 import AdminDesks from "../components/AdminDesks.vue";
