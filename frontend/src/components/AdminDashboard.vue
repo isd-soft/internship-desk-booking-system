@@ -19,14 +19,12 @@ import AdminSidePanel from "../components/AdminSidePanel.vue";
   overflow: hidden;
 }
 
-/* Left sidebar */
 .layout > :first-child {
   width: 320px;
   border-right: 1px solid #ddd;
   background-color: #fffaf4;
 }
 
-/* Main content area for tables */
 .content-area {
   flex: 1;
   display: flex;
@@ -36,7 +34,6 @@ import AdminSidePanel from "../components/AdminSidePanel.vue";
   background: #fff;
 }
 
-/* Optional: make it responsive */
 @media (max-width: 900px) {
   .layout {
     flex-direction: column;
