@@ -22,7 +22,7 @@
 
           <v-select
               v-model="statusFilter"
-              :items="STATUS_OPTIONS"
+              :items="statusOptions"
               item-title="title"
               item-value="value"
               density="compact"
@@ -36,7 +36,7 @@
           />
           <v-select
               v-model="typeFilter"
-              :items="TYPE_OPTIONS"
+              :items="typeOptions"
               item-title="title"
               item-value="value"
               density="compact"
@@ -56,7 +56,6 @@
           >
             Reset Filters
           </v-btn>
-          <v-chip size="small" color="#171717" variant="flat" class="count-chip">{{ filteredDesks.length }}</v-chip>
         </div>
       </div>
 
@@ -240,6 +239,7 @@ import { useRoute } from "vue-router";
 import api from '../plugins/axios';
 import DeskEditModal from "../components/AdminDashboard/DeskEditModal.vue";
 import DeskViewModal from "../components/AdminDashboard/DeskViewModal.vue";
+import{ fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors,getColor} from "@/utils/useEnums"
 
 // State
 const desks = ref([]);
@@ -256,22 +256,12 @@ const showDeleteDialog = ref(false);
 const selectedDesk = ref(null);
 const deletingId = ref(null);
 
-// Filter options
-const STATUS_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Active', value: 'ACTIVE' },
-  { title: 'Cancelled', value: 'CANCELLED' },
-  { title: 'Confirmed', value: 'CONFIRMED' },
-];
-
-const TYPE_OPTIONS = [
-  { title: 'All', value: 'ALL' },
-  { title: 'Shared', value: 'SHARED' },
-  { title: 'Assigned', value: 'ASSIGNED' },
-  { title: 'Unavailable', value: 'UNAVAILABLE' },
-];
+// Colors
+const statusColorMap = ref<Record<string, string>>({});
 
 const statusFilter = ref(String(route.query?.deskStatus || 'ALL').toUpperCase());
+const statusOptions = ref([{ title: 'All', value: 'ALL' }]);
+const typeOptions = ref([{ title: 'All', value: 'ALL' }]);
 const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 
 // Table headers
@@ -348,19 +338,6 @@ function resetFilters() {
   searchQuery.value = '';
 }
 
-function getColor(status: string): string {
-  const statusMap: Record<string, string> = {
-    ACTIVE: "#10b981",
-    SHARED: "#10b981",
-    COMPLETED: "#0b4df5",
-    CONFIRMED: "#0b4df5",
-    ASSIGNED: "#0b4df5",
-    CANCELLED: "#ef4444",
-    DEACTIVATED: "#ef4444",
-    UNAVAILABLE: "#737373FF",
-  };
-  return statusMap[status?.toUpperCase()] || "#737373";
-}
 
 function onView(item) {
   selectedDesk.value = item;
@@ -422,6 +399,9 @@ async function confirmDelete() {
 }
 
 onMounted(() => {
+  fetchDeskTypeEnum();
+  fetchDeskStatusEnum();
+  fetchColors()
   fetchDesks();
 });
 </script>

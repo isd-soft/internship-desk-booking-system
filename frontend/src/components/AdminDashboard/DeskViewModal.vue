@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { fetchColors, getColor} from "@/utils/useEnums";
+import { formatDateTime} from "@/utils/useFormatDate";
 
 interface Props {
   modelValue: boolean;
@@ -16,7 +18,7 @@ interface Props {
     rawData?: any;
   };
 }
-
+fetchColors();
 interface Emits {
   (e: "update:modelValue", value: boolean): void;
   (e: "edit"): void;
@@ -25,33 +27,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// Format date for display
-const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
-// Get status badge color
-const statusColor = computed(() => {
-  return props.desk?.status === "ACTIVE" ? "success" : "error";
-});
-
-// Get type badge color
-const typeColor = computed(() => {
-  const colors: Record<string, string> = {
-    SHARED: "primary",
-    ASSIGNED: "info",
-    UNAVAILABLE: "warning"
-  };
-  return colors[props.desk?.type || ""] || "default";
-});
 
 // Check if temporary availability is active now
 const isTempAvailabilityActive = computed(() => {
@@ -106,16 +82,10 @@ function handleEdit() {
       <v-card-text class="card-body">
         <!-- Status and Type Badges -->
         <div class="badges-row">
-          <div class="badge" :class="`badge-${statusColor}`">
-            <v-icon size="16" class="badge-icon">
-              {{ desk?.status === 'ACTIVE' ? 'mdi-check-circle' : 'mdi-close-circle' }}
-            </v-icon>
+          <div class="badge" :style="{ backgroundColor: getColor(desk?.status) }">
             {{ desk?.status }}
           </div>
-          <div class="badge" :class="`badge-${typeColor}`">
-            <v-icon size="16" class="badge-icon">
-              {{ desk?.type === 'SHARED' ? 'mdi-account-multiple' : desk?.type === 'ASSIGNED' ? 'mdi-account' : 'mdi-cancel' }}
-            </v-icon>
+          <div class="badge" :style="{ backgroundColor: getColor(desk?.type) }">
             {{ desk?.type }}
           </div>
         </div>

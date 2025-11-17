@@ -8,6 +8,8 @@ import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.service.AdminService;
+import com.project.internship_desk_booking_system.service.BookingService;
+import com.project.internship_desk_booking_system.service.DeskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final DeskService deskService;
+    private final BookingService bookingService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desk/{id}")
@@ -143,5 +147,19 @@ public class AdminController {
     public ResponseEntity<List<String>> getAllUserEmails() {
         log.info("Admin request to fetch all registered user emails");
         return ResponseEntity.ok(adminService.getAllRegisteredUserEmails());
+    }
+
+    @GetMapping("/desk-status")
+    public ResponseEntity<List<String>> getDeskStatusEnum(){
+        return ResponseEntity.ok(deskService.getAllStatusDeskEnum());
+    }
+
+    @GetMapping("/desk-type")
+    public ResponseEntity<List<String>> getDeskTypeEnum(){
+        return ResponseEntity.ok(deskService.getAllTypeDeskEnum());
+    }
+    @GetMapping("/booking-status")
+    public ResponseEntity<List<String>> getBookingStatusEnum(){
+        return ResponseEntity.ok(bookingService.getBookingStatusEnum());
     }
 }

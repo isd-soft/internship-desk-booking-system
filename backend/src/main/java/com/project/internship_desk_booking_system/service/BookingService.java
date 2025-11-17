@@ -11,6 +11,7 @@ import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -293,5 +295,11 @@ public class BookingService {
         return bookings.stream()
                 .map(bookingMapper::toResponse)
                 .toList();
+    }
+
+    public List<String> getBookingStatusEnum(){
+        return Arrays.stream(BookingStatus.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
     }
 }

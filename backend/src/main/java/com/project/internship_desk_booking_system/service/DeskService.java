@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -128,5 +130,17 @@ public class DeskService {
             resultList.add(deskColorDTO);
         }
         return resultList;
+    }
+        public List<String> getAllStatusDeskEnum() {
+            return Arrays.stream(DeskStatus.values())
+                    .map(Enum::name)
+                    .collect(Collectors.toList());
+        }
+
+        public List<String> getAllTypeDeskEnum(){
+            return Arrays.stream(DeskType.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+
     }
 }
