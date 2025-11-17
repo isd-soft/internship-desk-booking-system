@@ -10,6 +10,7 @@ CREATE TABLE desk (
                       temporary_available_until TIMESTAMP,
                       is_deleted BOOLEAN DEFAULT 'false',
                       deleted_at TIMESTAMP,
+                      reason_of_deletion VARCHAR(100),
                       current_x DOUBLE PRECISION NOT NULL,
                       current_y DOUBLE PRECISION NOT NULL,
                       base_x DOUBLE PRECISION NOT NULL,

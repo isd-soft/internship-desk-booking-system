@@ -276,8 +276,10 @@ public class AdminService {
         return deskMapper.toDto(desk);
     }
 
+// Update the deleteDesk method in AdminService.java
+
     @Transactional
-    public void deleteDesk(Long id) {
+    public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id)
                 .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
@@ -291,17 +293,19 @@ public class AdminService {
             log.info("All active bookings for desk {} have been cancelled", id);
         }
         if (hasScheduledBookings(desk)) {
-            log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
+            log.info("Desk {} has scheduled bookings. Cancelling them before deletion.", id);
             bookingRepository.cancelAllPendingBookingsForDesk(id);
-            log.info("All active bookings for desk {} have been cancelled", id);
+            log.info("All scheduled bookings for desk {} have been cancelled", id);
         }
-
 
         desk.setIsDeleted(true);
         desk.setDeletedAt(LocalDateTime.now());
+        desk.setReasonOfDeletion(reason != null && !reason.trim().isEmpty() ? reason.trim()
+                : "No reason provided");
+
         deskRepository.save(desk);
 
-        log.info("Desk {} soft deleted successfully", id);
+        log.info("Desk {} soft deleted successfully with reason: {}", id, reason);
     }
 
     @Transactional
@@ -395,7 +399,6 @@ public class AdminService {
         Long newUserId = bookingUpdateCommand.userId();
         Long currentUserId = existingBooking.getUser().getId();
 
-        // Determine final start/end times (use existing if not provided)
         LocalDateTime finalStartTime = bookingUpdateCommand.startTime() != null
                 ? bookingUpdateCommand.startTime()
                 : existingBooking.getStartTime();
@@ -404,7 +407,6 @@ public class AdminService {
                 ? bookingUpdateCommand.endTime()
                 : existingBooking.getEndTime();
 
-        // check user availability when user changes
         boolean userIsChanging = newUserId != null && !newUserId.equals(currentUserId);
         if (userIsChanging) {
             List<Booking> userBookings = bookingRepository.findUserBookings(
@@ -549,7 +551,7 @@ public class AdminService {
 
     public List<String> getAllRegisteredUserEmails() {
         log.info("Fetching all unique user emails from bookings");
-        List<String> emails = bookingRepository.findAllUniqueUserEmails();
+        List<String> emails = userRepository.findDistinctEmails();
         log.info("Found {} unique user emails", emails.size());
 
         if (emails.isEmpty()) {

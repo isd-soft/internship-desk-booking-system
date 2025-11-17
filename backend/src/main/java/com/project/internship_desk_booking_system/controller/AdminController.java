@@ -83,9 +83,10 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/desk/{id}")
     public ResponseEntity<Void> deleteDesk(
-            @PathVariable("id") Long deskId
+            @PathVariable("id") Long deskId,
+            @RequestParam(value = "reason", required = false) String reason
     ) {
-        adminService.deleteDesk(deskId);
+        adminService.deleteDesk(deskId, reason);
         return ResponseEntity.ok().build();
     }
 

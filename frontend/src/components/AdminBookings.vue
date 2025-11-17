@@ -265,6 +265,7 @@ import { formatDateTimeLocal, formatTime, formatDate, calculateDuration} from "@
 
 const router = useRouter();
 const route = useRoute();
+
 const bookings = ref([]);
 const loading = ref(false);
 const error = ref(null);

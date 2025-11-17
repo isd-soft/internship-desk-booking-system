@@ -3,5 +3,6 @@ package com.project.internship_desk_booking_system.enums;
 public enum DeskType {
     ASSIGNED,
     SHARED,
-    UNAVAILABLE
+    UNAVAILABLE,
+    DELETED
 }

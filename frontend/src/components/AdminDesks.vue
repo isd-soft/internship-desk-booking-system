@@ -4,8 +4,8 @@
       <div class="admin-header">
         <div class="title-wrap">
           <div class="workspace-label">ADMIN PANEL</div>
-          <h2 class="title">All Desks</h2>
-          <span class="sub">{{ filteredDesks.length }} total desks</span>
+          <h2 class="title">Desk Management</h2>
+          <span class="sub">{{ filteredDesks.length }} desks</span>
         </div>
         <div class="header-actions">
           <v-text-field
@@ -34,6 +34,7 @@
               label="Filter by status"
               class="filter-select"
           />
+
           <v-select
               v-model="typeFilter"
               :items="typeOptions"
@@ -45,9 +46,10 @@
               :disabled="loading"
               :clearable="false"
               hide-details
-              label="Filter by desk type"
+              label="Filter by type"
               class="filter-select"
           />
+
           <v-btn
               color="#171717"
               variant="flat"
@@ -56,6 +58,8 @@
           >
             Reset Filters
           </v-btn>
+
+          <v-chip size="small" color="#171717" variant="flat" class="count-chip">{{ filteredDesks.length }}</v-chip>
         </div>
       </div>
 
@@ -66,6 +70,7 @@
           class="mb-4"
           density="compact"
           closable
+          @click:close="error = null"
       >
         {{ error }}
       </v-alert>
@@ -112,7 +117,7 @@
 
           <template #item.zoneName="{ item }">
             <div class="cell-main">
-              <div class="desk-name">{{ item.zoneName }}</div>
+              <div class="zone-name">{{ item.zoneName }}</div>
             </div>
           </template>
 
@@ -129,7 +134,7 @@
           </template>
 
           <template #item.isTemporarilyAvailable="{ item }">
-            <v-chip size="x-small" :color="item.isTemporarilyAvailable ?  '#10b981' : '#ef4444' " variant="flat" class="status-chip">
+            <v-chip size="x-small" :color="item.isTemporarilyAvailable ? '#10b981' : '#ef4444'" variant="flat" class="status-chip">
               {{ item.isTemporarilyAvailable ? 'Yes' : 'No' }}
             </v-chip>
           </template>
@@ -162,21 +167,22 @@
                     prepend-icon="mdi-pencil"
                     title="Edit">
                 </v-list-item>
-
                 <v-list-item
-                    @click="onDelete(item)"
+                    @click="onDeleteClick(item)"
                     prepend-icon="mdi-delete"
                     title="Delete desk"
+                    class="delete-item"
                     :disabled="deletingId === item.id"
                 ></v-list-item>
               </v-list>
             </v-menu>
           </template>
+
           <template #no-data>
             <div class="empty-state">
-              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-desk</v-icon>
+              <v-icon size="48" color="#171717" class="mb-3">mdi-desk</v-icon>
               <div class="empty-title">No desks found</div>
-              <div class="empty-sub">Try adjusting your filters or check back later.</div>
+              <div class="empty-sub">Create a new desk to get started.</div>
             </div>
           </template>
         </v-data-table>
@@ -196,50 +202,83 @@
             @close="showEditModal = false"
             @save="handleSave"
         />
-
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="500">
-          <v-card class="delete-dialog">
-            <v-card-title class="dialog-title">
-              <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
-              Delete Desk
-            </v-card-title>
-            <v-card-text class="dialog-text">
-              Are you sure you want to delete desk <strong>{{ selectedDesk?.name }}</strong>?
-              This action cannot be undone.
-            </v-card-text>
-            <v-card-actions class="dialog-actions">
-              <v-spacer></v-spacer>
-              <v-btn
-                  variant="text"
-                  @click="showDeleteDialog = false"
-                  :disabled="deletingId !== null"
-              >
-                Cancel
-              </v-btn>
-              <v-btn
-                  color="error"
-                  variant="flat"
-                  @click="confirmDelete"
-                  :loading="deletingId !== null"
-              >
-                Delete
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
       </template>
     </div>
+
+    <!-- Delete Desk Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="550" persistent>
+      <v-card class="delete-dialog">
+        <v-card-title class="dialog-title">
+          <v-icon color="error" class="mr-2">mdi-delete-alert</v-icon>
+          Delete Desk
+        </v-card-title>
+
+        <v-card-text class="dialog-text">
+          <div class="warning-box">
+            <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+            <span>You are about to delete desk <strong>{{ selectedDesk?.name }}</strong></span>
+          </div>
+
+          <p class="mt-4 mb-2">Please provide a reason for deletion:</p>
+
+          <v-textarea
+              v-model="deletionReason"
+              variant="outlined"
+              placeholder="e.g., Desk damaged, Office renovation, Equipment malfunction..."
+              rows="4"
+              :error-messages="deleteErrorMessage"
+              :disabled="isDeleting"
+              counter="500"
+              maxlength="500"
+              class="reason-textarea"
+              auto-grow
+          />
+
+          <v-alert
+              v-if="selectedDesk?.hasActiveBookings"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+          >
+            <template #prepend>
+              <v-icon>mdi-calendar-alert</v-icon>
+            </template>
+            This desk has active or scheduled bookings. All bookings will be automatically cancelled.
+          </v-alert>
+        </v-card-text>
+
+        <v-card-actions class="dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn
+              variant="text"
+              @click="handleDeleteCancel"
+              :disabled="isDeleting"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+              color="error"
+              variant="flat"
+              @click="handleDeleteConfirm"
+              :loading="isDeleting"
+              :disabled="!deletionReason.trim()"
+          >
+            Delete Desk
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from "vue-router";
 import api from '../plugins/axios';
 import DeskEditModal from "../components/AdminDashboard/DeskEditModal.vue";
 import DeskViewModal from "../components/AdminDashboard/DeskViewModal.vue";
-import{ fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors,getColor} from "@/utils/useEnums"
+import { fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors, getColor } from "@/utils/useEnums";
 
 // State
 const desks = ref([]);
@@ -256,9 +295,12 @@ const showDeleteDialog = ref(false);
 const selectedDesk = ref(null);
 const deletingId = ref(null);
 
-// Colors
-const statusColorMap = ref<Record<string, string>>({});
+// Delete Dialog State
+const deletionReason = ref('');
+const deleteErrorMessage = ref('');
+const isDeleting = ref(false);
 
+// Filter options
 const statusFilter = ref(String(route.query?.deskStatus || 'ALL').toUpperCase());
 const statusOptions = ref([{ title: 'All', value: 'ALL' }]);
 const typeOptions = ref([{ title: 'All', value: 'ALL' }]);
@@ -267,15 +309,14 @@ const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 // Table headers
 const headers = [
   { title: 'ID', key: 'id', width: 80, align: 'start' },
-  { title: 'Desk', key: 'name', width: 150 },
-  { title: 'Zone Id', key: 'zoneId', width: 140 },
+  { title: 'Desk', key: 'name', minWidth: 150 },
+  { title: 'Zone ID', key: 'zoneId', width: 100 },
   { title: 'Zone Name', key: 'zoneName', width: 140 },
   { title: 'Type', key: 'type', width: 120 },
   { title: 'Status', key: 'status', width: 120 },
-  { title: 'Temporarily Available', key: 'isTemporarilyAvailable', width: 180, align: 'center' },
+  { title: 'Temp Available', key: 'isTemporarilyAvailable', width: 130, align: 'center' },
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false }
 ] as const;
-
 
 // Computed
 const filteredDesks = computed(() => {
@@ -313,7 +354,8 @@ const filteredDesks = computed(() => {
     isTemporarilyAvailable: d.isTemporarilyAvailable ?? false,
     tempFrom: d.temporaryAvailableFrom,
     tempUntil: d.temporaryAvailableUntil,
-    rawData: d // Keep original data for editing
+    hasActiveBookings: d.hasActiveBookings || false,
+    rawData: d
   }));
 });
 
@@ -338,7 +380,6 @@ function resetFilters() {
   searchQuery.value = '';
 }
 
-
 function onView(item) {
   selectedDesk.value = item;
   showViewModal.value = true;
@@ -347,11 +388,6 @@ function onView(item) {
 function onEdit(item) {
   selectedDesk.value = item;
   showEditModal.value = true;
-}
-
-function onDelete(item) {
-  selectedDesk.value = item;
-  showDeleteDialog.value = true;
 }
 
 async function handleSave(updatedDesk) {
@@ -373,19 +409,53 @@ async function handleSave(updatedDesk) {
   }
 }
 
-async function confirmDelete() {
+// Delete Dialog Methods
+function onDeleteClick(item) {
+  selectedDesk.value = item;
+  deletionReason.value = '';
+  deleteErrorMessage.value = '';
+  showDeleteDialog.value = true;
+}
+
+function handleDeleteCancel() {
+  if (!isDeleting.value) {
+    showDeleteDialog.value = false;
+    selectedDesk.value = null;
+    deletionReason.value = '';
+    deleteErrorMessage.value = '';
+  }
+}
+
+async function handleDeleteConfirm() {
+  const reason = deletionReason.value.trim();
+
+  if (!reason) {
+    deleteErrorMessage.value = 'Please provide a reason for deletion';
+    return;
+  }
+
+  if (reason.length < 5) {
+    deleteErrorMessage.value = 'Reason must be at least 5 characters long';
+    return;
+  }
+
   if (!selectedDesk.value?.id) return;
 
   try {
+    isDeleting.value = true;
     deletingId.value = selectedDesk.value.id;
+    deleteErrorMessage.value = '';
     error.value = null;
-    successMessage.value = null;
 
-    await api.delete(`/admin/delete/desk/${selectedDesk.value.id}`);
+    // Call API with reason as query parameter
+    await api.delete(`/admin/delete/desk/${selectedDesk.value.id}`, {
+      params: { reason }
+    });
 
     successMessage.value = `Desk "${selectedDesk.value.name}" deleted successfully`;
     showDeleteDialog.value = false;
     selectedDesk.value = null;
+    deletionReason.value = '';
 
     // Refresh desk list
     await fetchDesks();
@@ -394,6 +464,7 @@ async function confirmDelete() {
     error.value = err.response?.data?.message || err.message || 'Failed to delete desk';
     showDeleteDialog.value = false;
   } finally {
+    isDeleting.value = false;
     deletingId.value = null;
   }
 }
@@ -401,7 +472,7 @@ async function confirmDelete() {
 onMounted(() => {
   fetchDeskTypeEnum();
   fetchDeskStatusEnum();
-  fetchColors()
+  fetchColors();
   fetchDesks();
 });
 </script>
@@ -448,7 +519,7 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 700;
   color: #737373;
-  letter-spacing: -0.5px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
@@ -610,6 +681,13 @@ onMounted(() => {
   letter-spacing: -0.2px;
 }
 
+.zone-name {
+  font-weight: 600;
+  color: #171717;
+  font-size: 14px;
+  letter-spacing: -0.1px;
+}
+
 .zone-id {
   font-weight: 600;
   color: #171717;
@@ -658,8 +736,12 @@ onMounted(() => {
   opacity: 0.4;
 }
 
-.action-menu :deep(.v-list-item__prepend .v-icon) {
-  opacity: 0.7;
+.delete-item :deep(.v-list-item__prepend .v-icon) {
+  color: #dc2626;
+}
+
+.delete-item:hover {
+  background-color: #fef2f2 !important;
 }
 
 .empty-state {
@@ -683,7 +765,7 @@ onMounted(() => {
   letter-spacing: 0.3px;
 }
 
-/* Delete Dialog */
+/* Delete Dialog Styles */
 .delete-dialog {
   border-radius: 16px !important;
 }
@@ -693,6 +775,8 @@ onMounted(() => {
   font-size: 20px;
   color: #171717;
   padding: 24px 24px 16px;
+  display: flex;
+  align-items: center;
 }
 
 .dialog-text {
@@ -700,6 +784,37 @@ onMounted(() => {
   color: #525252;
   padding: 0 24px 16px;
   line-height: 1.6;
+}
+
+.warning-box {
+  background: #fff7ed;
+  border: 2px solid #fed7aa;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #9a3412;
+}
+
+.reason-textarea :deep(.v-field) {
+  border-radius: 12px !important;
+  border: 2px solid #e5e5e5 !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.reason-textarea :deep(.v-field:hover) {
+  border-color: #a3a3a3 !important;
+}
+
+.reason-textarea :deep(.v-field--focused) {
+  border-color: #171717 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.reason-textarea :deep(.v-field--error) {
+  border-color: #dc2626 !important;
 }
 
 .dialog-actions {
