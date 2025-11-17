@@ -2,6 +2,14 @@
 import { reactive, watch, computed } from "vue";
 import api from '@/plugins/axios';
 import {tr} from "vuetify/locale";
+import {
+  fetchColors,
+  fetchDeskStatusEnum,
+  fetchDeskTypeEnum,
+  getColor,
+  statusDeskOptions,
+  typeDeskOptions
+} from "@/utils/useEnums"
 
 
 interface Props {
@@ -32,7 +40,8 @@ interface Emits {
     temporaryAvailableUntil: string | null;
   }): void;
 }
-
+fetchDeskTypeEnum(false);
+fetchDeskStatusEnum(false);
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
@@ -47,17 +56,6 @@ const deskForm = reactive({
   temporaryAvailableFrom: null as string | null,
   temporaryAvailableUntil: null as string | null,
 });
-
-const statusOptions = [
-  { value: "ACTIVE", label: "Active" },
-  { value: "DEACTIVATED", label: "Deactivated" },
-];
-
-const typeOptions = [
-  { value: "SHARED", label: "Shared" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "UNAVAILABLE", label: "Unavailable" }
-];
 
 // Computed: Can temporary availability be enabled?
 const canEnableTemporaryAvailability = computed(() => {
@@ -262,12 +260,12 @@ function closeModal() {
           <div class="section-title">Desk Type</div>
           <div class="status-grid">
             <button
-                v-for="option in typeOptions"
+                v-for="option in typeDeskOptions"
                 :key="option.value"
                 @click.stop="deskForm.type = option.value"
                 :class="['status-btn', { active: deskForm.type === option.value }]"
             >
-              {{ option.label }}
+              {{ option.value }}
             </button>
           </div>
         </div>
@@ -276,12 +274,12 @@ function closeModal() {
           <div class="section-title">Desk Status</div>
           <div class="status-grid">
             <button
-                v-for="option in statusOptions"
+                v-for="option in statusDeskOptions"
                 :key="option.value"
                 @click.stop="handleStatusClick(option)"
                 :class="['status-btn', { active: deskForm.status === option.value }]"
             >
-              {{ option.label }}
+              {{ option.value }}
             </button>
           </div>
         </div>
