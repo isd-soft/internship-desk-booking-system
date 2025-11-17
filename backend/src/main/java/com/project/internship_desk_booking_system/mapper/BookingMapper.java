@@ -34,7 +34,9 @@ public class BookingMapper {
                     null,   // currentX
                     null,   // currentY
                     null,   // baseX
-                    null    // baseY
+                    null,
+                    null,
+                    null// baseY
             );
         } else {
             deskDto = deskMapper.toDto(booking.getDesk());

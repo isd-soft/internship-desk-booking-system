@@ -73,6 +73,11 @@ public class Desk {
     @Column(name = "base_y")
     private Double baseY;
 
+    @Column(name = "height")
+    private Long height;
+
+    @Column(name = "width")
+    private Long width;
 
     @Override
     public boolean equals(Object o) {

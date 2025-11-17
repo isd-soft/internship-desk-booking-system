@@ -268,6 +268,12 @@ public class AdminService {
         if(updates.baseY() != null){
             desk.setBaseY(updates.baseY());
         }
+        if(updates.height() != null){
+            desk.setHeight(updates.height());
+        }
+        if(updates.width() != null){
+            desk.setWidth(updates.width());
+        }
 
         deskRepository.save(desk);
 
@@ -365,7 +371,9 @@ public class AdminService {
                 desk.getId(),
                 desk.getDeskName(),
                 desk.getCurrentX(),
-                desk.getCurrentY()
+                desk.getCurrentY(),
+                desk.getHeight(),
+                desk.getWidth()
         );
     }
 

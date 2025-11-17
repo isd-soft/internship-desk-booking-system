@@ -41,10 +41,10 @@
             density="comfortable"
             hide-details
             class="modern-input"
-            placeholder="Enter desk name"
+            placeholder="Enter x coordinate"
           />
         </div>
-
+        
         <div class="section">
           <div class="section-title">Y</div>
           <v-text-field
@@ -53,15 +53,44 @@
             density="comfortable"
             hide-details
             class="modern-input"
-            placeholder="Enter desk name"
+            placeholder="Enter y coordinate"
+          />
+        </div>
+
+        <div class="section">
+          <div class="section-title">Height</div>
+          <v-text-field
+            v-model.number="localDesk.h"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="modern-input"
+            placeholder="Enter desk height"
+          />
+        </div>
+
+        <div class="section">
+          <div class="section-title">Width</div>
+          <v-text-field
+            v-model.number="localDesk.w"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="modern-input"
+            placeholder="Enter desk width"
           />
         </div>
 
         <v-select
           label="Select"
-          :items="zones.value.map(z => z.zoneName)"
+          :items="zones.map(z => ({
+            title: `${z.zoneAbv} - ${z.zoneName}`,
+            value: z.id
+          }))"
+          item-title="title"
+          item-value="value"
           variant="solo-inverted"
-        ></v-select>
+        />
 
         <div class="section">
           <div class="section-title">Disable desk</div>
@@ -110,8 +139,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import zones from "./adminFloorLayout.ts";
-
+import { zones } from "./adminFloorLayout";
 
 const props = defineProps<{
   visible: boolean;

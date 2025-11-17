@@ -4,6 +4,8 @@ public record DeskCoordinatesDTO(
         Long id,
         String deskName,
         Double x,
-        Double y
+        Double y,
+        Long height,
+        Long width
 ) {
 }

@@ -10,7 +10,7 @@ import {
 } from "../VisualFloorMap/floorLayout";
 import api from "../../plugins/axios.js";
 
-const zones = ref([]);
+export const zones = ref([]);
 
 export const getAllDesksFromBackend = async () => {
   try {
@@ -20,8 +20,6 @@ export const getAllDesksFromBackend = async () => {
 
     resetLayout();
 
-    console.log(data);
-
     data.forEach((desk: any) => {
       if (
         desk &&
@@ -29,13 +27,6 @@ export const getAllDesksFromBackend = async () => {
         typeof desk.currentX === "number" &&
         typeof desk.currentY === "number"
       ) {
-        let current_width = DEFAULT_WIDTH;
-        let current_height = DEFAULT_HEIGHT;
-
-        if (horizontalDesks.includes(desk.id)) {
-          current_width = HORIZONTAL_DESK_WIDTH;
-          current_height = HORIZONTAL_DESK_HEIGHT;
-        }
         const zone = {
           zoneId: desk.zoneDto.id,
           zoneName: desk.zoneDto.zoneName,
@@ -49,8 +40,8 @@ export const getAllDesksFromBackend = async () => {
         layout.push({
           x: Math.round(desk.currentX),
           y: Math.round(desk.currentY),
-          w: current_width,
-          h: current_height,
+          w: desk.width,
+          h: desk.height,
           i: String(desk.id),
           static: false,
           deskName: desk.displayName,

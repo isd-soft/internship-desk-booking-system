@@ -14,6 +14,8 @@ CREATE TABLE desk (
                       current_y DOUBLE PRECISION NOT NULL,
                       base_x DOUBLE PRECISION NOT NULL,
                       base_y DOUBLE PRECISION NOT NULL,
+                      height INTEGER NOT NULL,
+                      width INTEGER NOT NULL,
 
                       CONSTRAINT fk_desk_zone FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE RESTRICT,
                       CONSTRAINT chk_desk_type CHECK (type IN ('ASSIGNED', 'SHARED', 'UNAVAILABLE')),

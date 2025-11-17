@@ -20,4 +20,6 @@ public record DeskUpdateDTO(
         Double currentX,
         Double currentY,
         Double baseX,
-        Double baseY) { }
+        Double baseY,
+        Long height,
+        Long width) { }

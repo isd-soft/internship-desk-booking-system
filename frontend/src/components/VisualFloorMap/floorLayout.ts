@@ -154,13 +154,7 @@ export const loadDesksFromBackend = async () => {
         typeof desk.x === "number" &&
         typeof desk.y === "number"
       ) {
-        let current_width = DEFAULT_WIDTH;
-        let current_height = DEFAULT_HEIGHT;
 
-        if (horizontalDesks.includes(desk.id)) {
-          current_width = HORIZONTAL_DESK_WIDTH;
-          current_height = HORIZONTAL_DESK_HEIGHT;
-        }
         const colorMatch = DeskColors.value.find((c) => c.deskId === desk.id);
         const current_color = colorMatch ? colorMatch.deskColor : "GREEN";
 
@@ -169,8 +163,8 @@ export const loadDesksFromBackend = async () => {
         layout.push({
           x: Math.round(desk.x),
           y: Math.round(desk.y),
-          w: current_width,
-          h: current_height,
+          w: desk.width,
+          h: desk.height,
           i: String(desk.id),
           static: false,
           deskName: desk.deskName,

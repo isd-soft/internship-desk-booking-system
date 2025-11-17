@@ -131,12 +131,16 @@ async function applyDeskChanges(updated: any) {
   await api.patch(`/admin/edit/desk/${Number(updated.i)}`, {
     displayName: updated.deskName,
     currentX: updated.x,
-    currentY: updated.y
+    currentY: updated.y,
+    height: updated.h,
+    width: updated.w
   });
 
   const item = layout.find(item => item.i === String(updated.i));
   if (item) {
     item.deskName = updated.deskName;
+    item.w = updated.w;
+    item.h = updated.h;
   }
   showEditModal.value = false;
 }
