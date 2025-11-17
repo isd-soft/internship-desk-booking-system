@@ -3,6 +3,22 @@
     fluid
     class="login-container d-flex align-center justify-center pa-0"
   >
+    <transition name="slide-down">
+      <v-btn
+        v-if="isUserAuthenticated"
+        icon
+        variant="flat"
+        class="logout-fab"
+        color="rgba(255, 255, 255, 0.95)"
+        size="large"
+        elevation="4"
+        @click="handleLogout"
+      >
+        <v-icon color="orange-darken-2">mdi-logout</v-icon>
+        <v-tooltip activator="parent" location="left">Logout</v-tooltip>
+      </v-btn>
+    </transition>
+
     <div class="bg-decoration">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
@@ -91,6 +107,13 @@
               Sign In
             </v-btn>
 
+            <div class="text-center mt-6">
+              <p class="helper-text">
+                Don't have an account?
+                <a href="/register" class="register-link">Sign up here</a>
+              </p>
+            </div>
+
             <div class="text-center mt-4">
               <p class="helper-text">
                 <v-icon size="16" class="mr-1">mdi-shield-check</v-icon>
@@ -128,9 +151,10 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
+import { logout, isAuthenticated } from "../utils/auth";
 
 const router = useRouter();
 const valid = ref(false);
@@ -140,6 +164,7 @@ const showPassword = ref(false);
 const form = ref(null);
 const showCard = ref(true);
 const isLoading = ref(false);
+const isUserAuthenticated = ref(false);
 
 const snackbar = ref({
   show: false,
@@ -152,6 +177,25 @@ const usernameRules = [
   (v) => /.+@.+\..+/.test(v) || "Email format is invalid",
 ];
 const passwordRules = [(v) => !!v || "Password is required"];
+
+onMounted(() => {
+  isUserAuthenticated.value = isAuthenticated();
+});
+
+const handleLogout = async () => {
+  snackbar.value = {
+    show: true,
+    message: "Logging out...",
+    color: "info",
+  };
+
+  setTimeout(async () => {
+    await logout(router);
+    isUserAuthenticated.value = false;
+    username.value = "";
+    password.value = "";
+  }, 500);
+};
 
 const handleLogin = async () => {
   const { valid: isValid } = await form.value.validate();
@@ -273,6 +317,22 @@ const handleLogin = async () => {
   66% {
     transform: translate(-20px, 20px) scale(0.9);
   }
+}
+
+.logout-fab {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 152, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
+  border-color: rgba(255, 152, 0, 0.4);
 }
 
 .login-card {
@@ -418,6 +478,19 @@ const handleLogin = async () => {
   gap: 4px;
 }
 
+.register-link {
+  color: #ff9800;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.register-link:hover {
+  color: #f57c00;
+  text-decoration: underline;
+}
+
 .custom-snackbar {
   font-weight: 600;
 }
@@ -470,6 +543,11 @@ const handleLogin = async () => {
 
   .welcome-text {
     font-size: 24px;
+  }
+
+  .logout-fab {
+    top: 16px;
+    right: 16px;
   }
 
   .circle-1 {

@@ -4,10 +4,13 @@ import com.project.internship_desk_booking_system.command.BookingCreateRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import com.project.internship_desk_booking_system.dto.BookingDTO;
+import com.project.internship_desk_booking_system.dto.DeskAvailabilityResponse;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
+import com.project.internship_desk_booking_system.service.BookingAvailabilityService;
 import com.project.internship_desk_booking_system.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
+    private final BookingAvailabilityService bookingAvailabilityService;
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/my")
@@ -55,19 +59,6 @@ public class BookingController {
         return ResponseEntity.ok().body(bookingService.getBookingById(principal.getEmail(), bookingId));
 
     }
-
-/*
-    @DeleteMapping("/{bookingId}")
-    public ResponseEntity<Void> cancelBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long bookingId) {
-        String email = principal.getEmail();
-        bookingService.cancelBooking(email, bookingId);
-        return ResponseEntity.ok().build();
-    }
-*/
-
-
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long id) {
         bookingService.cancelBooking(principal.getEmail(), id);
@@ -83,6 +74,7 @@ public class BookingController {
                 bookingService.getBookingsByDate(localDate)
         );
     }
+
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/my/byDate")
     public ResponseEntity<List<BookingResponse>> getAllMyBookingsByDate(
