@@ -6,6 +6,7 @@ import com.project.internship_desk_booking_system.command.CoordinatesUpdateComma
 import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,14 @@ import java.util.List;
 public class AdminController {
     private final AdminService adminService;
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/desk/{id}")
+    public ResponseEntity<DeskDto> getDeskById(
+        @PathVariable("id") Long deskId
+    ){
+        return ResponseEntity.ok(
+                adminService.getDeskById(deskId));
+    }
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/addDesk")
     public ResponseEntity<DeskDto> addDesk(

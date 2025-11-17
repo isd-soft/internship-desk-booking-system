@@ -100,6 +100,27 @@ public class AdminService {
             desk.setTemporaryAvailableUntil(null);
         }
     }
+
+    public DeskDto getDeskById(
+            Long deskId
+    ){
+        Desk desk = deskRepository
+                .findById(deskId).orElseThrow(
+                        ()-> {
+                            log.warn(
+                                    "Desk with id {} not found",
+                                    deskId
+                            );
+                            return new ExceptionResponse(
+                                    HttpStatus.NOT_FOUND,
+                                    "DESK_NOT_FOUND",
+                                    String.format("Desk with id %d not found",deskId)
+                            );
+                        });
+
+        return deskMapper.toDto(desk);
+    }
+
     public DeskDto addDesk(
             DeskDto deskDto
     ) {
