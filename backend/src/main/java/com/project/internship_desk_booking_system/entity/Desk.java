@@ -61,6 +61,9 @@ public class Desk {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "reason_of_deletion")
+    private String reasonOfDeletion;
+
     @Column(name = "current_x")
     private Double currentX;
 

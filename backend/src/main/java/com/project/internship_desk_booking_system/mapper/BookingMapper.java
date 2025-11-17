@@ -19,22 +19,21 @@ public class BookingMapper {
     public BookingResponse toResponse(Booking booking) {
         DeskDto deskDto;
 
-        // Handle soft-deleted desks
         if (booking.getDesk() == null) {
-            // Create a placeholder DTO for deleted desk
             deskDto = new DeskDto(
-                    booking.getDeskId(),  // Use the deskId field
+                    booking.getDeskId(),
                     "Deleted Desk",
-                    null,  // zoneDto
+                    null,
                     DeskType.UNAVAILABLE,
                     DeskStatus.DEACTIVATED,
-                    false,  // isTemporarilyAvailable
-                    null,   // temporaryAvailableFrom
-                    null,   // temporaryAvailableUntil
-                    null,   // currentX
-                    null,   // currentY
-                    null,   // baseX
-                    null    // baseY
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             );
         } else {
             deskDto = deskMapper.toDto(booking.getDesk());
@@ -53,12 +52,11 @@ public class BookingMapper {
     public BookingResponseDto maptoDto(Booking booking) {
         double durationHours = Duration.between(booking.getStartTime(), booking.getEndTime()).toHours();
 
-        // Handle soft-deleted desks
         if (booking.getDesk() == null) {
             return BookingResponseDto.builder()
                     .id(booking.getId())
                     .userId(booking.getUser().getId())
-                    .deskId(booking.getDeskId())  // Use the deskId field
+                    .deskId(booking.getDeskId())
                     .deskName("Deleted Desk")
                     .deskType(DeskType.UNAVAILABLE)
                     .startTime(booking.getStartTime())

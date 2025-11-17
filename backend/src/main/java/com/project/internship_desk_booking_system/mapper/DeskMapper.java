@@ -23,7 +23,8 @@ public class DeskMapper {
                 desk.getCurrentX(),
                 desk.getCurrentY(),
                 desk.getBaseX(),
-                desk.getBaseY()
+                desk.getBaseY(),
+                desk.getReasonOfDeletion()
         );
     }
 }
