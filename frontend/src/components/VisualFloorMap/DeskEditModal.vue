@@ -57,6 +57,12 @@
           />
         </div>
 
+        <v-select
+          label="Select"
+          :items="zones.value.map(z => z.zoneName)"
+          variant="solo-inverted"
+        ></v-select>
+
         <div class="section">
           <div class="section-title">Disable desk</div>
           <v-switch
@@ -81,7 +87,15 @@
             Restore Default coordinates
           </v-btn>
 
-          <v-btn
+            <v-btn v-if=" localDesk.newDesk"
+            class="confirm-button"
+            size="x-large"
+            @click="create"
+          >
+            Create desk
+          </v-btn>
+
+          <v-btn v-else
             class="confirm-button"
             size="x-large"
             @click="confirm"
@@ -96,6 +110,8 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import zones from "./adminFloorLayout.ts";
+
 
 const props = defineProps<{
   visible: boolean;
@@ -106,10 +122,11 @@ const emit = defineEmits<{
   (e: "confirm", desk: any): void;
   (e: "restore", deskId: number): void;
   (e: "cancel"): void;
+  (e: "create", desk: any): void;
 }>();
 
 const localDesk = ref({ ...props.desk });
-
+console.log(localDesk);
 watch(
   () => props.desk,
   (newDesk) => {
@@ -117,6 +134,10 @@ watch(
   },
   { immediate: true }
 );
+
+function create(){
+  emit("create", localDesk.value);
+}
 
 function confirm() {
   emit("confirm", localDesk.value);

@@ -22,11 +22,11 @@ export const DeskColors = ref<Array<{ deskId: number; deskColor: string }>>([]);
 
 export const selectedDate = ref<string>(new Date().toISOString().split("T")[0]);
 
-const DEFAULT_WIDTH = 27;
-const DEFAULT_HEIGHT = 50;
+export const DEFAULT_WIDTH = 27;
+export const DEFAULT_HEIGHT = 50;
 
-const HORIZONTAL_DESK_WIDTH = 55;
-const HORIZONTAL_DESK_HEIGHT = 26;
+export const HORIZONTAL_DESK_WIDTH = 55;
+export const HORIZONTAL_DESK_HEIGHT = 26;
 
 async function getColors() {
   try {
