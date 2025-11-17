@@ -6,6 +6,7 @@ import Map from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import { isAuthenticated } from "../utils/auth";
 import StatisticsPage from "../components/StatisticsPage.vue";
 import AdminDesks from "../components/AdminDesks.vue";
+import AllUsers from "../components/AllUsers.vue";
 import AdminBookings from "../components/AdminBookings.vue";
 import AdminDashboard from "../components/AdminDashboard.vue";
 import SettingsPage from "../components/SettingsPage.vue";
@@ -33,6 +34,7 @@ const routes = [
         children: [
             {path: "bookings", name: "AdminBookings", component: AdminBookings},
             {path: "desks", name: "AdminDesks", component: AdminDesks},
+            {path: "users", name: "AllUsers", component: AllUsers},
             {path: "statistics", name: "Statistics", component: StatisticsPage},
             {path: "settings", name: "Settings", component: SettingsPage},
             {path: "deleted-desks", name:"b Deleted Desks", component: DeletedDesksPage },

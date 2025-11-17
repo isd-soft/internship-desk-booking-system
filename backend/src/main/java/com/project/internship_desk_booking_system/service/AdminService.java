@@ -525,4 +525,16 @@ public class AdminService {
                 .map(deskMapper::toDto)
                 .toList();
     }
+
+    public List<String> getAllRegisteredUserEmails() {
+        log.info("Fetching all unique user emails from bookings");
+        List<String> emails = bookingRepository.findAllUniqueUserEmails();
+        log.info("Found {} unique user emails", emails.size());
+
+        if (emails.isEmpty()) {
+            log.warn("No users found with bookings");
+        }
+
+        return emails;
+    }
 }

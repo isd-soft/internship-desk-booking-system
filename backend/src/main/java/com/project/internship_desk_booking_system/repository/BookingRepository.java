@@ -21,6 +21,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findByUserEmailAndId(String email, Long bookingId);
 
+    @Query("SELECT DISTINCT u.email FROM Booking b JOIN b.user u ORDER BY u.email ASC")
+    List<String> findAllUniqueUserEmails();
+
     List<Booking> findByUserEmailAndStatusOrderByStartTimeAsc(String email, BookingStatus status);
 
     @Modifying
