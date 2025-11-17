@@ -551,7 +551,7 @@ public class AdminService {
 
     public List<String> getAllRegisteredUserEmails() {
         log.info("Fetching all unique user emails from bookings");
-        List<String> emails = bookingRepository.findAllUniqueUserEmails();
+        List<String> emails = userRepository.findDistinctEmails();
         log.info("Found {} unique user emails", emails.size());
 
         if (emails.isEmpty()) {

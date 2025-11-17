@@ -6,12 +6,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User,Long> {
     boolean existsByEmail(String email);
 
     Optional<User> findByEmailIgnoreCase(String email);
+
+    @Query("SELECT DISTINCT u.email FROM User u WHERE u.id > 1 ORDER BY u.email ASC ")
+    List<String> findDistinctEmails();
 
     @Query("SELECT COUNT(DISTINCT b.user) FROM Booking b WHERE b.startTime > :startTime")
     long countUsersWithBookingsAfter(@Param("startTime") LocalDateTime startTime);
