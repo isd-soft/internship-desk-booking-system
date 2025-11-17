@@ -97,7 +97,7 @@ const details = ref<{ open: boolean; item: any | null }>({
   item: null,
 });
 
-function openAdmin(page: "bookings" | "desks" | "statistics" | "map" | "settings"| "deleted-desks") {
+function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | "settings"| "deleted-desks") {
   const role = localStorage.getItem("role");
 
   if (String(role).toUpperCase() !== "ADMIN") {
@@ -109,7 +109,7 @@ function openAdmin(page: "bookings" | "desks" | "statistics" | "map" | "settings
     return;
   }
 
-  const validPages = ["bookings", "desks", "statistics", "map", "settings", "deleted-desks"];
+  const validPages = ["bookings", "desks", "users","statistics", "map", "settings", "deleted-desks"];
   const path = validPages.includes(page)
       ? `/admin-dashboard/${page}`
       : "/admin-dashboard";

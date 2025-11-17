@@ -9,12 +9,13 @@ import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
@@ -127,5 +128,10 @@ public class AdminController {
         adminService.restoreDesk(deskId);
         return ResponseEntity.ok().build();
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/users/emails")
+    public ResponseEntity<List<String>> getAllUserEmails() {
+        log.info("Admin request to fetch all registered user emails");
+        return ResponseEntity.ok(adminService.getAllRegisteredUserEmails());
+    }
 }

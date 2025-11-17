@@ -47,6 +47,19 @@
       class="neo-btn mb-3"
       elevation="0"
       size="large"
+      @click="$emit('openAdmin', 'users')"
+    >
+      <v-icon class="mr-2" size="20">mdi-account-group</v-icon>
+      <span class="btn-text">All Users</span>
+    </v-btn>
+
+    <v-btn
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
       @click="$emit('openAdmin', 'statistics')"
     >
       <v-icon class="mr-2" size="20">mdi-chart-bar</v-icon>
@@ -110,6 +123,7 @@ const emit = defineEmits<{
     page:
       | "bookings"
       | "desks"
+      | "users"
       | "settings"
       | "statistics"
       | "map"
