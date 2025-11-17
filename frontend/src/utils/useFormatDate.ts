@@ -39,7 +39,7 @@ export function calculateDuration(startStr: string, endStr: string): string {
 export function formatDateTime(dateStr: string): string {
     if (!dateStr) return "Not set";
     const date = new Date(dateStr);
-    return date.toLocaleString("en-US", {
+    return date.toLocaleString("en-GB", {
         month: "short",
         day: "numeric",
         year: "numeric",

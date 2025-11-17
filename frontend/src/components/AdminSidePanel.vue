@@ -5,7 +5,6 @@
     <AdminActionSections
         :currentType="currentType"
         :itemsCount="items.length"
-        @load="loadData"
         @openAdmin="openAdmin"
         @logout="logout"
     />
@@ -22,14 +21,6 @@
           @details="openDetails"
       />
     </v-slide-y-transition>
-
-    <EmptyPanel
-        v-if="items.length === 0 && !loading"
-        :title="emptyTitle"
-        :subtitle="emptySubtitle"
-    />
-
-    <LoadingPanel v-if="loading" :title="currentTitle" />
 
     <v-snackbar
         v-model="snackbar.show"
