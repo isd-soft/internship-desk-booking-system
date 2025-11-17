@@ -33,71 +33,14 @@
         <div class="section dark-slider">
           <div class="section-title">Select Time Range</div>
 
-          <div class="timeline-container">
-            <div
-              ref="timelineRef"
-              class="timeline-track"
-              @mousedown="handleTrackClick"
-            >
-              <div
-                class="timeline-range"
-                :style="{
-                  left: `${startPosition}%`,
-                  width: `${endPosition - startPosition}%`,
-                }"
-              />
-
-              <div
-                class="timeline-handle"
-                :style="{ left: `${startPosition}%` }"
-                @mousedown.stop="startDrag('start', $event)"
-              >
-                <div class="handle-time">{{ bookingForm.startHour }}:00</div>
-              </div>
-
-              <div
-                class="timeline-handle"
-                :style="{ left: `${endPosition}%` }"
-                @mousedown.stop="startDrag('end', $event)"
-              >
-                <div class="handle-time">{{ bookingForm.endHour }}:00</div>
-              </div>
-            </div>
-
-            <div class="timeline-labels">
-              <div
-                v-for="hour in hours"
-                :key="hour"
-                class="timeline-label"
-                :style="{ left: `${getHourPosition(hour)}%` }"
-              >
-                {{ hour }}:00
-              </div>
-            </div>
-          </div>
-
-          <div class="time-range-display">
-            <div class="time-range-label">Selected</div>
-            <div class="time-range-value">{{ formattedTimeRange }}</div>
-            <div class="time-duration">
-              {{ duration }} {{ duration === 1 ? "hour" : "hours" }}
-            </div>
-          </div>
-
-          <transition name="slide-fade">
-            <div v-if="lunchOverlap" class="modern-alert lunch-alert">
-              <div class="alert-icon lunch-icon">
-                <v-icon size="20">mdi-information-outline</v-icon>
-              </div>
-              <div class="alert-content">
-                <div class="alert-title">Lunch Hours</div>
-                <div class="alert-message">
-                  This time includes lunch hours (13:00 - 14:00). Workspace may
-                  be less available.
-                </div>
-              </div>
-            </div>
-          </transition>
+        <DeskAvailabilityTimeline
+  :desk-id="deskId"
+  :date-iso="props.selectedDateISO"
+  v-model:startHour="bookingForm.startHour"
+  v-model:endHour="bookingForm.endHour"
+  :min-hour="MIN_HOUR"
+  :max-hour="MAX_HOUR"
+/>
         </div>
 
         <button
@@ -197,6 +140,7 @@ import {
 } from "vue";
 import api from "@/plugins/axios";
 import { useFavouritesStore } from "@/stores/favourites";
+import DeskAvailabilityTimeline from "../DeskAvailabilityTimeline.vue";
 
 interface Props {
   modelValue: boolean;
@@ -371,28 +315,6 @@ function handleMouseUp() {
   isDragging.value = null;
 }
 
-function handleTrackClick(event: MouseEvent) {
-  if (!timelineRef.value) return;
-
-  const rect = timelineRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const percentage = x / rect.width;
-  const hour = Math.round(MIN_HOUR + percentage * (MAX_HOUR - MIN_HOUR));
-
-  const midPoint = (bookingForm.startHour + bookingForm.endHour) / 2;
-
-  if (hour < midPoint) {
-    bookingForm.startHour = Math.max(
-      MIN_HOUR,
-      Math.min(hour, bookingForm.endHour - 1)
-    );
-  } else {
-    bookingForm.endHour = Math.max(
-      bookingForm.startHour + 1,
-      Math.min(hour, MAX_HOUR)
-    );
-  }
-}
 
 onMounted(() => {
   document.addEventListener("mousemove", handleMouseMove);
@@ -412,13 +334,9 @@ async function toggleFavourite() {
   if (!deskId.value || isFavouriteProcessing.value) return;
   isFavouriteProcessing.value = true;
   try {
-    console.log('[BookingModal] Toggling favourite for desk:', deskId.value);
     await favStore.toggle(deskId.value);
-    console.log('[BookingModal] Toggle complete, emitting event');
     // Emit event to notify parent to refresh lists
     emit('favourite-toggled', { deskId: deskId.value, isFavourite: favStore.isFav(deskId.value) });
-  } catch (e) {
-    console.error('[BookingModal] Failed to toggle favourite:', e);
   } finally {
     isFavouriteProcessing.value = false;
   }

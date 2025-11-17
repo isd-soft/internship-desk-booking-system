@@ -28,24 +28,6 @@ import java.util.stream.Collectors;
 public class DeskService {
 
     private final DeskRepository deskRepository;
-    private final DeskMapper deskMapper;
-
-
-    @Transactional(readOnly = true)
-    public List<DeskDto> getAllUnavailableDesks() {
-        return deskRepository.findByType(DeskType.UNAVAILABLE)
-                .stream()
-                .map(deskMapper::toDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<DeskDto> getAllAvailableDesks() {
-        return deskRepository.findByStatus(DeskStatus.ACTIVE)
-                .stream()
-                .map(deskMapper::toDto)
-                .toList();
-    }
 
     public List<DeskCoordinatesDTO> getCoordinates(){
         List<DeskCoordinatesDTO>  coordinates = deskRepository.findCurrentCoordinates();
