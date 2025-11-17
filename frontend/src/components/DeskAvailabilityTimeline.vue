@@ -27,8 +27,7 @@
             :class="slotClasses(hour)"
             :style="slotStyle(hour)"
             @click.stop="handleSlotClick(hour)"
-          >
-          </div>
+          ></div>
         </div>
 
         <div class="timeline-range-container">
@@ -73,31 +72,36 @@
       <div class="time-display">
         <div class="time-info">
           <span class="time-label">Selected Time</span>
-          <span class="time-value">{{ formatTime(startHour) }} - {{ formatTime(endHour) }}</span>
+          <span class="time-value"
+            >{{ formatTime(startHour) }} - {{ formatTime(endHour) }}</span
+          >
         </div>
         <div class="duration-badge">
           <span class="duration-value">{{ selectedDuration }}</span>
-          <span class="duration-unit">{{ selectedDuration === 1 ? 'hour' : 'hours' }}</span>
+          <span class="duration-unit">{{
+            selectedDuration === 1 ? "hour" : "hours"
+          }}</span>
         </div>
       </div>
 
-      <transition name="slide-fade">
-        <div v-if="lunchOverlap" class="lunch-warning">
-          <div class="warning-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <div class="warning-content">
-            <div class="warning-title">Lunch Hours</div>
-            <div class="warning-message">This time includes lunch hours (13:00 - 14:00). Workspace may be less available.</div>
-          </div>
-        </div>
-      </transition>
-
       <div class="timeline-labels">
         <span class="label-time">{{ MIN_HOUR }}:00</span>
-        <span class="label-lunch">Lunch Break</span>
+        <span class="label-lunch" :class="{ 'has-overlap': lunchOverlap }">
+          Lunch Break
+          <v-tooltip
+            v-if="lunchOverlap"
+            activator="parent"
+            location="top"
+            content-class="lunch-tooltip"
+          >
+            <div class="tooltip-content">
+              <div class="tooltip-text">
+                <strong>Lunch Hours (13:00 - 14:00)</strong><br />
+                Workspace may be less available
+              </div>
+            </div>
+          </v-tooltip>
+        </span>
         <span class="label-time">{{ MAX_HOUR }}:00</span>
       </div>
     </div>
@@ -106,7 +110,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import api from "@/plugins/axios"; 
+import api from "@/plugins/axios";
 
 type SlotStatus = "FREE" | "BUSY";
 
@@ -162,13 +166,15 @@ const pendingMouseEvent = ref<MouseEvent | null>(null);
 
 const quickCasts = computed<QuickCast[]>(() => {
   const slots = availabilitySlots.value;
-  const freeSlots = slots.filter(s => s.status === "FREE" && s.hour !== LUNCH_HOUR);
-  
+  const freeSlots = slots.filter(
+    (s) => s.status === "FREE" && s.hour !== LUNCH_HOUR
+  );
+
   if (freeSlots.length === 0) return [];
 
   const casts: QuickCast[] = [];
 
-  const morningSlots = freeSlots.filter(s => s.hour < LUNCH_HOUR);
+  const morningSlots = freeSlots.filter((s) => s.hour < LUNCH_HOUR);
   if (morningSlots.length > 0) {
     const start = morningSlots[0].hour;
     const end = morningSlots[morningSlots.length - 1].hour + 1;
@@ -176,11 +182,11 @@ const quickCasts = computed<QuickCast[]>(() => {
       label: "Morning",
       start,
       end,
-      available: true
+      available: true,
     });
   }
 
-  const afternoonSlots = freeSlots.filter(s => s.hour > LUNCH_HOUR);
+  const afternoonSlots = freeSlots.filter((s) => s.hour > LUNCH_HOUR);
   if (afternoonSlots.length > 0) {
     const start = afternoonSlots[0].hour;
     const end = afternoonSlots[afternoonSlots.length - 1].hour + 1;
@@ -188,7 +194,7 @@ const quickCasts = computed<QuickCast[]>(() => {
       label: "Afternoon",
       start,
       end,
-      available: true
+      available: true,
     });
   }
 
@@ -199,7 +205,7 @@ const quickCasts = computed<QuickCast[]>(() => {
       label: "Full Day",
       start,
       end,
-      available: true
+      available: true,
     });
   }
 
@@ -218,7 +224,7 @@ function isQuickCastActive(cast: QuickCast): boolean {
 const selectedDuration = computed(() => {
   let duration = 0;
   for (let h = props.startHour; h < props.endHour; h++) {
-    if (slotStatus(h) === 'FREE') {
+    if (slotStatus(h) === "FREE") {
       duration++;
     }
   }
@@ -233,7 +239,7 @@ const lunchOverlap = computed(() => {
 function formatTime(hour: number): string {
   const h = Math.floor(hour);
   const m = (hour % 1) * 60;
-  return `${h}:${m.toString().padStart(2, '0')}`;
+  return `${h}:${m.toString().padStart(2, "0")}`;
 }
 
 async function loadDeskAvailability() {
@@ -291,7 +297,10 @@ async function loadDeskAvailability() {
       }
     }
   } catch (error) {
-    console.error("[DeskAvailabilityTimeline] Failed to load availability", error);
+    console.error(
+      "[DeskAvailabilityTimeline] Failed to load availability",
+      error
+    );
     availabilitySlots.value = [];
   } finally {
     isLoading.value = false;
@@ -383,7 +392,7 @@ function handleSlotClick(hour: number) {
   if (status !== "FREE" || hour === LUNCH_HOUR) return;
 
   const isAdjacent = hour === props.startHour - 1 || hour === props.endHour;
-  
+
   if (isAdjacent) {
     if (hour === props.startHour - 1) {
       emit("update:startHour", hour);
@@ -397,7 +406,7 @@ function handleSlotClick(hour: number) {
     let nextHour = hour + 1;
     if (nextHour === LUNCH_HOUR) nextHour = LUNCH_HOUR + 1;
     nextHour = Math.min(nextHour, MAX_HOUR.value);
-    
+
     emit("update:startHour", hour);
     emit("update:endHour", nextHour);
   }
@@ -415,14 +424,15 @@ function onTrackMouseDown(event: MouseEvent) {
   const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
   const percentage = x / rect.width;
 
-  const exactHour = MIN_HOUR.value + percentage * (MAX_HOUR.value - MIN_HOUR.value);
+  const exactHour =
+    MIN_HOUR.value + percentage * (MAX_HOUR.value - MIN_HOUR.value);
   let hour = Math.round(exactHour);
 
   const status = slotStatus(hour);
   if (status !== "FREE" || hour === LUNCH_HOUR) return;
 
   const currentMid = (props.startHour + props.endHour) / 2;
-  
+
   if (exactHour < currentMid) {
     emit("update:startHour", hour);
   } else {
@@ -442,7 +452,7 @@ function handleMouseMove(event: MouseEvent) {
 
   rafId.value = requestAnimationFrame(() => {
     rafId.value = null;
-    
+
     const evt = pendingMouseEvent.value;
     if (!evt || !trackRef.value) return;
 
@@ -450,7 +460,7 @@ function handleMouseMove(event: MouseEvent) {
     const x = Math.max(0, Math.min(evt.clientX - rect.left, rect.width));
     const percentage = x / rect.width;
     const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
-    
+
     const exactHour = MIN_HOUR.value + percentage * totalSpan;
     let hour = Math.round(exactHour);
 
@@ -460,14 +470,15 @@ function handleMouseMove(event: MouseEvent) {
     if (dragState.value === "start") {
       const maxStart = props.endHour - 1;
       if (hour >= maxStart) hour = maxStart;
-      
+
       if (props.startHour !== hour) {
         emit("update:startHour", hour);
       }
-    } else { // 'end'
+    } else {
+      // 'end'
       const minEnd = props.startHour + 1;
       if (hour <= minEnd) hour = minEnd;
-      
+
       if (props.endHour !== hour) {
         emit("update:endHour", hour);
       }
@@ -478,7 +489,7 @@ function handleMouseMove(event: MouseEvent) {
 function handleMouseUp() {
   dragState.value = null;
   pendingMouseEvent.value = null;
-  
+
   if (rafId.value !== null) {
     cancelAnimationFrame(rafId.value);
     rafId.value = null;
@@ -493,7 +504,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("mousemove", handleMouseMove);
   window.removeEventListener("mouseup", handleMouseUp);
-  
+
   if (rafId.value !== null) {
     cancelAnimationFrame(rafId.value);
     rafId.value = null;
@@ -506,7 +517,8 @@ onBeforeUnmount(() => {
 
 .timeline-container {
   width: 100%;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 }
 
 .timeline-wrapper {
@@ -606,15 +618,17 @@ onBeforeUnmount(() => {
 }
 
 .timeline-slot.slot-free {
-  background: linear-gradient(180deg, 
-    rgba(34, 197, 94, 0.45) 0%, 
+  background: linear-gradient(
+    180deg,
+    rgba(34, 197, 94, 0.45) 0%,
     rgba(22, 163, 74, 0.35) 100%
   );
 }
 
 .timeline-slot.slot-busy {
-  background: linear-gradient(180deg, 
-    rgba(248, 113, 113, 0.45) 0%, 
+  background: linear-gradient(
+    180deg,
+    rgba(248, 113, 113, 0.45) 0%,
     rgba(239, 68, 68, 0.35) 100%
   );
   cursor: not-allowed;
@@ -635,24 +649,21 @@ onBeforeUnmount(() => {
   position: absolute;
   height: 100%;
   transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 0.3s ease;
+    width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .timeline-range.range-free {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
   box-shadow: 0 2px 12px rgba(34, 197, 94, 0.5),
-              inset 0 1px 0 rgba(255, 255, 255, 0.3),
-              0 0 20px rgba(34, 197, 94, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 20px rgba(34, 197, 94, 0.2);
 }
 
 .timeline-range.range-busy {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
   box-shadow: 0 2px 12px rgba(239, 68, 68, 0.4),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2),
-              0 0 20px rgba(239, 68, 68, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 20px rgba(239, 68, 68, 0.2);
 }
 
 .timeline-handle {
@@ -668,14 +679,13 @@ onBeforeUnmount(() => {
   transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 10;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35),
-              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .timeline-handle:hover {
   transform: translate(-50%, -50%) scale(1.2);
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5),
-              0 0 0 4px rgba(239, 68, 68, 0.1),
-              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 0 0 4px rgba(239, 68, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   border-color: #ef4444;
 }
 
@@ -698,13 +708,13 @@ onBeforeUnmount(() => {
   font-weight: 700;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   pointer-events: none;
   font-family: inherit;
   opacity: 0;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .timeline-handle:hover .handle-time,
@@ -872,14 +882,78 @@ onBeforeUnmount(() => {
   font-weight: 600;
   font-family: inherit;
 }
-
-.label-lunch {
-  color: #6b7280;
-  font-size: 10px;
-  font-weight: 600;
+.lunch-tooltip :deep(.v-overlay__content) {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%) !important;
+  border: 2px solid #fbbf24 !important;
+  border-radius: 16px !important;
+  padding: 0 !important;
+  box-shadow: 0 12px 40px rgba(251, 191, 36, 0.35),
+    0 0 0 1px rgba(251, 191, 36, 0.1) !important;
+  backdrop-filter: blur(8px);
 }
 
-.label-time {
-  color: #9ca3af;
+.tooltip-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tooltip-content::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #fbbf24 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+.tooltip-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.tooltip-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+.tooltip-text strong {
+  font-weight: 800;
+  color: #92400e;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  letter-spacing: 0.2px;
 }
 </style>
