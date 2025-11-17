@@ -206,7 +206,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits(["update:modelValue", "created", "cancel"]);
+const emit = defineEmits(["update:modelValue", "created", "cancel", "favourite-toggled"]);
 
 const favStore = useFavouritesStore();
 const isProcessing = ref(false);
@@ -412,7 +412,13 @@ async function toggleFavourite() {
   if (!deskId.value || isFavouriteProcessing.value) return;
   isFavouriteProcessing.value = true;
   try {
+    console.log('[BookingModal] Toggling favourite for desk:', deskId.value);
     await favStore.toggle(deskId.value);
+    console.log('[BookingModal] Toggle complete, emitting event');
+    // Emit event to notify parent to refresh lists
+    emit('favourite-toggled', { deskId: deskId.value, isFavourite: favStore.isFav(deskId.value) });
+  } catch (e) {
+    console.error('[BookingModal] Failed to toggle favourite:', e);
   } finally {
     isFavouriteProcessing.value = false;
   }

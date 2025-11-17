@@ -2,6 +2,7 @@ package com.project.internship_desk_booking_system.entity;
 
 import com.project.internship_desk_booking_system.enums.Role;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,16 +13,11 @@ import java.util.List;
 
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class CustomUserPrincipal implements UserDetails {
     private final String email;
     private final String passwordHash;
     private final Role role;
-
-    public CustomUserPrincipal(String email, String passwordHash, Role role) {
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.role = role;
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -8,6 +8,7 @@
       @load="loadData"
       @logout="logout"
       @book-desk="onBookDesk"
+      @favourite-toggled="onFavouriteToggled"
     />
     <v-slide-y-transition>
       <ResultsList
@@ -53,6 +54,7 @@
       :isBooked="false"
       :selectedDateISO="selectedDateISO"
       @created="onBookingCreated"
+      @favourite-toggled="onFavouriteToggled"
     />
 
     <DetailsDialog v-model="details.open" :item="details.item" />
@@ -118,13 +120,25 @@ function onBookDesk(payload: any) {
 async function onBookingCreated(payload: any) {
   bookingModalOpen.value = false;
 
-  if (currentType.value === "upcoming") {
+  // Refresh bookings list immediately
+  if (currentType.value === "bookings") {
+    await loadData("bookings");
+  } else if (currentType.value === "upcoming") {
     await loadData("upcoming");
-  } else {
-    refreshList();
   }
 
   snackbar.value = { show: true, message: "Booking created", color: "success" };
+}
+
+async function onFavouriteToggled(payload?: any) {
+  console.log('[SidePanel] Favourite toggled event received, currentType:', currentType.value);
+  
+  // Refresh favourites list immediately if viewing favourites
+  if (currentType.value === "favourites") {
+    console.log("[SidePanel] Reloading favourites list now...");
+    await loadData("favourites");
+    console.log('[SidePanel] Favourites list reloaded');
+  }
 }
 
 const initialWidth = typeof window !== "undefined" ? window.innerWidth : 1024;
@@ -184,6 +198,7 @@ const emptySubtitle = computed(() => {
 });
 
 async function loadData(type: "bookings" | "favourites" | "upcoming") {
+  console.log('[SidePanel] loadData called with type:', type);
   try {
     loading.value = true;
     currentType.value = type;
@@ -211,12 +226,14 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
         statusColor: statusToColor(b.status),
         raw: b,
       }));
+      console.log('[SidePanel] Loaded', items.value.length, 'bookings');
     }
 
     if (type === "favourites") {
       currentTitle.value = "Favorites";
       const response = await api.get("/favourites");
       const data = response.data || [];
+      console.log('[SidePanel] Favourites API response:', data.length, 'items');
 
       items.value = data.map((d: any, idx: number) => ({
         id: d.deskId ?? d.id ?? idx,
@@ -239,6 +256,7 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
         duration: "",
         raw: d,
       }));
+      console.log('[SidePanel] Loaded', items.value.length, 'favourites');
     }
 
     if (type === "upcoming") {
@@ -307,15 +325,6 @@ async function handleRemoveFavourite(item: any) {
   }
 }
 
-watch(
-  () => favouriteIds.value.join(","),
-  async () => {
-    if (currentType.value === "favourites" && !loading.value) {
-      await loadData("favourites");
-    }
-  }
-);
-
 function openDetails(item: any) {
   details.value.item = item;
   details.value.open = true;
@@ -336,8 +345,19 @@ function refreshUpcoming() {
   }
 }
 
+function refreshFavourites() {
+  console.log(
+    "[SidePanel] refreshFavourites called, currentType:",
+    currentType.value
+  );
+  if (currentType.value === "favourites") {
+    loadData("favourites");
+  }
+}
+
 defineExpose({
   refreshUpcoming,
+  refreshFavourites,
 });
 </script>
 

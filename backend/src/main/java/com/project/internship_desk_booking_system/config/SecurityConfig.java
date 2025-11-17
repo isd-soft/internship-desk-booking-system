@@ -49,7 +49,7 @@ public class SecurityConfig {
     public AuthenticationManager ldapAuthenticationManager(LdapContextSource contextSource) {
         LdapBindAuthenticationManagerFactory factory = new LdapBindAuthenticationManagerFactory(contextSource);
 
-        factory.setUserSearchBase("ou=developer");
+        factory.setUserSearchBase("cn=developer");
         factory.setUserSearchFilter("(mail={0})");
 
         return factory.createAuthenticationManager();
@@ -63,8 +63,8 @@ public class SecurityConfig {
         ProviderManager ldapManager = (ProviderManager) ldapAuthenticationManager;
 
         return new ProviderManager(
-                ldapManager.getProviders().get(0),
-                daoAuthProvider
+                daoAuthProvider,
+                ldapManager.getProviders().get(0)
         );
     }
 

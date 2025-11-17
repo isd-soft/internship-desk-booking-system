@@ -23,7 +23,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["booking-created"]);
+const emit = defineEmits(["booking-created", "favourite-toggled"]);
 
 const favStore = useFavouritesStore();
 
@@ -167,6 +167,11 @@ function handleCreated(data: { deskId: number; success: boolean }) {
   showBookingModal.value = false;
 }
 
+function handleFavouriteToggled(payload: any) {
+  console.log("[Map] favourite toggled → notifying parent");
+  emit("favourite-toggled", payload);
+}
+
 function handleCancelBooking() {
   showBookingModal.value = false;
 }
@@ -261,6 +266,7 @@ watch(
       :office-end-hour="18"
       @created="handleCreated"
       @cancel="handleCancelBooking"
+      @favourite-toggled="handleFavouriteToggled"
     />
   </div>
 </template>

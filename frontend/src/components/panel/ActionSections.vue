@@ -413,7 +413,6 @@ defineProps<{
   itemsCount: number;
 }>();
 
-// Опциональные обработчики для событий компонента
 function handleZoomChange(scale: number) {
   console.log("[Mobile Map] Zoom changed to:", scale);
 }
@@ -429,6 +428,7 @@ const emit = defineEmits<{
     e: "book-desk",
     payload: { desk: any; selectedDateISO?: string | null }
   ): void;
+  (e: "favourite-toggled"): void;
 }>();
 
 const isMobile = ref(false);
@@ -611,11 +611,15 @@ async function loadDesksFromApi() {
 
 async function toggleFav(desk: any) {
   try {
+    console.log('[ActionSections] Toggling favourite for desk:', desk.id);
     await favStore.toggle(desk.id);
+    console.log('[ActionSections] Toggle complete, emitting event');
     // refresh local flag
     desk.isFavourite = favStore.isFav(desk.id);
+    // Notify parent to refresh favourites list
+    emit("favourite-toggled");
   } catch (e) {
-    console.error("Failed to toggle favourite", e);
+    console.error("[ActionSections] Failed to toggle favourite", e);
   }
 }
 
