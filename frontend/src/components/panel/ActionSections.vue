@@ -1,6 +1,19 @@
 <template>
   <div class="actions-section px-6 pb-4">
     <v-btn
+        v-if="isAdmin"
+        block
+        variant="text"
+        class="neo-btn mb-3"
+        elevation="0"
+        size="large"
+        @click="$router.push('/admin-dashboard')"
+    >
+      <v-icon class="mr-2" size="20">mdi-shield-crown-outline</v-icon>
+      <span class="btn-text">Admin Dashboard </span>
+    </v-btn>
+
+    <v-btn
       block
       variant="text"
       class="neo-btn mb-3 all-desks-btn"
@@ -405,6 +418,7 @@ import {
   loadDesksFromBackend,
 } from "@/components/VisualFloorMap/floorLayout";
 import { useFavouritesStore } from "@/stores/favourites";
+import Dashboard from "@/components/Dashboard.vue";
 
 const zoomableMapRef = ref<InstanceType<typeof ZoomableMap> | null>(null);
 
@@ -438,8 +452,10 @@ const showMobileMap = ref(false);
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;
 };
-
+const isAdmin = ref(false);
 onMounted(() => {
+  const role = localStorage.getItem("role");
+  isAdmin.value = String(role).toUpperCase() === "ADMIN";
   checkMobile();
   window.addEventListener("resize", checkMobile, { passive: true });
 });

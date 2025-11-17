@@ -2,6 +2,19 @@
   <div class="actions-section px-6 pb-4">
     <!-- Admin only buttons -->
     <v-btn
+        v-if="isAdmin"
+        block
+        variant="text"
+        class="neo-btn mb-3"
+        elevation="0"
+        size="large"
+        @click="$router.push('/dashboard')"
+    >
+      <v-icon class="mr-2" size="20">mdi-account-arrow-left</v-icon>
+      <span class="btn-text">User View</span>
+    </v-btn>
+
+    <v-btn
       v-if="isAdmin"
       block
       variant="text"
@@ -10,7 +23,7 @@
       size="large"
       @click="$emit('openAdmin', 'map')"
     >
-      <v-icon class="mr-2" size="20">mdi-clipboard-text-clock</v-icon>
+      <v-icon class="mr-2" size="20">mdi-map-clock-outline</v-icon>
       <span class="btn-text">Map Settings</span>
     </v-btn>
 
@@ -88,7 +101,7 @@
       size="large"
       @click="$emit('openAdmin', 'deleted-desks')"
     >
-      <v-icon class="mr-2" size="20">mdi-cog</v-icon>
+      <v-icon class="mr-2" size="20">mdi-delete-empty</v-icon>
       <span class="btn-text">Deleted Desks</span>
     </v-btn>
 
@@ -121,6 +134,7 @@ const emit = defineEmits<{
   (
     e: "openAdmin",
     page:
+      | "dashboard"
       | "bookings"
       | "desks"
       | "users"

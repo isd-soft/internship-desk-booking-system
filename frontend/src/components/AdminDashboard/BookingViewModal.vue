@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {reactive, ref, watch} from "vue";
+import {computed, reactive, ref, watch} from "vue";
 import { calculateDuration, formatDateTime } from "@/utils/useFormatDate"
 import {fetchColors, getColor} from "@/utils/useEnums"
 interface Props {
@@ -63,8 +63,29 @@ watch(
     { immediate: true }
 );
 
+  const isLunchIncluded = true;
+  const LUNCH_START = 13;
+  const LUNCH_END = 14;
+  const MIN_HOUR = 9;
+  const MAX_HOUR = 18;
+  const hours = Array.from(
+    { length: MAX_HOUR - MIN_HOUR + 1 },
+    (_, i) => MIN_HOUR + i
+);
 
+const lunchOverlap = computed(() => {
+  if (!bookingForm.startTime || !bookingForm.endTime) return false;
 
+  // Extract hour from ISO datetime string
+  const start = new Date(bookingForm.startTime).getHours();
+  const end = new Date(bookingForm.endTime).getHours();
+
+  console.log('Start hour:', start);
+  console.log('End hour:', end);
+  console.log('Overlap check:', start < LUNCH_END && end > LUNCH_START);
+
+  return start < LUNCH_END && end > LUNCH_START;
+});
 
 function getDeskTypeIcon(type: string): string {
   const typeMap: Record<string, string> = {
@@ -204,7 +225,7 @@ function getDeskTypeIcon(type: string): string {
                 <v-icon size="16" color="#37aede" class="mr-1">mdi-clock-start</v-icon>
                 Lunch Time
               </div>
-              <div class="time-value">{{'YES'}}</div>
+              <div class="time-value">{{ lunchOverlap ? 'YES' : 'NO' }}</div>
             </div>
             <div class="time-card end simple">
               <div class="time-label">
