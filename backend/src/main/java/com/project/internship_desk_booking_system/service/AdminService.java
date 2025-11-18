@@ -12,6 +12,7 @@ import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
@@ -573,6 +574,25 @@ public class AdminService {
             zoneDtoList.add(zoneDTO);
         }
         return zoneDtoList;
+    }
+
+    @Transactional
+    public EmailRoleDTO updateUserRole(EmailRoleDTO dto) {
+        log.info("Admin requested to update role for email: {}", dto.getEmail());
+
+        User user = userRepository.findByEmailIgnoreCase(dto.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("User with email {} not found", dto.getEmail());
+                    return new IllegalArgumentException("User not found");
+                });
+
+        Role oldRole = user.getRole();
+        user.setRole(dto.getRole());
+        userRepository.save(user);
+
+        log.info("Updated user role: {} -> {}", oldRole, dto.getRole());
+
+        return new EmailRoleDTO(user.getEmail(), user.getRole());
     }
 
 }
