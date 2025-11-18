@@ -342,6 +342,11 @@ public class AdminService {
         log.info("Desk {} restored successfully", id);
     }
 
+    @Transactional
+    public void restoreCoordinates(){
+        deskRepository.restoreCoordinates();
+    }
+
     public List<DeskDto>    getAllDesks(){
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
@@ -350,6 +355,99 @@ public class AdminService {
             deskDtoList.add(deskDTO);
         }
         return deskDtoList;
+    }
+
+    @Transactional
+    public Integer saveAll(
+            List<DeskDto> updates
+    ){
+        int count = 0;
+        for(DeskDto deskDto : updates){
+            boolean changed = false;
+
+            log.info(
+                    "Looking for desk with id {}",
+                    deskDto.id()
+            );
+            Desk desk = getDeskOrCreate(deskDto);
+
+            if(!deskDto.displayName().equals(desk.getDeskName())){
+                desk.setDeskName(deskDto.displayName());
+                changed = true;
+            }
+            if(!deskDto.zoneDto().getId().equals(desk.getZone().getId())){
+                Zone zone = zoneRepository
+                        .findById(deskDto.zoneDto().getId())
+                                .orElseThrow(()-> new ExceptionResponse(
+                                        HttpStatus.NOT_FOUND,
+                                        "ZONE_NOT_FOUND",
+                                        String.format(
+                                                "Zone with id %d not found",
+                                                deskDto.zoneDto().getId()
+                                        )
+                                ));
+
+                desk.setZone(zone);
+                changed = true;
+            }
+            if(!deskDto.currentX().equals(desk.getCurrentX())){
+                desk.setCurrentX(deskDto.currentX());
+                changed = true;
+            }
+            if(!deskDto.currentY().equals(desk.getCurrentY())){
+                desk.setCurrentY(deskDto.currentY());
+                changed = true;
+            }
+            if(!deskDto.height().equals(desk.getHeight())){
+                desk.setHeight(deskDto.height());
+                changed = true;
+            }
+            if(!deskDto.width().equals(desk.getWidth())){
+                desk.setWidth(deskDto.width());
+                changed = true;
+            }
+
+            if(changed || desk.getId() == null){
+                deskRepository.save(desk);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private Desk getDeskOrCreate(
+            DeskDto deskDto
+    ){
+        return deskRepository
+                .findById(deskDto.id())
+                .orElseGet(() -> {
+                    log.info(
+                            "Creating new desk as ID {} was not found",
+                            deskDto.id()
+                    );
+
+                    Zone zone  = zoneRepository
+                            .findById(deskDto.zoneDto().getId())
+                            .orElseThrow(() -> new ExceptionResponse(
+                                    HttpStatus.NOT_FOUND,
+                                    "ZONE_NOT_FOUND",
+                                    String.format(
+                                            "Zone with id %d was not found",
+                                            deskDto.zoneDto().getId()
+                                    )
+                            ));
+                    Desk newDesk = new Desk();
+                    newDesk.setDeskName(deskDto.displayName());
+                    newDesk.setZone(zone);
+                    newDesk.setCurrentX(deskDto.currentX());
+                    newDesk.setCurrentY(deskDto.currentY());
+                    newDesk.setBaseX(deskDto.currentX());
+                    newDesk.setBaseY(deskDto.currentY());
+                    newDesk.setHeight(deskDto.height());
+                    newDesk.setWidth(deskDto.width());
+
+                    return newDesk;
+                });
     }
 
     public List<DeskCoordinatesDTO> getBaseCoordinates() {

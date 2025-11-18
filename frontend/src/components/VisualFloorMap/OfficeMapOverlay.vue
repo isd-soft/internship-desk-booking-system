@@ -251,7 +251,7 @@ watch(
             :class="{
               static: item.isNonInteractive,
               favourite: isDeskFavourite(item.i),
-              vertical: !horizontalDesks.includes(Number(item.i)),
+              vertical: !(item.w >= item.h),
               'non-interactive': item.isNonInteractive,
             }"
             @click="handleDeskClick(item)"
