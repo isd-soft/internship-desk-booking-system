@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.repository;
 
+import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
 import com.project.internship_desk_booking_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,9 +15,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     Optional<User> findByEmailIgnoreCase(String email);
 
-    @Query("SELECT DISTINCT u.email FROM User u WHERE u.id > 1 ORDER BY u.email ASC ")
-    List<String> findDistinctEmails();
-
     @Query("SELECT COUNT(DISTINCT b.user) FROM Booking b WHERE b.startTime > :startTime")
     long countUsersWithBookingsAfter(@Param("startTime") LocalDateTime startTime);
 
@@ -25,4 +23,10 @@ public interface UserRepository extends JpaRepository<User,Long> {
     long countUsersWithBookingsBetween(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT DISTINCT new com.project.internship_desk_booking_system.dto.EmailRoleDTO(u.email, u.role) " +
+            "FROM User u " +
+            "WHERE u.id > 1 " +
+            "ORDER BY u.email ASC")
+    List<EmailRoleDTO> findDistinctEmailAndRole();
 }
