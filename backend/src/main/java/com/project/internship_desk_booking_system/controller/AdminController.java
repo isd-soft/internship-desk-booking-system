@@ -6,6 +6,7 @@ import com.project.internship_desk_booking_system.command.CoordinatesUpdateComma
 import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.dto.ZoneDto;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.service.AdminService;
 import com.project.internship_desk_booking_system.service.BookingService;
@@ -30,11 +31,12 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desk/{id}")
     public ResponseEntity<DeskDto> getDeskById(
-        @PathVariable("id") Long deskId
-    ){
+            @PathVariable("id") Long deskId
+    ) {
         return ResponseEntity.ok(
                 adminService.getDeskById(deskId));
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/addDesk")
     public ResponseEntity<DeskDto> addDesk(
@@ -52,6 +54,7 @@ public class AdminController {
         return ResponseEntity
                 .ok(adminService.deactivateDesk(deskId));
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/activateDesk/{id}")
     public ResponseEntity<DeskDto> activateDesk(
@@ -76,7 +79,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks")
-    public ResponseEntity<List<DeskDto>> getAllDesks(){
+    public ResponseEntity<List<DeskDto>> getAllDesks() {
         return ResponseEntity.ok(adminService.getAllDesks());
     }
 
@@ -93,8 +96,8 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("cancel/booking/{id}")
     public ResponseEntity<BookingResponse> cancelBooking(
-        @PathVariable("id") Long bookingId
-    ){
+            @PathVariable("id") Long bookingId
+    ) {
         return ResponseEntity
                 .ok(adminService.cancelBooking(bookingId));
     }
@@ -102,9 +105,9 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("edit/booking/{id}")
     public ResponseEntity<BookingResponse> editBooking(
-        @PathVariable("id") Long bookingId,
-        @RequestBody BookingUpdateCommand bookingUpdateCommand
-    ){
+            @PathVariable("id") Long bookingId,
+            @RequestBody BookingUpdateCommand bookingUpdateCommand
+    ) {
         return ResponseEntity
                 .ok(adminService
                         .editBooking(
@@ -123,11 +126,12 @@ public class AdminController {
     @PatchMapping("/edit/currentCoordinates")
     public ResponseEntity<DeskCoordinatesDTO> editCurrentCoordinates(
             @RequestBody @Valid CoordinatesUpdateCommand coordinatesUpdateCommand
-            ){
+    ) {
         return ResponseEntity.ok(
                 adminService.changeCurrentCoordinates(coordinatesUpdateCommand)
         );
     }
+
     //@PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/desks/deleted")
     public ResponseEntity<List<DeskDto>> getDeletedDesks() {
@@ -142,6 +146,7 @@ public class AdminController {
         adminService.restoreDesk(deskId);
         return ResponseEntity.ok().build();
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/emails")
     public ResponseEntity<List<String>> getAllUserEmails() {
@@ -150,16 +155,23 @@ public class AdminController {
     }
 
     @GetMapping("/desk-status")
-    public ResponseEntity<List<String>> getDeskStatusEnum(){
+    public ResponseEntity<List<String>> getDeskStatusEnum() {
         return ResponseEntity.ok(deskService.getAllStatusDeskEnum());
     }
 
     @GetMapping("/desk-type")
-    public ResponseEntity<List<String>> getDeskTypeEnum(){
+    public ResponseEntity<List<String>> getDeskTypeEnum() {
         return ResponseEntity.ok(deskService.getAllTypeDeskEnum());
     }
+
     @GetMapping("/booking-status")
-    public ResponseEntity<List<String>> getBookingStatusEnum(){
+    public ResponseEntity<List<String>> getBookingStatusEnum() {
         return ResponseEntity.ok(bookingService.getBookingStatusEnum());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/zones")
+    public ResponseEntity<List<ZoneDto>> getAllZones() {
+        return ResponseEntity.ok(adminService.getAllZones());
     }
 }
