@@ -83,4 +83,13 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             """)
     List<DeskCoordinatesDTO> findBaseCoordinates();
 
+    @Modifying
+    @Query("""
+            UPDATE Desk d SET
+            d.currentX = d.baseX,
+            d.currentY = d.baseY
+            WHERE isDeleted = false
+            """)
+    void restoreCoordinates();
+
 }

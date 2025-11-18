@@ -165,6 +165,23 @@ public class AdminController {
         return ResponseEntity.ok(deskService.getAllTypeDeskEnum());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/desks/restoreCoordinates")
+    public ResponseEntity<Void> restoreCoordinates(){
+        adminService.restoreCoordinates();
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/desks/saveAll")
+    public ResponseEntity<Integer> saveAll(
+            @RequestBody List<DeskDto> updates
+    ){
+        return ResponseEntity.ok(
+                adminService.saveAll(updates)
+        );
+    }
+
     @GetMapping("/booking-status")
     public ResponseEntity<List<String>> getBookingStatusEnum() {
         return ResponseEntity.ok(bookingService.getBookingStatusEnum());

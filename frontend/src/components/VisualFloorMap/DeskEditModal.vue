@@ -15,7 +15,7 @@
               {{ desk?.deskName || `Desk ${desk?.i}` }}
             </div>
           </div>
-          <v-btn icon variant="text" size="small" @click="$emit('cancel')">
+          <v-btn icon variant="text" size="small" @click="close">
             <v-icon size="20">mdi-close</v-icon>
           </v-btn>
         </div>
@@ -161,6 +161,7 @@ const emit = defineEmits<{
   (e: "cancel"): void;
   (e: "create", desk: any): void;
   (e: "delete", deskId: number): void;
+  (e: "close", desk: any): void;
 }>();
 
 const zoneDisplay = ref('');
@@ -190,6 +191,10 @@ watch(zoneDisplay, (newZoneDisplay) => {
     }
   }
 });
+
+function close(){
+  emit("close", localDesk.value );
+}
 
 function create(){
   console.log(localDesk);

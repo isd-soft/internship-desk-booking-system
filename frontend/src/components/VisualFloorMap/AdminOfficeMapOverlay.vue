@@ -147,6 +147,20 @@ function openDeskEditor(item: any) {
   showEditModal.value = true;
 }
 
+function updateDesk(updated){
+  const matchingZone = zones.value.find((z: any) => z.zoneId === updated.zone.zoneId);
+
+  const item = layout.find(item => item.i === String(updated.i));
+  if (item) {
+    item.deskName = updated.deskName;
+    item.w = updated.w;
+    item.h = updated.h;
+    item.zone = matchingZone;
+    item.x = updated.x;
+    item.y = updated.y;
+  }
+}
+
 async function applyDeskChanges(updated: any) {
   await api.patch(`/admin/edit/desk/${Number(updated.i)}`, {
     displayName: updated.deskName,
@@ -157,15 +171,8 @@ async function applyDeskChanges(updated: any) {
     zoneId: updated.zone.zoneId
   });
 
-  const matchingZone = zones.value.find((z: any) => z.zoneId === updated.zone.zoneId);
+  updateDesk(updated);
 
-  const item = layout.find(item => item.i === String(updated.i));
-  if (item) {
-    item.deskName = updated.deskName;
-    item.w = updated.w;
-    item.h = updated.h;
-    item.zone = matchingZone
-  }
   showEditModal.value = false;
 }
 
@@ -203,6 +210,11 @@ function deleteDeskFromLayout(deskId: string){
     }
 }
 
+function closeModal(updated: any){
+  updateDesk(updated);
+  showEditModal.value = false;
+}
+
 async function deleteDesk(deskId: number){
   try{
     const response = await api.delete(`/admin/delete/desk/${deskId}`);
@@ -210,6 +222,41 @@ async function deleteDesk(deskId: number){
   }catch(err){
     console.error("Failed to delete desk from backend: ", err);
     deleteDeskFromLayout(String(deskId));
+  }
+}
+
+async function restoreAllDesks(){
+  try{
+    await api.patch("/admin/desks/restoreCoordinates");
+    resetLayout();
+    await getAllDesksFromBackend();
+  }catch(err){
+    console.error("Failed to restore all desks to default: ", err)
+  }
+}
+
+async function saveAllChanges(){
+  try{
+    const allDesks = layout.map(item =>({
+      id: Number(item.i),
+      displayName: item.deskName,
+      currentX: item.x,
+      currentY: item.y,
+      zoneDto:{
+        id: item.zone.zoneId,
+        zoneName: item.zone.zoneName,
+        zoneAbv: item.zone.zoneAbv
+      },
+      height: item.h,
+      width: item.w
+    }));
+  const response = await api.patch(
+    "/admin/desks/saveAll",
+    allDesks
+  );
+    console.log(`Saved ${response.data} desks`);
+  }catch(err){
+    console.error("Failed to save all the desks: ", err)
   }
 }
 
@@ -311,6 +358,7 @@ onMounted(async () => {
     @create="createNewDesk"
     @cancel="showEditModal = false"
     @delete="deleteDesk"
+    @close="closeModal"
   />
 </template>
 
