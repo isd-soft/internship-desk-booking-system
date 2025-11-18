@@ -1,5 +1,5 @@
 <template>
-  <VRow justify="center">
+  <VRow justify="center" class="date-picker-row">
     <VCol cols="12" class="d-flex justify-center">
       <VMenu
         v-model="menu"
@@ -7,6 +7,7 @@
         transition="scale-transition"
         offset="10"
         max-width="360"
+        location="bottom"
       >
         <template #activator="{ props }">
           <div class="date-selector" v-bind="props">
@@ -17,7 +18,6 @@
             <v-icon size="18" class="chevron-icon">mdi-chevron-down</v-icon>
           </div>
         </template>
-
         <div class="calendar-card">
           <VDatePicker
             v-model.date="selectedDate"
@@ -111,11 +111,38 @@ emitISO();
   padding: 0;
 }
 
+.date-picker-row {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+/* Адаптив для ноутбуков */
+@media (max-width: 1440px) {
+  .date-picker-row {
+    margin-top: 6px;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .date-picker-row {
+    margin-top: 5px;
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .date-picker-row {
+    margin-top: 4px;
+    margin-bottom: 6px;
+  }
+}
+
 .date-selector {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 20px;
+  gap: 10px;
+  padding: 10px 16px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -124,6 +151,31 @@ emitISO();
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   min-width: 0;
   width: min(100%, 320px);
+}
+
+/* Адаптив селектора для ноутбуков */
+@media (max-width: 1440px) {
+  .date-selector {
+    padding: 9px 14px;
+    gap: 9px;
+    width: min(100%, 300px);
+  }
+}
+
+@media (max-width: 1280px) {
+  .date-selector {
+    padding: 8px 12px;
+    gap: 8px;
+    width: min(100%, 280px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .date-selector {
+    padding: 7px 10px;
+    gap: 7px;
+    width: min(100%, 260px);
+  }
 }
 
 .date-selector:hover {
@@ -165,6 +217,25 @@ emitISO();
   letter-spacing: -0.2px;
 }
 
+/* Адаптив текста для ноутбуков */
+@media (max-width: 1440px) {
+  .date-value {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .date-value {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .date-value {
+    font-size: 13px;
+  }
+}
+
 .calendar-icon {
   color: #171717;
 }
@@ -185,6 +256,33 @@ emitISO();
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Адаптив календаря для ноутбуков */
+@media (max-width: 1440px) {
+  .calendar-card {
+    max-height: 80vh;
+    transform: scale(0.92);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 1280px) {
+  .calendar-card {
+    max-height: 75vh;
+    transform: scale(0.85);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 1024px) {
+  .calendar-card {
+    max-height: 70vh;
+    transform: scale(0.78);
+    transform-origin: top center;
+  }
 }
 
 /* Стилизация календаря */
@@ -197,9 +295,27 @@ emitISO();
 }
 
 .elegant-picker :deep(.v-date-picker-header) {
-  padding: 20px 20px 16px !important;
+  padding: 12px 16px 10px !important;
   background: #171717;
   border-bottom: 1px solid #262626;
+}
+
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-date-picker-header) {
+    padding: 10px 14px 8px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-date-picker-header) {
+    padding: 9px 12px 7px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-date-picker-header) {
+    padding: 8px 10px 6px !important;
+  }
 }
 
 .elegant-picker :deep(.v-date-picker-header__content) {
@@ -209,8 +325,26 @@ emitISO();
   color: #ffffff !important;
 }
 
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-date-picker-header__content) {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-date-picker-header__content) {
+    font-size: 15px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-date-picker-header__content) {
+    font-size: 14px !important;
+  }
+}
+
 .elegant-picker :deep(.v-date-picker-controls) {
-  padding: 16px 20px !important;
+  padding: 10px 16px !important;
 }
 
 .elegant-picker :deep(.v-btn--icon) {
@@ -220,13 +354,52 @@ emitISO();
   transition: all 0.25s ease !important;
 }
 
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-btn--icon) {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-btn--icon) {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-btn--icon) {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
 .elegant-picker :deep(.v-btn--icon:hover) {
   background: #f3f4f6 !important;
   transform: scale(1.05);
 }
 
 .elegant-picker :deep(.v-date-picker-month) {
-  padding: 12px 20px 20px !important;
+  padding: 8px 16px 16px !important;
+}
+
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-date-picker-month) {
+    padding: 7px 14px 14px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-date-picker-month) {
+    padding: 6px 12px 12px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-date-picker-month) {
+    padding: 5px 10px 10px !important;
+  }
 }
 
 .elegant-picker :deep(.v-date-picker-month__weekday) {
@@ -234,6 +407,27 @@ emitISO();
   font-size: 12px !important;
   color: #6b7280 !important;
   padding: 8px 0 !important;
+}
+
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-date-picker-month__weekday) {
+    font-size: 11px !important;
+    padding: 6px 0 !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-date-picker-month__weekday) {
+    font-size: 10px !important;
+    padding: 5px 0 !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-date-picker-month__weekday) {
+    font-size: 9px !important;
+    padding: 4px 0 !important;
+  }
 }
 
 .elegant-picker :deep(.v-date-picker-month__day) {
@@ -247,6 +441,24 @@ emitISO();
   font-size: 14px !important;
   border-radius: 10px !important;
   transition: all 0.2s ease !important;
+}
+
+@media (max-width: 1440px) {
+  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
+    font-size: 11px !important;
+  }
 }
 
 .elegant-picker :deep(.v-date-picker-month__day:hover .v-btn) {

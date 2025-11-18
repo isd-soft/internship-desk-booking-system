@@ -59,6 +59,20 @@ function handleBookingCreated(data) {
   }
 }
 
+function handleBookingCancelled(data) {
+  console.log("[Dashboard] Booking cancelled, notifying SidePanel", data);
+  if (sidePanelRef.value && sidePanelRef.value.refreshUpcoming) {
+    sidePanelRef.value.refreshUpcoming();
+  }
+}
+
+function handleFavouriteToggled(payload) {
+  console.log("[Dashboard] Favourite toggled, notifying SidePanel", payload);
+  if (sidePanelRef.value && sidePanelRef.value.refreshFavourites) {
+    sidePanelRef.value.refreshFavourites();
+  }
+}
+
 const legends = [
   { color: "#50c878", label: "Available", icon: "mdi-check-circle" },
   { color: "#ee4b2b", label: "Fully booked", icon: "mdi-close-circle" },
@@ -86,6 +100,8 @@ const legends = [
           <OfficeMapOverlay
             :selectedDateISO="selectedDate"
             @booking-created="handleBookingCreated"
+            @booking-cancelled="handleBookingCancelled"
+            @favourite-toggled="handleFavouriteToggled"
           />
         </div>
         <div class="legend-bar">

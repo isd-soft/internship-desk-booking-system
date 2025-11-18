@@ -27,6 +27,8 @@ public record DeskDto(
         Double baseX,
         Double baseY,
         Long height,
-        Long width
+        Long width,
+        String reasonOfDeletion
+
 ) {
 }

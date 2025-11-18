@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {reactive, ref, watch} from "vue";
-
+import {fetchBookingStatus,statusBookingOptions} from "@/utils/useEnums"
 
 interface Props {
   show: boolean;
@@ -12,7 +12,7 @@ interface Props {
   };
   error: String;
 }
-
+fetchBookingStatus(false)
 interface Emits {
   (e: "close"): void;
   (e: "save", data: {
@@ -32,13 +32,6 @@ const bookingForm = reactive({
   endTime: "",
   status: "ACTIVE",
 });
-
-const statusOptions = [
-  { value: "ACTIVE", label: "Active" },
-  { value: "CONFIRMED", label: "Confirmed" },
-  { value: "CANCELLED", label: "Cancelled" },
-  { value: "SCHEDULED", label: "Scheduled" },
-];
 
 // Sync with existing booking
 watch(
@@ -70,18 +63,6 @@ function handleSave() {
 
 function closeModal() {
   emit("close");
-}
-
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return "Not set";
-  const date = new Date(dateStr);
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 </script>
 
@@ -155,7 +136,7 @@ function formatDateTime(dateStr: string): string {
           <div class="section-title">Status</div>
           <div class="status-grid">
             <button
-                v-for="option in statusOptions"
+                v-for="option in statusBookingOptions"
                 :key="option.value"
                 @click.stop="bookingForm.status = option.value"
                 :class="[
@@ -163,7 +144,7 @@ function formatDateTime(dateStr: string): string {
                 { active: bookingForm.status === option.value },
               ]"
             >
-              {{ option.label }}
+              {{ option.value }}
             </button>
           </div>
         </div>

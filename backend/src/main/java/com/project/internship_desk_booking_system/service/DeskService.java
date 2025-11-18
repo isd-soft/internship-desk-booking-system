@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,24 +28,6 @@ import java.util.List;
 public class DeskService {
 
     private final DeskRepository deskRepository;
-    private final DeskMapper deskMapper;
-
-
-    @Transactional(readOnly = true)
-    public List<DeskDto> getAllUnavailableDesks() {
-        return deskRepository.findByType(DeskType.UNAVAILABLE)
-                .stream()
-                .map(deskMapper::toDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<DeskDto> getAllAvailableDesks() {
-        return deskRepository.findByStatus(DeskStatus.ACTIVE)
-                .stream()
-                .map(deskMapper::toDto)
-                .toList();
-    }
 
     public List<DeskCoordinatesDTO> getCoordinates(){
         List<DeskCoordinatesDTO>  coordinates = deskRepository.findCurrentCoordinates();
@@ -128,5 +112,17 @@ public class DeskService {
             resultList.add(deskColorDTO);
         }
         return resultList;
+    }
+        public List<String> getAllStatusDeskEnum() {
+            return Arrays.stream(DeskStatus.values())
+                    .map(Enum::name)
+                    .collect(Collectors.toList());
+        }
+
+        public List<String> getAllTypeDeskEnum(){
+            return Arrays.stream(DeskType.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+
     }
 }

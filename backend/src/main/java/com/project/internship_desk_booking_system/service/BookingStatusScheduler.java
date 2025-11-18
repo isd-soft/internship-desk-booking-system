@@ -17,7 +17,7 @@ public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
     @Transactional()
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 300000)
     public void updateBookingStatuses() {
         LocalDateTime now = LocalDateTime.now();
 

@@ -33,71 +33,14 @@
         <div class="section dark-slider">
           <div class="section-title">Select Time Range</div>
 
-          <div class="timeline-container">
-            <div
-              ref="timelineRef"
-              class="timeline-track"
-              @mousedown="handleTrackClick"
-            >
-              <div
-                class="timeline-range"
-                :style="{
-                  left: `${startPosition}%`,
-                  width: `${endPosition - startPosition}%`,
-                }"
-              />
-
-              <div
-                class="timeline-handle"
-                :style="{ left: `${startPosition}%` }"
-                @mousedown.stop="startDrag('start', $event)"
-              >
-                <div class="handle-time">{{ bookingForm.startHour }}:00</div>
-              </div>
-
-              <div
-                class="timeline-handle"
-                :style="{ left: `${endPosition}%` }"
-                @mousedown.stop="startDrag('end', $event)"
-              >
-                <div class="handle-time">{{ bookingForm.endHour }}:00</div>
-              </div>
-            </div>
-
-            <div class="timeline-labels">
-              <div
-                v-for="hour in hours"
-                :key="hour"
-                class="timeline-label"
-                :style="{ left: `${getHourPosition(hour)}%` }"
-              >
-                {{ hour }}:00
-              </div>
-            </div>
-          </div>
-
-          <div class="time-range-display">
-            <div class="time-range-label">Selected</div>
-            <div class="time-range-value">{{ formattedTimeRange }}</div>
-            <div class="time-duration">
-              {{ duration }} {{ duration === 1 ? "hour" : "hours" }}
-            </div>
-          </div>
-
-          <transition name="slide-fade">
-            <div v-if="lunchOverlap" class="modern-alert lunch-alert">
-              <div class="alert-icon lunch-icon">
-                <v-icon size="20">mdi-information-outline</v-icon>
-              </div>
-              <div class="alert-content">
-                <div class="alert-title">Lunch Hours</div>
-                <div class="alert-message">
-                  This time includes lunch hours (13:00 - 14:00). Workspace may
-                  be less available.
-                </div>
-              </div>
-            </div>
-          </transition>
+          <DeskAvailabilityTimeline
+            :desk-id="deskId"
+            :date-iso="props.selectedDateISO"
+            v-model:startHour="bookingForm.startHour"
+            v-model:endHour="bookingForm.endHour"
+            :min-hour="MIN_HOUR"
+            :max-hour="MAX_HOUR"
+          />
         </div>
 
         <button
@@ -163,22 +106,48 @@
             </div>
           </div>
 
-          <v-btn
-            :disabled="isProcessing"
-            class="confirm-button"
-            size="x-large"
-            @click.stop="confirmBooking"
-          >
-            {{ isBooked ? "Update Booking" : "Confirm Booking" }}
-            <template v-if="isProcessing">
+          <div class="action-buttons-container">
+            <v-btn
+              v-if="canCancelBooking"
+              size="small"
+              color="red"
+              variant="text"
+              class="cancel-btn"
+              @click.stop="cancelBooking"
+              :disabled="isCancelProcessing || isProcessing"
+            >
+              Cancel
+              <v-icon size="16" class="ml-1">mdi-close</v-icon>
               <v-progress-circular
+                v-if="isCancelProcessing"
                 indeterminate
-                size="18"
-                width="3"
-                class="ml-3"
+                size="16"
+                width="2"
+                class="ml-2"
               />
-            </template>
-          </v-btn>
+            </v-btn>
+
+            <v-btn
+              :disabled="isProcessing || isCancelProcessing"
+              class="confirm-button"
+              size="x-large"
+              @click.stop="confirmBooking"
+            >
+              {{
+                isBooked || canCancelBooking
+                  ? "Update Booking"
+                  : "Confirm Booking"
+              }}
+              <template v-if="isProcessing">
+                <v-progress-circular
+                  indeterminate
+                  size="18"
+                  width="3"
+                  class="ml-3"
+                />
+              </template>
+            </v-btn>
+          </div>
         </div>
       </v-card-actions>
     </v-card>
@@ -197,6 +166,7 @@ import {
 } from "vue";
 import api from "@/plugins/axios";
 import { useFavouritesStore } from "@/stores/favourites";
+import DeskAvailabilityTimeline from "../DeskAvailabilityTimeline.vue";
 
 interface Props {
   modelValue: boolean;
@@ -206,7 +176,12 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits(["update:modelValue", "created", "cancel"]);
+const emit = defineEmits([
+  "update:modelValue",
+  "created",
+  "cancel",
+  "favourite-toggled",
+]);
 
 const favStore = useFavouritesStore();
 const isProcessing = ref(false);
@@ -214,6 +189,8 @@ const isFavouriteProcessing = ref(false);
 const bookingErrors = ref<string[]>([]);
 const errorContainer = ref<HTMLElement | null>(null);
 const expandedMessages = ref<Set<number>>(new Set());
+const myBooking = ref<any | null>(null);
+const isCancelProcessing = ref(false);
 
 function mapBackendCode(code: string) {
   const map: Record<string, string> = {
@@ -303,6 +280,14 @@ const isDragging = ref<"start" | "end" | null>(null);
 
 const deskId = computed(() => Number(props.desk?.i ?? 0));
 const isFavourite = computed(() => favStore.isFav(deskId.value));
+const myBookingId = computed(
+  () => myBooking.value?.bookingId ?? myBooking.value?.id ?? null
+);
+const canCancelBooking = computed(() => {
+  if (!myBooking.value || !myBookingId.value) return false;
+  const status = String(myBooking.value.status || "").toUpperCase();
+  return !["CANCELLED", "CANCELED", "COMPLETED"].includes(status);
+});
 
 const duration = computed(() => bookingForm.endHour - bookingForm.startHour);
 
@@ -324,6 +309,18 @@ watch(
     if (open) {
       bookingErrors.value = [];
       await favStore.ensureLoaded();
+      await loadMyBooking();
+    } else {
+      myBooking.value = null;
+    }
+  }
+);
+
+watch(
+  () => [deskId.value, props.selectedDateISO],
+  async () => {
+    if (props.modelValue) {
+      await loadMyBooking();
     }
   }
 );
@@ -371,29 +368,6 @@ function handleMouseUp() {
   isDragging.value = null;
 }
 
-function handleTrackClick(event: MouseEvent) {
-  if (!timelineRef.value) return;
-
-  const rect = timelineRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const percentage = x / rect.width;
-  const hour = Math.round(MIN_HOUR + percentage * (MAX_HOUR - MIN_HOUR));
-
-  const midPoint = (bookingForm.startHour + bookingForm.endHour) / 2;
-
-  if (hour < midPoint) {
-    bookingForm.startHour = Math.max(
-      MIN_HOUR,
-      Math.min(hour, bookingForm.endHour - 1)
-    );
-  } else {
-    bookingForm.endHour = Math.max(
-      bookingForm.startHour + 1,
-      Math.min(hour, MAX_HOUR)
-    );
-  }
-}
-
 onMounted(() => {
   document.addEventListener("mousemove", handleMouseMove);
   document.addEventListener("mouseup", handleMouseUp);
@@ -408,11 +382,56 @@ function closeModal() {
   emit("update:modelValue", false);
 }
 
+function applyBookingRange(booking: any) {
+  if (!booking) return;
+  const start = new Date(booking.startTime);
+  const end = new Date(booking.endTime);
+  const rawStart = start.getHours();
+  const rawEnd = end.getHours();
+  const clampedStart = Math.min(Math.max(rawStart, MIN_HOUR), MAX_HOUR - 1);
+  const clampedEnd = Math.min(Math.max(rawEnd, clampedStart + 1), MAX_HOUR);
+  bookingForm.startHour = clampedStart;
+  bookingForm.endHour = clampedEnd;
+}
+
+async function loadMyBooking() {
+  if (!deskId.value || !props.selectedDateISO) {
+    myBooking.value = null;
+    return;
+  }
+
+  const dateParam = props.selectedDateISO.slice(0, 10);
+  try {
+    const { data } = await api.get("/booking/my/byDate", {
+      params: { localDate: dateParam },
+    });
+
+    const bookings: any[] = Array.isArray(data) ? data : [];
+    const found = bookings.find((entry: any) => {
+      const entryDeskId = Number(entry?.desk?.id ?? entry?.deskId);
+      return entryDeskId === deskId.value;
+    });
+
+    myBooking.value = found ?? null;
+
+    if (found) {
+      applyBookingRange(found);
+    }
+  } catch (error) {
+    console.error("[BookingModal] Failed to load user's booking", error);
+    myBooking.value = null;
+  }
+}
+
 async function toggleFavourite() {
   if (!deskId.value || isFavouriteProcessing.value) return;
   isFavouriteProcessing.value = true;
   try {
     await favStore.toggle(deskId.value);
+    emit("favourite-toggled", {
+      deskId: deskId.value,
+      isFavourite: favStore.isFav(deskId.value),
+    });
   } finally {
     isFavouriteProcessing.value = false;
   }
@@ -475,17 +494,42 @@ async function confirmBooking() {
   } catch (err) {
     console.error("Booking error:", err);
     bookingErrors.value = parseBookingError(err);
-    // focus the error container for accessibility
     await nextTick();
     if (errorContainer.value) {
       try {
         errorContainer.value.focus();
-      } catch (e) {
-        /* ignore */
-      }
+      } catch (e) {}
     }
   } finally {
     isProcessing.value = false;
+  }
+}
+
+async function cancelBooking() {
+  if (!canCancelBooking.value || !myBookingId.value) return;
+
+  try {
+    isCancelProcessing.value = true;
+    bookingErrors.value = [];
+    await api.post(`/booking/${myBookingId.value}/cancel`);
+
+    const payload = {
+      deskId: deskId.value,
+      bookingId: myBookingId.value,
+      startTime: myBooking.value?.startTime ?? null,
+      status: "CANCELLED",
+    };
+
+    console.log("[BookingModal] Emitting cancel event with payload:", payload);
+    emit("cancel", payload);
+
+    myBooking.value = null;
+    closeModal();
+  } catch (err) {
+    console.error("[BookingModal] Cancel error", err);
+    bookingErrors.value = parseBookingError(err);
+  } finally {
+    isCancelProcessing.value = false;
   }
 }
 
@@ -840,8 +884,23 @@ function contactSupport() {
   padding: 0 28px 28px;
 }
 
+.action-buttons-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  font-weight: 780 !important;
+  font-size: clamp(0.8rem, 0.78rem + 0.15vw, 0.9rem) !important;
+  padding: 0 clamp(6px, 0.8vw, 10px) !important;
+  min-height: 32px;
+  text-transform: none !important;
+}
+
 .confirm-button {
-  width: 100%;
+  flex: 1;
   background: #171717 !important;
   color: #ffffff !important;
   font-weight: 700 !important;

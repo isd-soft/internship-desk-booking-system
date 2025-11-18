@@ -1,6 +1,18 @@
 <template>
   <div class="actions-section px-6 pb-4">
-    <!-- Admin only buttons -->
+    <v-btn
+        v-if="isAdmin"
+        block
+        variant="flat"
+        class="neo-btn mb-3 admin-gradient-btn"
+        elevation="3"
+        size="large"
+        @click="$router.push('/dashboard')"
+    >
+      <v-icon class="mr-2" size="20">mdi-account-convert</v-icon>
+      <span class="btn-text">Switch to User View</span>
+    </v-btn>
+
     <v-btn
       v-if="isAdmin"
       block
@@ -10,7 +22,7 @@
       size="large"
       @click="$emit('openAdmin', 'map')"
     >
-      <v-icon class="mr-2" size="20">mdi-clipboard-text-clock</v-icon>
+      <v-icon class="mr-2" size="20">mdi-map-clock-outline</v-icon>
       <span class="btn-text">Map Settings</span>
     </v-btn>
 
@@ -38,6 +50,19 @@
     >
       <v-icon class="mr-2" size="20">mdi-desk</v-icon>
       <span class="btn-text">All Desks</span>
+    </v-btn>
+
+    <v-btn
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'users')"
+    >
+      <v-icon class="mr-2" size="20">mdi-account-group</v-icon>
+      <span class="btn-text">All Users</span>
     </v-btn>
 
     <v-btn
@@ -75,7 +100,7 @@
       size="large"
       @click="$emit('openAdmin', 'deleted-desks')"
     >
-      <v-icon class="mr-2" size="20">mdi-cog</v-icon>
+      <v-icon class="mr-2" size="20">mdi-delete-empty</v-icon>
       <span class="btn-text">Deleted Desks</span>
     </v-btn>
 
@@ -108,8 +133,10 @@ const emit = defineEmits<{
   (
     e: "openAdmin",
     page:
+      | "dashboard"
       | "bookings"
       | "desks"
+      | "users"
       | "settings"
       | "statistics"
       | "map"
@@ -162,5 +189,9 @@ onMounted(() => {
   font-weight: 820;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   color: #2b2f3a;
+}
+.admin-gradient-btn {
+  background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
+  color: white !important;
 }
 </style>

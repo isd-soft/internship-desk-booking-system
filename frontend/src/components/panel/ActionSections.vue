@@ -1,6 +1,19 @@
 <template>
   <div class="actions-section px-6 pb-4">
     <v-btn
+        v-if="isAdmin"
+        block
+        variant="flat"
+        class="neo-btn mb-3 admin-gradient-btn"
+        elevation="3"
+        size="large"
+        @click="$router.push('/admin-dashboard/map')"
+    >
+      <v-icon class="mr-2" size="20">mdi-shield-crown-outline</v-icon>
+      <span class="btn-text">Switch to Admin Dashboard</span>
+    </v-btn>
+
+    <v-btn
       block
       variant="text"
       class="neo-btn mb-3 all-desks-btn"
@@ -405,6 +418,7 @@ import {
   loadDesksFromBackend,
 } from "@/components/VisualFloorMap/floorLayout";
 import { useFavouritesStore } from "@/stores/favourites";
+import Dashboard from "@/components/Dashboard.vue";
 
 const zoomableMapRef = ref<InstanceType<typeof ZoomableMap> | null>(null);
 
@@ -413,7 +427,6 @@ defineProps<{
   itemsCount: number;
 }>();
 
-// Опциональные обработчики для событий компонента
 function handleZoomChange(scale: number) {
   console.log("[Mobile Map] Zoom changed to:", scale);
 }
@@ -429,6 +442,7 @@ const emit = defineEmits<{
     e: "book-desk",
     payload: { desk: any; selectedDateISO?: string | null }
   ): void;
+  (e: "favourite-toggled"): void;
 }>();
 
 const isMobile = ref(false);
@@ -438,8 +452,10 @@ const showMobileMap = ref(false);
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;
 };
-
+const isAdmin = ref(false);
 onMounted(() => {
+  const role = localStorage.getItem("role");
+  isAdmin.value = String(role).toUpperCase() === "ADMIN";
   checkMobile();
   window.addEventListener("resize", checkMobile, { passive: true });
 });
@@ -611,11 +627,15 @@ async function loadDesksFromApi() {
 
 async function toggleFav(desk: any) {
   try {
+    console.log('[ActionSections] Toggling favourite for desk:', desk.id);
     await favStore.toggle(desk.id);
+    console.log('[ActionSections] Toggle complete, emitting event');
     // refresh local flag
     desk.isFavourite = favStore.isFav(desk.id);
+    // Notify parent to refresh favourites list
+    emit("favourite-toggled");
   } catch (e) {
-    console.error("Failed to toggle favourite", e);
+    console.error("[ActionSections] Failed to toggle favourite", e);
   }
 }
 
@@ -1501,4 +1521,10 @@ const formatDateTime = (dateTime: string | null) => {
 .mobile-controls-overlay {
   display: none;
 }
+
+.admin-gradient-btn {
+  background: linear-gradient(135deg, #e16531 0%, #eadf66 100%) !important;
+  color: white !important;
+}
 </style>
+

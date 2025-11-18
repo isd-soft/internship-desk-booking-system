@@ -24,7 +24,7 @@
 
           <v-select
             v-model="statusFilter"
-            :items="STATUS_OPTIONS"
+            :items="statusBookingOptions"
             item-title="title"
             item-value="value"
             density="compact"
@@ -39,7 +39,7 @@
 
           <v-select
             v-model="typeFilter"
-            :items="TYPE_OPTIONS"
+            :items="typeDeskOptions"
             item-title="title"
             item-value="value"
             density="compact"
@@ -111,7 +111,7 @@
           <template #item.deskType="{ item }">
             <v-chip
               size="x-small"
-              :color="getStatusColor(item.deskType)"
+              :color="getColor(item.deskType)"
               variant="flat"
               class="table-chip"
             >
@@ -142,7 +142,7 @@
           <template #item.status="{ item }">
             <v-chip
               size="x-small"
-              :color="getStatusColor(item.status)"
+              :color="getColor(item.status)"
               variant="flat"
               class="table-chip"
             >
@@ -259,6 +259,9 @@ import { useRouter, useRoute } from "vue-router";
 import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
+import {fetchDeskTypeEnum,fetchBookingStatus, statusBookingOptions, typeDeskOptions,fetchColors,getColor} from "@/utils/useEnums";
+import { formatDateTimeLocal, formatTime, formatDate, calculateDuration} from "@/utils/useFormatDate";
+
 
 const router = useRouter();
 const route = useRoute();
@@ -273,36 +276,7 @@ const showEditModal = ref(false);
 const showViewModal = ref(false);
 const showCancelDialog = ref(false);
 const successMessage = ref(null);
-
-const STATUS_OPTIONS = [
-  { title: "All", value: "ALL" },
-  { title: "Active", value: "ACTIVE" },
-  { title: "Cancelled", value: "CANCELLED" },
-  { title: "Confirmed", value: "CONFIRMED" },
-  { title: "Scheduled", value: "SCHEDULED" },
-];
-
-const TYPE_OPTIONS = [
-  { title: "All", value: "ALL" },
-  { title: "Shared", value: "SHARED" },
-  { title: "Assigned", value: "ASSIGNED" },
-  { title: "Unavailable", value: "UNAVAILABLE" },
-];
-
-const STATUS_COLOR_MAP: Record<string, string> = {
-  ACTIVE: "#10b981",
-  SHARED: "#10b981",
-  COMPLETED: "#0b4df5",
-  CONFIRMED: "#0b4df5",
-  ASSIGNED: "#0b4df5",
-  CANCELLED: "#ef4444",
-  DEACTIVATED: "#ef4444",
-  UNAVAILABLE: "#737373FF",
-  SCHEDULED: "#e5ff00",
-};
-
-const DEFAULT_COLOR = "#737373";
-
+const statusColorMap = ref<Record<string, string>>({});
 const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
 const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
 
@@ -414,48 +388,6 @@ function transformBookingData(booking: any) {
   };
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatTime(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false, // This forces 24-hour format
-  });
-}
-
-function formatDateTimeLocal(dateStr: string): string {
-  const date = new Date(dateStr);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function calculateDuration(startStr: string, endStr: string): string {
-  if (!startStr || !endStr) return "—";
-
-  const diffMs = +new Date(endStr) - +new Date(startStr);
-  const totalMinutes = Math.max(0, Math.round(diffMs / 60000));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  return hours > 0
-    ? `${hours}h ${minutes.toString().padStart(2, "0")}m`
-    : `${minutes}m`;
-}
-
-function getStatusColor(status: string): string {
-  return STATUS_COLOR_MAP[status?.toUpperCase()] || DEFAULT_COLOR;
-}
-
 async function fetchBookings() {
   try {
     loading.value = true;
@@ -472,6 +404,8 @@ async function fetchBookings() {
     loading.value = false;
   }
 }
+
+
 
 async function updateBooking(bookingId: number, updateData: any) {
   await api.patch(`/admin/edit/booking/${bookingId}`, updateData);
@@ -557,8 +491,14 @@ function updateRouteQuery(status: string) {
   router.replace({ query: nextQuery });
 }
 
-onMounted(() => {
-  fetchBookings();
+onMounted(async () => {
+  // Run all fetches in parallel
+  await Promise.all([
+    fetchDeskTypeEnum(),
+    fetchColors(),
+    fetchBookings(),
+    fetchBookingStatus()
+  ]);
 });
 
 watch(statusFilter, (val) => {

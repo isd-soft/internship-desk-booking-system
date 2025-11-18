@@ -153,13 +153,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { layout } from "../VisualFloorMap/floorLayout";
-import api from "@/plugins/axios";
-
 const emit = defineEmits<{
   (e: "page", page: number): void;
   (e: "details", item: any): void;
-  (e: "refresh", item: any): void;
+  (e: "cancel-booking", item: any): void;
   (e: "remove-favourite", item: any): void;
 }>();
 
@@ -171,16 +168,7 @@ const props = defineProps<{
   currentType: string;
 }>();
 
-async function cancelItem(item: any) {
-  try {
-    await api.post(`/booking/${item.id}/cancel`);
-
-    const isoTime = item.raw.startTime.split("T")[0];
-    emit("refresh", { deskId: item.raw.desk.id, date: isoTime });
-  } catch (e: any) {
-    console.error("Failed to cancel booking", e);
-  }
-}
+const cancelItem = (item: any) => emit("cancel-booking", item);
 
 const totalPages = computed(() =>
   Math.ceil((props.items?.length ?? 0) / props.perPage)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue";
-import duration = _default.defaults.animation.duration;
-
+import {computed, reactive, ref, watch} from "vue";
+import { calculateDuration, formatDateTime } from "@/utils/useFormatDate"
+import {fetchColors, getColor} from "@/utils/useEnums"
 interface Props {
   show: boolean;
   booking?: {
@@ -32,7 +32,7 @@ const bookingForm = reactive({
   endTime: "",
   status: "ACTIVE",
 });
-
+fetchColors();
 watch(
     () => props.booking,
     (booking) => {
@@ -62,35 +62,30 @@ watch(
     },
     { immediate: true }
 );
-function formatDuration( startStr, endStr) {
-  if (!startStr || !endStr) return '—';
-  const diff = new Date(endStr) - new Date(startStr);
-  const min = Math.max(0, Math.round(diff / 60000));
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h ${m.toString().padStart(2, '0')}m` : `${m}m`;
-}
 
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return "Not set";
-  const date = new Date(dateStr);
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+  const isLunchIncluded = true;
+  const LUNCH_START = 13;
+  const LUNCH_END = 14;
+  const MIN_HOUR = 9;
+  const MAX_HOUR = 18;
+  const hours = Array.from(
+    { length: MAX_HOUR - MIN_HOUR + 1 },
+    (_, i) => MIN_HOUR + i
+);
 
-function getStatusColor(status: string): string {
-  const statusMap: Record<string, string> = {
-    ACTIVE: "#10b981",
-    COMPLETED: "#6366f1",
-    CANCELLED: "#ef4444",
-  };
-  return statusMap[status.toUpperCase()] || "#737373";
-}
+const lunchOverlap = computed(() => {
+  if (!bookingForm.startTime || !bookingForm.endTime) return false;
+
+  // Extract hour from ISO datetime string
+  const start = new Date(bookingForm.startTime).getHours();
+  const end = new Date(bookingForm.endTime).getHours();
+
+  console.log('Start hour:', start);
+  console.log('End hour:', end);
+  console.log('Overlap check:', start < LUNCH_END && end > LUNCH_START);
+
+  return start < LUNCH_END && end > LUNCH_START;
+});
 
 function getDeskTypeIcon(type: string): string {
   const typeMap: Record<string, string> = {
@@ -132,7 +127,7 @@ function getDeskTypeIcon(type: string): string {
 
       <v-card-text class="card-body">
         <!-- Status Banner -->
-        <div class="status-banner" :style="{ background: getStatusColor(booking?.status || 'ACTIVE') }">
+        <div class="status-banner" :style="{ background: getColor(booking?.status || 'ACTIVE') }">
           <div class="status-icon">
             <v-icon size="20" color="white">mdi-calendar-check</v-icon>
           </div>
@@ -230,7 +225,7 @@ function getDeskTypeIcon(type: string): string {
                 <v-icon size="16" color="#37aede" class="mr-1">mdi-clock-start</v-icon>
                 Lunch Time
               </div>
-              <div class="time-value">{{'YES'}}</div>
+              <div class="time-value">{{ lunchOverlap ? 'YES' : 'NO' }}</div>
             </div>
             <div class="time-card end simple">
               <div class="time-label">
@@ -238,7 +233,7 @@ function getDeskTypeIcon(type: string): string {
                 Duration
               </div>
               <div class="time-value">
-                {{ formatDuration(booking?.startTime, booking?.endTime) || '—' }}
+                {{ calculateDuration(booking?.startTime, booking?.endTime) || '—' }}
               </div>
             </div>
           </div>

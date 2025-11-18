@@ -1,8 +1,12 @@
-<script setup lang="ts" xmlns="http://www.w3.org/1999/html">
-import { reactive, watch, computed } from "vue";
+<script setup lang="ts">
+import { reactive, watch, computed, onMounted, ref } from "vue";
 import api from '@/plugins/axios';
-import {tr} from "vuetify/locale";
-
+import {
+  fetchDeskStatusEnum,
+  fetchDeskTypeEnum,
+  statusDeskOptions,
+  typeDeskOptions
+} from "@/utils/useEnums"
 
 interface Props {
   modelValue: boolean;
@@ -18,7 +22,7 @@ interface Props {
     tempUntil: string | null;
     rawData?: any;
   };
-    error: String;
+  error: String;
 }
 
 interface Emits {
@@ -33,14 +37,29 @@ interface Emits {
   }): void;
 }
 
+fetchDeskTypeEnum(false);
+fetchDeskStatusEnum(false);
+
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const zones = ref<Array<{ id: number; zoneName: string; zoneAbv: string }>>([]);
+
+onMounted(async () => {
+  try {
+    const response = await api.get('/admin/zones');
+    zones.value = response.data;
+  } catch (error) {
+    console.error('Error fetching zones:', error);
+  }
+});
 
 const deskForm = reactive({
   id: 0,
   displayName: "",
   zoneId: 0,
   zoneName: "",
+  zoneAbv: "",
   type: "",
   status: "ACTIVE",
   isTemporarilyAvailable: false,
@@ -48,20 +67,15 @@ const deskForm = reactive({
   temporaryAvailableUntil: null as string | null,
 });
 
-const statusOptions = [
-  { value: "ACTIVE", label: "Active" },
-  { value: "DEACTIVATED", label: "Deactivated" },
-];
+watch(() => deskForm.zoneId, (newZoneId) => {
+  const selectedZone = zones.value.find(z => z.id === newZoneId);
+  if (selectedZone) {
+    deskForm.zoneName = selectedZone.zoneName;
+    deskForm.zoneAbv = selectedZone.zoneAbv;
+  }
+});
 
-const typeOptions = [
-  { value: "SHARED", label: "Shared" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "UNAVAILABLE", label: "Unavailable" }
-];
-
-// Computed: Can temporary availability be enabled?
 const canEnableTemporaryAvailability = computed(() => {
-  // Only allow for SHARED desks that are ACTIVE
   return deskForm.type === "SHARED" && deskForm.status === "ACTIVE";
 });
 
@@ -78,18 +92,6 @@ const tempAvailabilityHint = computed(() => {
   }
   return "Make this desk temporarily available for booking";
 });
-
-// Computed: Date validation
-const dateRangeValid = computed(() => {
-  if (!deskForm.isTemporarilyAvailable) return true;
-  if (!deskForm.temporaryAvailableFrom || !deskForm.temporaryAvailableUntil) return false;
-
-  const from = new Date(deskForm.temporaryAvailableFrom);
-  const until = new Date(deskForm.temporaryAvailableUntil);
-
-  return until > from;
-});
-// Watch for type changes - disable temp availability if type becomes incompatible
 watch(() => deskForm.type, (newType) => {
   if (newType !== "SHARED" && deskForm.isTemporarilyAvailable) {
     deskForm.isTemporarilyAvailable = false;
@@ -98,7 +100,6 @@ watch(() => deskForm.type, (newType) => {
   }
 });
 
-// Watch for status changes - disable temp availability if deactivated
 watch(() => deskForm.status, (newStatus) => {
   if (newStatus === "DEACTIVATED" && deskForm.isTemporarilyAvailable) {
     deskForm.isTemporarilyAvailable = false;
@@ -108,22 +109,22 @@ watch(() => deskForm.status, (newStatus) => {
 });
 
 async function deactivateDesk() {
-  try{
+  try {
     await api.patch(`/admin/deactivateDesk/${deskForm.id}`);
-  }catch (error) {
+  } catch (error) {
     console.error("Failed to deactivate desk:", error);
   }
 }
+
 async function activateDesk() {
   try {
     await api.patch(`/admin/activateDesk/${deskForm.id}`);
-  }catch (error) {
+  } catch (error) {
     console.error("Failed to activate desk:", error);
   }
 }
 
-async function handleStatusClick(option) {
-  console.log("deskForm is", deskForm); // debug
+async function handleStatusClick(option: { value: string }) {
   deskForm.status = option.value;
   if (option.value === "DEACTIVATED") {
     await deactivateDesk();
@@ -132,9 +133,6 @@ async function handleStatusClick(option) {
   }
 }
 
-
-
-// Watch for temporary availability toggle - clear dates when disabled
 watch(() => deskForm.isTemporarilyAvailable, (enabled) => {
   if (!enabled) {
     deskForm.temporaryAvailableFrom = null;
@@ -168,6 +166,7 @@ function resetForm() {
   deskForm.displayName = "";
   deskForm.zoneId = 0;
   deskForm.zoneName = "";
+  deskForm.zoneAbv = "";
   deskForm.type = "";
   deskForm.status = "ACTIVE";
   deskForm.isTemporarilyAvailable = false;
@@ -205,7 +204,6 @@ function closeModal() {
           <div class="header-info">
             <div class="workspace-label">DESK</div>
             <div class="desk-title">Edit Desk</div>
-
           </div>
           <v-btn
               icon
@@ -228,13 +226,12 @@ function closeModal() {
             density="compact"
             closable
         >
-          {{error}}
+          {{ error }}
         </v-alert>
+
         <div class="section">
           <div class="section-title">Desk Name</div>
           <div class="id-label">Desk_ID: {{ desk?.id }}</div>
-
-
           <input
               v-model="deskForm.displayName"
               type="text"
@@ -262,12 +259,12 @@ function closeModal() {
           <div class="section-title">Desk Type</div>
           <div class="status-grid">
             <button
-                v-for="option in typeOptions"
+                v-for="option in typeDeskOptions"
                 :key="option.value"
                 @click.stop="deskForm.type = option.value"
                 :class="['status-btn', { active: deskForm.type === option.value }]"
             >
-              {{ option.label }}
+              {{ option.value }}
             </button>
           </div>
         </div>
@@ -276,12 +273,12 @@ function closeModal() {
           <div class="section-title">Desk Status</div>
           <div class="status-grid">
             <button
-                v-for="option in statusOptions"
+                v-for="option in statusDeskOptions"
                 :key="option.value"
                 @click.stop="handleStatusClick(option)"
                 :class="['status-btn', { active: deskForm.status === option.value }]"
             >
-              {{ option.label }}
+              {{ option.value }}
             </button>
           </div>
         </div>
@@ -304,7 +301,6 @@ function closeModal() {
             {{ tempAvailabilityHint }}
           </div>
 
-          <!-- Show date/time pickers when checkbox is checked -->
           <transition name="slide-fade">
             <div v-if="deskForm.isTemporarilyAvailable" class="date-range-section">
               <div class="date-input-group">
@@ -391,6 +387,7 @@ function closeModal() {
   margin-bottom: 8px;
   text-transform: uppercase;
 }
+
 .id-label {
   font-size: 11px;
   font-weight: 700;
@@ -640,18 +637,6 @@ function closeModal() {
 .date-input::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
-
-.validation-message {
-  margin-top: 12px;
-  padding: 12px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #dc2626;
-}
-
 
 :deep(.v-overlay__scrim) {
   backdrop-filter: blur(8px);

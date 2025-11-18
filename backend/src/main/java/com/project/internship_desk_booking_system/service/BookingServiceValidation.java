@@ -33,6 +33,7 @@ public class BookingServiceValidation {
     public void validateBookingLogic(User user, BookingCreateRequest request) {
         LocalDateTime start = request.getStartTime();
         LocalDateTime end = request.getEndTime();
+        validateUserOtherThanAdmin(user);
         validateBookingTimes(start, end);
         validateOfficeHours(start, end);
         validateMaxDaysInAdvance(start);
@@ -42,6 +43,18 @@ public class BookingServiceValidation {
 
         log.info("Validation passed for user {} desk {}", user.getEmail(), request.getDeskId());
     }
+
+    public void validateUserOtherThanAdmin(User user) {
+        if (user.getId().equals(1L)) {
+            throw new ExceptionResponse(
+                    HttpStatus.FORBIDDEN,
+                    "USER_CANNOT_BOOK",
+                    "This user account is not allowed to create bookings"
+            );
+        }
+    }
+
+
 
     public void validateDeskType(Desk desk, LocalDateTime start, LocalDateTime end) {
 
