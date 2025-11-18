@@ -13,6 +13,7 @@ import {
 } from "../components/VisualFloorMap/floorLayout.ts";
 
 const sidePanelRef = ref(null);
+const activeLegendFilter = ref(null);
 
 const reloadColors = async () => {
   resetLayout();
@@ -74,13 +75,21 @@ function handleFavouriteToggled(payload) {
 }
 
 const legends = [
-  { color: "#50c878", label: "Available", icon: "mdi-check-circle" },
-  { color: "#ee4b2b", label: "Fully booked", icon: "mdi-close-circle" },
-  { color: "#ffbf00", label: "Partially booked", icon: "mdi-clock-outline" },
-  { color: "#7393b3", label: "Assigned", icon: "mdi-account" },
-  { color: "#818589", label: "Unavailable", icon: "mdi-minus-circle" },
-  { color: "#E1BEE7", label: "Your booking", icon: "mdi-minus-circle" },
+  { color: "#50c878", label: "Available", icon: "mdi-check-circle", deskColor: "GREEN" },
+  { color: "#ee4b2b", label: "Fully booked", icon: "mdi-close-circle", deskColor: "RED" },
+  { color: "#ffbf00", label: "Partially booked", icon: "mdi-clock-outline", deskColor: "AMBER" },
+  { color: "#7393b3", label: "Assigned", icon: "mdi-account", deskColor: "BLUE" },
+  { color: "#818589", label: "Unavailable", icon: "mdi-minus-circle", deskColor: "GRAY" },
+  { color: "#E1BEE7", label: "Your booking", icon: "mdi-minus-circle", deskColor: "PURPLE" },
 ];
+
+function handleLegendHover(deskColor) {
+  activeLegendFilter.value = deskColor;
+}
+
+function handleLegendLeave() {
+  activeLegendFilter.value = null;
+}
 </script>
 
 <template>
@@ -99,6 +108,7 @@ const legends = [
         <div class="embedded-map">
           <OfficeMapOverlay
             :selectedDateISO="selectedDate"
+            :activeColorFilter="activeLegendFilter"
             @booking-created="handleBookingCreated"
             @booking-cancelled="handleBookingCancelled"
             @favourite-toggled="handleFavouriteToggled"
@@ -109,6 +119,9 @@ const legends = [
             v-for="(item, index) in legends"
             :key="index"
             class="legend-badge"
+            :class="{ 'legend-active': activeLegendFilter === item.deskColor }"
+            @mouseenter="handleLegendHover(item.deskColor)"
+            @mouseleave="handleLegendLeave"
           >
             <div
               class="badge-glow"
@@ -153,8 +166,8 @@ const legends = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  overflow: auto;
+  padding: 8px;
+  overflow: hidden;
   min-width: 0;
   min-height: 0;
   width: 100%;
@@ -165,14 +178,16 @@ const legends = [
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
+  height: 100%;
   max-width: 1100px;
   flex-shrink: 1;
   background: transparent;
   border-radius: 16px;
-  padding: 12px;
+  padding: 6px;
   box-shadow: none;
+  overflow: hidden;
 }
 
 .map-controls {
@@ -185,7 +200,7 @@ const legends = [
   width: min(1100px, 100%);
   aspect-ratio: 987 / 643;
   min-height: 420px;
-  max-height: 75vh;
+  max-height: 78vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -200,6 +215,15 @@ const legends = [
   max-width: 100%;
   display: flex;
   justify-content: center;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.embedded-map :deep(.floorplan-container img) {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .embedded-map :deep(.floorplan-inner) {
@@ -208,17 +232,17 @@ const legends = [
 
 .legend-bar {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  padding: 14px 18px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 3px 4px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
-  border-radius: 16px;
+  border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
   width: 100%;
-  max-width: 720px;
+  max-width: 100%;
   margin: 0 auto;
   flex-shrink: 0;
 }
@@ -227,20 +251,19 @@ const legends = [
   position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 16px;
-  justify-content: flex-start;
-  text-align: left;
+  gap: 3px;
+  padding: 3px 5px;
+  justify-content: center;
+  text-align: center;
   background: white;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: default;
   overflow: hidden;
-  flex: 1 1 210px;
-  max-width: 220px;
-  min-width: 180px;
-  min-height: 44px;
+  flex: 1 1 0;
+  min-height: 24px;
+  white-space: nowrap;
 }
 
 .legend-badge:hover {
@@ -261,40 +284,217 @@ const legends = [
   opacity: 1;
 }
 
+.legend-badge.legend-active {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.legend-badge.legend-active .badge-glow {
+  opacity: 1;
+}
+
 .badge-text {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
   white-space: nowrap;
   position: relative;
   z-index: 1;
+  line-height: 1;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .badge-dot {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-/* Tablet and desktop optimizations */
-@media (min-width: 1190px) {
+/* Laptop and desktop responsive sizing */
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .map-section {
+    max-width: 100%;
+    padding: 8px;
+    gap: 6px;
+  }
+  
   .map-holder {
-    padding: 24px;
+    padding: 12px;
+  }
+  
+  .embedded-map {
+    max-height: 68vh;
+    min-height: 420px;
+  }
+  
+  .legend-bar {
+    gap: 3px;
+    padding: 3px 4px;
+  }
+  
+  .legend-badge {
+    padding: 3px 5px;
+    gap: 3px;
+    min-height: 24px;
+  }
+  
+  .badge-text {
+    font-size: 11px;
+  }
+  
+  .badge-dot {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .map-section {
+    max-width: 100%;
+    padding: 6px;
+    gap: 5px;
+  }
+  
+  .map-holder {
+    padding: 10px;
+  }
+  
+  .embedded-map {
+    max-height: 66vh;
+    min-height: 400px;
+  }
+  
+  .legend-bar {
+    padding: 3px 4px;
+    gap: 2px;
+  }
+  
+  .legend-badge {
+    padding: 3px 4px;
+    gap: 2px;
+    min-height: 22px;
+  }
+  
+  .badge-text {
+    font-size: 12px;
+  }
+  
+  .badge-dot {
+    width: 6.5px;
+    height: 6.5px;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .map-section {
+    max-width: 100%;
+    padding: 5px;
+    gap: 4px;
+  }
+  
+  .map-holder {
+    padding: 8px;
+  }
+  
+  .embedded-map {
+    max-height: 64vh;
+    min-height: 380px;
+  }
+  
+  .legend-bar {
+    padding: 2px 3px;
+    gap: 2px;
+  }
+  
+  .legend-badge {
+    padding: 2px 4px;
+    gap: 2px;
+    min-height: 20px;
+  }
+  
+  .badge-text {
+    font-size: 11.5px;
+  }
+  
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .map-section {
+    max-width: 100%;
+    padding: 4px;
+    gap: 3px;
+  }
+  
+  .map-holder {
+    padding: 6px;
+  }
+  
+  .embedded-map {
+    max-height: 62vh;
+    min-height: 360px;
+  }
+  
+  .legend-bar {
+    padding: 2px 3px;
+    gap: 2px;
+  }
+  
+  .legend-badge {
+    padding: 2px 3px;
+    gap: 2px;
+    min-height: 18px;
+  }
+  
+  .badge-text {
+    font-size: 11px;
+  }
+  
+  .badge-dot {
+    width: 5.5px;
+    height: 5.5px;
+  }
+}
+
+@media (min-width: 1441px) {
+  .map-holder {
+    padding: 10px;
   }
 
   .embedded-map {
     min-height: 500px;
+    max-height: 80vh;
   }
-}
-
-@media (min-width: 1200px) {
-  .map-holder {
-    padding: 32px;
+  
+  .map-section {
+    gap: 8px;
+    padding: 8px;
   }
-
-  .embedded-map {
-    min-height: 600px;
+  
+  .legend-bar {
+    gap: 3px;
+    padding: 3px 5px;
+  }
+  
+  .legend-badge {
+    min-height: 26px;
+    padding: 4px 6px;
+    gap: 3px;
+  }
+  
+  .badge-text {
+    font-size: 13.5px;
+  }
+  
+  .badge-dot {
+    width: 7.5px;
+    height: 7.5px;
   }
 }
 

@@ -1,49 +1,70 @@
 <template>
   <VRow justify="center" class="date-picker-row">
-    <VCol cols="12" class="d-flex justify-center">
-      <VMenu
-        v-model="menu"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        offset="10"
-        max-width="360"
-        location="bottom"
-      >
-        <template #activator="{ props }">
-          <div class="date-selector" v-bind="props">
-            <v-icon size="20" class="calendar-icon"
-              >mdi-calendar-outline</v-icon
-            >
-            <span class="date-value">{{ displayDate }}</span>
-            <v-icon size="18" class="chevron-icon">mdi-chevron-down</v-icon>
-          </div>
-        </template>
-        <div class="calendar-card">
-          <VDatePicker
-            v-model.date="selectedDate"
-            :min="todayISO"
-            :max="maxDateISO"
-            show-adjacent-months
-            @update:model-value="onDateSelected"
-            class="elegant-picker"
-            color="black"
-          />
+    <VCol cols="12" class="d-flex flex-column align-center">
+      <!-- Week Navigation -->
+      <div class="week-navigation">
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          @click="previousWeek"
+          class="week-nav-btn"
+        >
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+
+        <div class="week-range">
+          {{ weekRangeDisplay }}
         </div>
-      </VMenu>
+
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          @click="nextWeek"
+          :disabled="!canGoNextWeek"
+          class="week-nav-btn"
+        >
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-btn>
+      </div>
+
+      <!-- Weekday Buttons -->
+      <div class="weekday-buttons">
+        <button
+          v-for="day in weekDays"
+          :key="day.iso"
+          @click="selectDay(day)"
+          :class="['weekday-btn', { active: isSelectedDay(day), today: isToday(day), disabled: isPastDay(day) }]"
+          :disabled="isPastDay(day)"
+        >
+          <span class="day-name">{{ day.name }}</span>
+          <span class="day-date">{{ day.dateNum }}</span>
+        </button>
+      </div>
     </VCol>
   </VRow>
 </template>
 
 <script setup>
-import { ref, computed, onActivated } from "vue";
+import { ref, computed, onActivated, watch } from "vue";
 
 const emit = defineEmits(["update:date"]);
 
-const menu = ref(false);
 const selectedDate = ref(null);
+const currentWeekStart = ref(null);
 
 const getTodayDate = () => {
   const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const getMonday = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
 };
@@ -64,30 +85,105 @@ const maxDateISO = computed(() => {
   return toISO(d);
 });
 
-const displayDate = computed(() => {
-  if (!selectedDate.value) return "Select a date";
-  const d = selectedDate.value;
-  return d.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+const weekDays = computed(() => {
+  const days = [];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(currentWeekStart.value);
+    date.setDate(date.getDate() + i);
+    days.push({
+      name: dayNames[i],
+      dateNum: date.getDate(),
+      iso: toISO(date),
+      date: date
+    });
+  }
+  
+  return days;
 });
 
-const resetToToday = () => {
-  selectedDate.value = getTodayDate();
+const weekRangeDisplay = computed(() => {
+  if (!currentWeekStart.value) return '';
+  
+  const start = new Date(currentWeekStart.value);
+  const end = new Date(currentWeekStart.value);
+  end.setDate(end.getDate() + 4);
+  
+  const formatDate = (d) => {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}.${month}`;
+  };
+  
+  return `${formatDate(start)} - ${formatDate(end)}`;
+});
+
+const canGoNextWeek = computed(() => {
+  const nextMonday = new Date(currentWeekStart.value);
+  nextMonday.setDate(nextMonday.getDate() + 7);
+  const maxDate = new Date(maxDateISO.value);
+  return nextMonday <= maxDate;
+});
+
+const isSelectedDay = (day) => {
+  if (!selectedDate.value) return false;
+  return toISO(selectedDate.value) === day.iso;
 };
+
+const isToday = (day) => {
+  return toISO(getTodayDate()) === day.iso;
+};
+
+const isPastDay = (day) => {
+  const today = getTodayDate();
+  return day.date < today;
+};
+
+const selectDay = (day) => {
+  if (isPastDay(day)) return;
+  selectedDate.value = new Date(day.date);
+  emitISO();
+};
+
+const previousWeek = () => {
+  const newMonday = new Date(currentWeekStart.value);
+  newMonday.setDate(newMonday.getDate() - 7);
+  
+  const today = getTodayDate();
+  const mondayOfToday = getMonday(today);
+  
+  if (newMonday >= mondayOfToday) {
+    currentWeekStart.value = newMonday;
+  }
+};
+
+const nextWeek = () => {
+  if (!canGoNextWeek.value) return;
+  
+  const newMonday = new Date(currentWeekStart.value);
+  newMonday.setDate(newMonday.getDate() + 7);
+  currentWeekStart.value = newMonday;
+};
+
+const resetToToday = () => {
+  const today = getTodayDate();
+  selectedDate.value = today;
+  currentWeekStart.value = getMonday(today);
+};
+
+// Watch for calendar date changes to update week
+watch(selectedDate, (newDate) => {
+  if (newDate) {
+    const monday = getMonday(newDate);
+    currentWeekStart.value = monday;
+  }
+});
 
 onActivated(() => {
   resetToToday();
   emitISO();
 });
-
-const onDateSelected = () => {
-  menu.value = false;
-  emitISO();
-};
 
 const emitISO = () => {
   if (selectedDate.value) {
@@ -112,381 +208,438 @@ emitISO();
 }
 
 .date-picker-row {
-  margin-top: 8px;
-  margin-bottom: 12px;
+  margin-top: 0;
+  margin-bottom: 6px;
 }
 
-/* Адаптив для ноутбуков */
 @media (max-width: 1440px) {
   .date-picker-row {
     margin-top: 6px;
-    margin-bottom: 10px;
-  }
-}
-
-@media (max-width: 1280px) {
-  .date-picker-row {
-    margin-top: 5px;
     margin-bottom: 8px;
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1366px) {
   .date-picker-row {
     margin-top: 4px;
     margin-bottom: 6px;
   }
 }
 
-.date-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  min-width: 0;
-  width: min(100%, 320px);
-}
-
-/* Адаптив селектора для ноутбуков */
-@media (max-width: 1440px) {
-  .date-selector {
-    padding: 9px 14px;
-    gap: 9px;
-    width: min(100%, 300px);
-  }
-}
-
 @media (max-width: 1280px) {
-  .date-selector {
-    padding: 8px 12px;
-    gap: 8px;
-    width: min(100%, 280px);
+  .date-picker-row {
+    margin-top: 3px;
+    margin-bottom: 5px;
   }
 }
 
 @media (max-width: 1024px) {
-  .date-selector {
-    padding: 7px 10px;
-    gap: 7px;
-    width: min(100%, 260px);
+  .date-picker-row {
+    margin-top: 2px;
+    margin-bottom: 4px;
   }
 }
 
-.date-selector:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.date-icon-wrapper {
+/* Week Navigation */
+.week-navigation {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #171717 0%, #404040 100%);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.date-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.date-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #6b7280;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
-.date-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #171717;
-  letter-spacing: -0.2px;
-}
-
-/* Адаптив текста для ноутбуков */
-@media (max-width: 1440px) {
-  .date-value {
-    font-size: 15px;
+@media (min-width: 1441px) {
+  .week-navigation {
+    padding: 6px 12px;
+    gap: 10px;
+    margin-bottom: 8px;
   }
-}
-
-@media (max-width: 1280px) {
-  .date-value {
+  
+  .weekday-buttons {
+    gap: 5px;
+  }
+  
+  .weekday-btn {
+    padding: 6px 10px;
+    min-width: 50px;
+    gap: 2px;
+  }
+  
+  .day-name {
+    font-size: 8.5px;
+  }
+  
+  .day-date {
     font-size: 14px;
   }
 }
 
-@media (max-width: 1024px) {
-  .date-value {
-    font-size: 13px;
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .week-navigation {
+    padding: 6px 12px;
+    gap: 8px;
+    margin-bottom: 8px;
+    border-radius: 10px;
   }
 }
 
-.calendar-icon {
-  color: #171717;
-}
-
-.chevron-icon {
-  color: #171717;
-  transition: transform 0.3s ease;
-  flex-shrink: 0;
-}
-
-.date-selector:hover .chevron-icon {
-  transform: translateY(2px);
-}
-
-.calendar-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  max-height: 85vh;
-  overflow-y: auto;
-}
-
-/* Адаптив календаря для ноутбуков */
-@media (max-width: 1440px) {
-  .calendar-card {
-    max-height: 80vh;
-    transform: scale(0.92);
-    transform-origin: top center;
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .week-navigation {
+    padding: 5px 10px;
+    gap: 7px;
+    margin-bottom: 7px;
+    border-radius: 9px;
   }
 }
 
-@media (max-width: 1280px) {
-  .calendar-card {
-    max-height: 75vh;
-    transform: scale(0.85);
-    transform-origin: top center;
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .week-navigation {
+    padding: 4px 8px;
+    gap: 6px;
+    margin-bottom: 6px;
+    border-radius: 8px;
   }
 }
 
-@media (max-width: 1024px) {
-  .calendar-card {
-    max-height: 70vh;
-    transform: scale(0.78);
-    transform-origin: top center;
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .week-navigation {
+    padding: 4px 7px;
+    gap: 5px;
+    margin-bottom: 5px;
+    border-radius: 7px;
   }
+}.week-nav-btn {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 28px !important;
+  height: 28px !important;
 }
 
-/* Стилизация календаря */
-.elegant-picker {
-  background: white !important;
+.week-nav-btn :deep(.v-icon) {
+  font-size: 16px !important;
 }
 
-.elegant-picker :deep(.v-picker-title) {
-  display: none !important;
-}
-
-.elegant-picker :deep(.v-date-picker-header) {
-  padding: 12px 16px 10px !important;
-  background: #171717;
-  border-bottom: 1px solid #262626;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-date-picker-header) {
-    padding: 10px 14px 8px !important;
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .week-nav-btn {
+    width: 28px !important;
+    height: 28px !important;
   }
-}
-
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-date-picker-header) {
-    padding: 9px 12px 7px !important;
-  }
-}
-
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-date-picker-header) {
-    padding: 8px 10px 6px !important;
-  }
-}
-
-.elegant-picker :deep(.v-date-picker-header__content) {
-  font-weight: 800 !important;
-  font-size: 18px !important;
-  letter-spacing: -0.3px !important;
-  color: #ffffff !important;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-date-picker-header__content) {
+  .week-nav-btn :deep(.v-icon) {
     font-size: 16px !important;
   }
 }
 
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-date-picker-header__content) {
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .week-nav-btn {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  .week-nav-btn :deep(.v-icon) {
     font-size: 15px !important;
   }
 }
 
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-date-picker-header__content) {
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .week-nav-btn {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .week-nav-btn :deep(.v-icon) {
     font-size: 14px !important;
   }
 }
 
-.elegant-picker :deep(.v-date-picker-controls) {
-  padding: 10px 16px !important;
-}
-
-.elegant-picker :deep(.v-btn--icon) {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
-  transition: all 0.25s ease !important;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-btn--icon) {
-    width: 32px !important;
-    height: 32px !important;
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .week-nav-btn {
+    width: 22px !important;
+    height: 22px !important;
   }
-}
-
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-btn--icon) {
-    width: 28px !important;
-    height: 28px !important;
-  }
-}
-
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-btn--icon) {
-    width: 26px !important;
-    height: 26px !important;
-  }
-}
-
-.elegant-picker :deep(.v-btn--icon:hover) {
-  background: #f3f4f6 !important;
-  transform: scale(1.05);
-}
-
-.elegant-picker :deep(.v-date-picker-month) {
-  padding: 8px 16px 16px !important;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-date-picker-month) {
-    padding: 7px 14px 14px !important;
-  }
-}
-
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-date-picker-month) {
-    padding: 6px 12px 12px !important;
-  }
-}
-
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-date-picker-month) {
-    padding: 5px 10px 10px !important;
-  }
-}
-
-.elegant-picker :deep(.v-date-picker-month__weekday) {
-  font-weight: 700 !important;
-  font-size: 12px !important;
-  color: #6b7280 !important;
-  padding: 8px 0 !important;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-date-picker-month__weekday) {
-    font-size: 11px !important;
-    padding: 6px 0 !important;
-  }
-}
-
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-date-picker-month__weekday) {
-    font-size: 10px !important;
-    padding: 5px 0 !important;
-  }
-}
-
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-date-picker-month__weekday) {
-    font-size: 9px !important;
-    padding: 4px 0 !important;
-  }
-}
-
-.elegant-picker :deep(.v-date-picker-month__day) {
-  margin: 2px !important;
-  border-radius: 10px !important;
-  transition: all 0.2s ease !important;
-}
-
-.elegant-picker :deep(.v-date-picker-month__day .v-btn) {
-  font-weight: 600 !important;
-  font-size: 14px !important;
-  border-radius: 10px !important;
-  transition: all 0.2s ease !important;
-}
-
-@media (max-width: 1440px) {
-  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
+  .week-nav-btn :deep(.v-icon) {
     font-size: 13px !important;
   }
 }
 
-@media (max-width: 1280px) {
-  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
-    font-size: 12px !important;
-  }
-}
-
-@media (max-width: 1024px) {
-  .elegant-picker :deep(.v-date-picker-month__day .v-btn) {
-    font-size: 11px !important;
-  }
-}
-
-.elegant-picker :deep(.v-date-picker-month__day:hover .v-btn) {
+.week-nav-btn:hover:not(:disabled) {
   background: #f3f4f6 !important;
-  transform: scale(1.08);
+  border-color: #d1d5db !important;
+  transform: scale(1.05);
 }
 
-.elegant-picker :deep(.v-date-picker-month__day--selected .v-btn) {
-  background: #171717 !important;
-  color: white !important;
-  font-weight: 700 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+.week-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-.elegant-picker :deep(.v-date-picker-month__day--adjacent) {
-  opacity: 0.3 !important;
+.week-range {
+  font-size: 13px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: 0.2px;
+  min-width: 100px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-.elegant-picker :deep(.v-date-picker-month__day--disabled) {
-  opacity: 0.2 !important;
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .week-range {
+    font-size: 13px;
+    min-width: 100px;
+    letter-spacing: 0.2px;
+  }
 }
 
-.elegant-picker :deep(.v-btn__content) {
-  font-size: 16px !important;
-  font-weight: 700 !important;
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .week-range {
+    font-size: 12px;
+    min-width: 95px;
+    letter-spacing: 0.15px;
+  }
 }
 
-.elegant-picker :deep(*) {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .week-range {
+    font-size: 11px;
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .week-range {
+    font-size: 10px;
+    min-width: 85px;
+  }
+}
+
+/* Weekday Buttons */
+.weekday-buttons {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .weekday-buttons {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .weekday-buttons {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .weekday-buttons {
+    gap: 3px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .weekday-buttons {
+    gap: 2px;
+  }
+}
+
+.weekday-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 46px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .weekday-btn {
+    padding: 5px 9px;
+    min-width: 48px;
+    gap: 2px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .weekday-btn {
+    padding: 5px 8px;
+    min-width: 46px;
+    gap: 2px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .weekday-btn {
+    padding: 4px 7px;
+    min-width: 44px;
+    gap: 2px;
+    border-radius: 7px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .weekday-btn {
+    padding: 4px 6px;
+    min-width: 42px;
+    gap: 1px;
+    border-radius: 7px;
+  }
+}
+
+.weekday-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.02) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.weekday-btn:hover:not(.disabled)::before {
+  opacity: 1;
+}
+
+.weekday-btn:hover:not(.disabled) {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .weekday-btn:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.weekday-btn.active {
+  background: linear-gradient(135deg, #171717 0%, #262626 100%);
+  border-color: #171717;
+  box-shadow: 0 4px 16px rgba(23, 23, 23, 0.2);
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .weekday-btn.active {
+    box-shadow: 0 4px 16px rgba(23, 23, 23, 0.2);
+  }
+}
+
+.weekday-btn.today:not(.active) {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.weekday-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #f3f4f6;
+}
+
+.day-name {
+  font-size: 8px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .day-name {
+    font-size: 8px;
+    letter-spacing: 0.2px;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .day-name {
+    font-size: 7.5px;
+    letter-spacing: 0.2px;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .day-name {
+    font-size: 7px;
+    letter-spacing: 0.15px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .day-name {
+    font-size: 6.5px;
+    letter-spacing: 0.15px;
+  }
+}
+
+.weekday-btn.active .day-name {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.weekday-btn.today:not(.active) .day-name {
+  color: #3b82f6;
+}
+
+.day-date {
+  font-size: 13px;
+  font-weight: 800;
+  color: #171717;
+  letter-spacing: -0.15px;
+}
+
+@media (max-width: 1440px) and (min-width: 1190px) {
+  .day-date {
+    font-size: 13px;
+    letter-spacing: -0.15px;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1190px) {
+  .day-date {
+    font-size: 12px;
+    letter-spacing: -0.15px;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1190px) {
+  .day-date {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 1190px) {
+  .day-date {
+    font-size: 10px;
+  }
+}
+
+.weekday-btn.active .day-date {
+  color: #ffffff;
+}
+
+.weekday-btn.today:not(.active) .day-date {
+  color: #2563eb;
 }
 </style>
+
