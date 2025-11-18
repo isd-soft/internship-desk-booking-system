@@ -281,10 +281,11 @@ function cancelAddingDesk() {
 }
 
 .floorplan-container {
-  flex: 1;
   display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 .floorplan-inner {
