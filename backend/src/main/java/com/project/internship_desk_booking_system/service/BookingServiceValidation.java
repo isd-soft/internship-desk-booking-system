@@ -55,7 +55,6 @@ public class BookingServiceValidation {
     }
 
 
-
     public void validateDeskType(Desk desk, LocalDateTime start, LocalDateTime end) {
 
         if (desk.getType() == DeskType.SHARED) {
@@ -150,11 +149,11 @@ public class BookingServiceValidation {
     }
 
     private void checkDeskAvailability(Long deskId, LocalDateTime start, LocalDateTime end) {
-        if (!bookingRepository.findOverlappingBookings(deskId, start, end).isEmpty()) {
+        if (bookingRepository.existsOverlappingBooking(deskId, start, end)) {
             throw new ExceptionResponse(
-                    HttpStatus.CONFLICT,
-                    "This desk is already booked for the selected time.",
-                    "Desk already booked in this period"
+                    HttpStatus.BAD_REQUEST,
+                    "DESK_ALREADY_BOOKED",
+                    "This desk is already booked for this time"
             );
         }
     }

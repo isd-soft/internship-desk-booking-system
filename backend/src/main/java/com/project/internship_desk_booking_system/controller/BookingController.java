@@ -24,9 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
-    private final BookingAvailabilityService bookingAvailabilityService;
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/my")
     public ResponseEntity<List<BookingResponse>> getAllMyBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(bookingService.getUserBookings(principal.getEmail()));
@@ -38,14 +37,14 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping()
     public ResponseEntity<Void> createBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @Valid @RequestBody BookingCreateRequest request) {
         bookingService.createBooking(principal.getEmail(), request);
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/upcoming")
     public ResponseEntity<List<BookingResponse>> getUpcomingBookings(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(bookingService.getUpcomingBookings(principal.getEmail()));
@@ -59,13 +58,14 @@ public class BookingController {
         return ResponseEntity.ok().body(bookingService.getBookingById(principal.getEmail(), bookingId));
 
     }
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelBooking(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long id) {
         bookingService.cancelBooking(principal.getEmail(), id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/byDate")
     public ResponseEntity<List<BookingDTO>> getBookingsByDate(
             @RequestParam LocalDate localDate
@@ -75,7 +75,7 @@ public class BookingController {
         );
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/my/byDate")
     public ResponseEntity<List<BookingResponse>> getAllMyBookingsByDate(
             @AuthenticationPrincipal CustomUserPrincipal principal,

@@ -59,17 +59,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 
     @Query("""
-            SELECT b FROM Booking b
-            WHERE b.desk.id = :deskId
-            AND b.status IN ('ACTIVE', 'CONFIRMED')
-            AND b.endTime > CURRENT_TIMESTAMP
-            AND b.startTime < :endTime
-            AND b.endTime > :startTime
-            """)
-    List<Booking> findOverlappingBookings(
-            @Param("deskId") Long deskId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
+    SELECT COUNT(b) > 0 FROM Booking b
+    WHERE b.desk.id = :deskId
+      AND b.status <> 'CANCELLED'
+      AND b.startTime < :endTime
+      AND b.endTime > :startTime
+""")
+    boolean existsOverlappingBooking(
+            Long deskId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
     );
 
 
@@ -85,16 +84,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findBookingsByUserOrderByStartTimeDesc(User user);
 
-    @Modifying
-    @Query(
-            value = """
-                    DELETE FROM booking WHERE
-                    id = :deskId AND
-                    user_id = :userId""",
-            nativeQuery = true)
-    void deleteBookingByDeskId(
-            @Param("deskId") Long deskId,
-            @Param("userId") Long userId);
+
 
     @Query("""
             SELECT b
