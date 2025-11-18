@@ -6,6 +6,7 @@ import com.project.internship_desk_booking_system.command.CoordinatesUpdateComma
 import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
 import com.project.internship_desk_booking_system.dto.ZoneDto;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.service.AdminService;
@@ -149,8 +150,8 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/emails")
-    public ResponseEntity<List<String>> getAllUserEmails() {
-        log.info("Admin request to fetch all registered user emails");
+    public ResponseEntity<List<EmailRoleDTO>> getAllUserEmails() {
+        log.info("Admin request to fetch all registered user emails and roles");
         return ResponseEntity.ok(adminService.getAllRegisteredUserEmails());
     }
 
