@@ -20,7 +20,7 @@
         :currentType="currentType"
         @page="(p) => (currentPage = p)"
         @details="openDetails"
-        @refresh="handleCancelItem"
+        @cancel-booking="handleCancelBooking"
         @remove-favourite="handleRemoveFavourite"
       />
     </v-slide-y-transition>
@@ -54,6 +54,7 @@
       :isBooked="false"
       :selectedDateISO="selectedDateISO"
       @created="onBookingCreated"
+      @cancel="onBookingCancelled"
       @favourite-toggled="onFavouriteToggled"
     />
 
@@ -130,23 +131,46 @@ async function onBookingCreated(payload: any) {
   snackbar.value = { show: true, message: "Booking created", color: "success" };
 }
 
+async function onBookingCancelled(payload?: {
+  bookingId?: number | string | null;
+  deskId?: number | string | null;
+  startTime?: string | null;
+  status?: string | null;
+}) {
+  bookingModalOpen.value = false;
+
+  if (!payload || payload.bookingId === undefined || payload.bookingId === null)
+    return;
+
+  await applyCancelledBooking({
+    bookingId: payload.bookingId,
+    deskId: payload.deskId ?? null,
+    startTime: payload.startTime ?? null,
+    status: payload.status ?? "CANCELLED",
+  });
+
+  console.log("[SidePanel] Refreshing upcoming after modal cancellation");
+  if (currentType.value === "upcoming") {
+    await loadData("upcoming");
+  }
+}
+
 async function onFavouriteToggled(payload?: any) {
-  console.log('[SidePanel] Favourite toggled event received, currentType:', currentType.value);
-  
-  // Refresh favourites list immediately if viewing favourites
+  console.log(
+    "[SidePanel] Favourite toggled event received, currentType:",
+    currentType.value
+  );
+
   if (currentType.value === "favourites") {
     console.log("[SidePanel] Reloading favourites list now...");
     await loadData("favourites");
-    console.log('[SidePanel] Favourites list reloaded');
+    console.log("[SidePanel] Favourites list reloaded");
   }
 }
 
 const initialWidth = typeof window !== "undefined" ? window.innerWidth : 1024;
 const winW = ref(initialWidth);
 const itemsPerPage = ref(3);
-function refreshList() {
-  loadData(currentType.value as "bookings" | "favourites" | "upcoming");
-}
 
 const updateLayout = () => {
   if (typeof window === "undefined") return;
@@ -197,8 +221,15 @@ const emptySubtitle = computed(() => {
   return "Select an action above to view your data.";
 });
 
+const hiddenStatuses = new Set([
+  "CANCELLED",
+  "CANCELED",
+  "COMPLETED",
+  "EXPIRED",
+]);
+
 async function loadData(type: "bookings" | "favourites" | "upcoming") {
-  console.log('[SidePanel] loadData called with type:', type);
+  console.log("[SidePanel] loadData called with type:", type);
   try {
     loading.value = true;
     currentType.value = type;
@@ -226,14 +257,14 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
         statusColor: statusToColor(b.status),
         raw: b,
       }));
-      console.log('[SidePanel] Loaded', items.value.length, 'bookings');
+      console.log("[SidePanel] Loaded", items.value.length, "bookings");
     }
 
     if (type === "favourites") {
       currentTitle.value = "Favorites";
       const response = await api.get("/favourites");
       const data = response.data || [];
-      console.log('[SidePanel] Favourites API response:', data.length, 'items');
+      console.log("[SidePanel] Favourites API response:", data.length, "items");
 
       items.value = data.map((d: any, idx: number) => ({
         id: d.deskId ?? d.id ?? idx,
@@ -256,7 +287,7 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
         duration: "",
         raw: d,
       }));
-      console.log('[SidePanel] Loaded', items.value.length, 'favourites');
+      console.log("[SidePanel] Loaded", items.value.length, "favourites");
     }
 
     if (type === "upcoming") {
@@ -265,6 +296,7 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
       const response = await api.get("/booking/upcoming");
       const data = (response.data || [])
         .filter((b: any) => new Date(b.startTime) > now)
+        .filter((b: any) => !hiddenStatuses.has(String(b.status).toUpperCase()))
         .slice()
         .sort(
           (a: any, b: any) =>
@@ -299,9 +331,94 @@ async function loadData(type: "bookings" | "favourites" | "upcoming") {
   }
 }
 
-function handleCancelItem(data: { deskId: number; color: string }) {
-  emit("cancel-item", data);
-  refreshList();
+async function applyCancelledBooking({
+  bookingId,
+  deskId,
+  startTime,
+  status = "CANCELLED",
+}: {
+  bookingId?: number | string | null;
+  deskId?: number | string | null;
+  startTime?: string | null;
+  status?: string | null;
+}) {
+  if (bookingId === undefined || bookingId === null) return;
+
+  const numericId = Number(bookingId);
+  const upperStatus = typeof status === "string" ? status.toUpperCase() : "";
+
+  if (currentType.value === "bookings") {
+    const match = items.value.find((entry) => Number(entry.id) === numericId);
+    if (match) {
+      match.status = upperStatus || "CANCELLED";
+      match.statusColor = statusToColor(match.status);
+    }
+  } else {
+    items.value = items.value.filter((entry) => Number(entry.id) !== numericId);
+  }
+
+  const normalizedDeskId =
+    deskId !== undefined && deskId !== null ? Number(deskId) : undefined;
+  let cancelDate: string | null = null;
+  if (typeof startTime === "string") {
+    cancelDate = startTime.includes("T") ? startTime.split("T")[0] : startTime;
+  }
+
+  const cancelPayload: {
+    deskId?: number;
+    date: string | null;
+    bookingId: number;
+    status?: string;
+  } = {
+    date: cancelDate,
+    bookingId: numericId,
+  };
+
+  if (normalizedDeskId !== undefined) {
+    cancelPayload.deskId = normalizedDeskId;
+  }
+  if (upperStatus) {
+    cancelPayload.status = upperStatus;
+  }
+
+  emit("cancel-item", cancelPayload);
+
+  snackbar.value = {
+    show: true,
+    message: "Booking cancelled",
+    color: "info",
+  };
+
+  if (["bookings", "upcoming"].includes(currentType.value)) {
+    await loadData(currentType.value as "bookings" | "upcoming");
+  }
+}
+
+async function handleCancelBooking(item: any) {
+  const bookingIdRaw = item?.id ?? item?.raw?.bookingId;
+  const bookingId = bookingIdRaw !== undefined ? Number(bookingIdRaw) : null;
+  if (!bookingId) return;
+
+  try {
+    await api.post(`/booking/${bookingId}/cancel`);
+    const deskIdValue =
+      item?.raw?.desk?.id ?? item?.raw?.deskId ?? item?.deskId ?? null;
+    const startTimeValue = item?.raw?.startTime ?? null;
+
+    await applyCancelledBooking({
+      bookingId,
+      deskId: deskIdValue,
+      startTime: startTimeValue,
+      status: "CANCELLED",
+    });
+  } catch (error) {
+    console.error("Failed to cancel booking", error);
+    snackbar.value = {
+      show: true,
+      message: "Could not cancel booking",
+      color: "error",
+    };
+  }
 }
 
 async function handleRemoveFavourite(item: any) {

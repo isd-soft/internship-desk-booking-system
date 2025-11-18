@@ -7,6 +7,7 @@ import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
 import com.project.internship_desk_booking_system.dto.DeskDto;
 import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
 import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
+import com.project.internship_desk_booking_system.dto.ZoneDto;
 import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -14,6 +15,7 @@ import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
+import com.project.internship_desk_booking_system.mapper.ZoneMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
 import com.project.internship_desk_booking_system.repository.UserRepository;
@@ -45,7 +47,7 @@ public class AdminService {
     private final DeskMapper deskMapper;
     private final BookingTimeLimitsService bookingTimeLimitsService;
     private final BookingServiceValidation bookingValidation;
-
+    private final ZoneMapper zoneMapper;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -324,7 +326,7 @@ public class AdminService {
         log.info("Desk {} restored successfully", id);
     }
 
-    public List<DeskDto> getAllDesks() {
+    public List<DeskDto>    getAllDesks(){
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
         for (Desk desk : desks) {
@@ -562,4 +564,15 @@ public class AdminService {
 
         return users;
     }
+
+    public List<ZoneDto> getAllZones() {
+        List<Zone> zones = zoneRepository.findAll();
+        List<ZoneDto> zoneDtoList = new ArrayList<>();
+        for(Zone zone : zones){
+            ZoneDto zoneDTO = zoneMapper.toDto(zone);
+            zoneDtoList.add(zoneDTO);
+        }
+        return zoneDtoList;
+    }
+
 }

@@ -23,7 +23,11 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["booking-created", "favourite-toggled"]);
+const emit = defineEmits([
+  "booking-created",
+  "favourite-toggled",
+  "booking-cancelled",
+]);
 
 const favStore = useFavouritesStore();
 
@@ -172,8 +176,25 @@ function handleFavouriteToggled(payload: any) {
   emit("favourite-toggled", payload);
 }
 
-function handleCancelBooking() {
+async function handleCancelBooking(payload?: { deskId?: number }) {
   showBookingModal.value = false;
+  const targetDeskId = payload?.deskId ?? Number(selectedDesk.value?.i);
+
+  if (targetDeskId) {
+    const desk = layout.find((d: any) => Number(d.i) === targetDeskId);
+    if (desk) {
+      desk.color = "GREEN";
+    }
+  }
+
+  try {
+    await loadAllColors();
+  } catch (error) {
+    console.warn("[Map] Failed to refresh colors after cancellation", error);
+  }
+
+  console.log("[Map] booking cancelled → notifying parent");
+  emit("booking-cancelled", payload);
 }
 
 watch(
