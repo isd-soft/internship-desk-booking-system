@@ -26,186 +26,136 @@
     </div>
 
     <!-- Main Content -->
-    <div v-else>
-      <!-- ========================================== -->
+    <div v-else class="settings-content">
+      
       <!-- SECTION 1: BOOKING TIME LIMITS -->
-      <!-- ========================================== -->
-      <div class="info-section">
-        <svg class="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <h4>Fixed Booking Duration Limits</h4>
-          <p>Minimum: <strong>1 hour</strong> | Maximum: <strong>8 hours</strong> per booking</p>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h3 class="section-title">
-          <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="settings-card">
+        <div class="card-header">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
-          Configurable Booking Limits
-        </h3>
+          <h3>Booking Time Limits</h3>
+        </div>
+
+        <!-- Info Badge -->
+        <div class="info-badge">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Fixed: 1-8 hours per booking</span>
+        </div>
 
         <form @submit.prevent="saveBookingLimits">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="maxDays" class="form-label">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>
                 Maximum Days in Advance
-                <span class="label-badge">Current: {{ originalLimits?.maxDaysInAdvance || 30 }}</span>
+                <span class="current-value">Current: {{ originalLimits?.maxDaysInAdvance || 30 }}</span>
               </label>
               <input 
-                id="maxDays" 
                 type="number" 
                 min="1" 
                 max="365" 
-                class="form-input"
                 v-model.number="limitsForm.maxDaysInAdvance"
                 @input="validateLimitsField('maxDaysInAdvance')"
-                :class="{ 'input-error': limitsErrors.maxDaysInAdvance }"
-                placeholder="1-365" 
+                :class="{ 'error': limitsErrors.maxDaysInAdvance }"
+                placeholder="1-365"
               />
               <transition name="fade">
-                <div v-if="limitsErrors.maxDaysInAdvance" class="error-message">
+                <span v-if="limitsErrors.maxDaysInAdvance" class="field-error">
                   {{ limitsErrors.maxDaysInAdvance }}
-                </div>
+                </span>
               </transition>
             </div>
 
-            <div class="form-group">
-              <label for="maxWeeklyHours" class="form-label">
+            <div class="form-field">
+              <label>
                 Maximum Weekly Hours
-                <span class="label-badge">Current: {{ originalLimits?.maxHoursPerWeek || 20 }}</span>
+                <span class="current-value">Current: {{ originalLimits?.maxHoursPerWeek || 20 }}</span>
               </label>
               <input 
-                id="maxWeeklyHours" 
                 type="number" 
                 min="1" 
                 max="168" 
-                class="form-input"
                 v-model.number="limitsForm.maxHoursPerWeek"
                 @input="validateLimitsField('maxHoursPerWeek')"
-                :class="{ 'input-error': limitsErrors.maxHoursPerWeek }"
-                placeholder="1-168" 
+                :class="{ 'error': limitsErrors.maxHoursPerWeek }"
+                placeholder="1-168"
               />
               <transition name="fade">
-                <div v-if="limitsErrors.maxHoursPerWeek" class="error-message">
+                <span v-if="limitsErrors.maxHoursPerWeek" class="field-error">
                   {{ limitsErrors.maxHoursPerWeek }}
-                </div>
+                </span>
               </transition>
             </div>
           </div>
 
-          <div class="form-actions">
-            <button 
-              type="button" 
-              class="button button-secondary" 
-              @click="resetLimitsForm" 
-              :disabled="!hasLimitsChanges"
-            >
+          <div class="button-group">
+            <button type="button" class="btn btn-secondary" @click="resetLimitsForm" :disabled="!hasLimitsChanges">
               Reset
             </button>
-            <button 
-              type="submit" 
-              class="button button-primary" 
-              :disabled="!isLimitsFormValid || limitsSaving || !hasLimitsChanges"
-            >
-              <span v-if="!limitsSaving">Save Changes</span>
-              <span v-else>Saving...</span>
+            <button type="submit" class="btn btn-primary" :disabled="!isLimitsFormValid || limitsSaving || !hasLimitsChanges">
+              {{ limitsSaving ? 'Saving...' : 'Save Changes' }}
             </button>
           </div>
-
-          <!-- Success/Error Messages -->
-          <transition name="fade">
-            <div v-if="limitsSuccess" class="success-alert">
-              <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ limitsSuccess }}
-            </div>
-          </transition>
-          <transition name="fade">
-            <div v-if="limitsError" class="error-alert-inline">
-              {{ limitsError }}
-            </div>
-          </transition>
         </form>
       </div>
 
-      <!-- ========================================== -->
       <!-- SECTION 2: EDIT DESK COLORS -->
-      <!-- ========================================== -->
-      <div class="settings-section">
-        <h3 class="section-title">
-          <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="settings-card">
+        <div class="card-header">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
-          Edit Existing Desk Colors
-        </h3>
+          <h3>Edit Desk Colors</h3>
+        </div>
 
         <form @submit.prevent="updateColor">
-          <!-- Select Color -->
-          <div class="form-row">
-            <div class="form-group full-width">
-              <label for="selectColor" class="form-label">Select Color to Edit</label>
-  <select id="selectColor" v-model="selectedColorId" class="form-input">
-                @change="loadSelectedColor"
-              >
-                <option :value="null" disabled>-- Choose a color --</option>
-                <option v-for="color in deskColors" :key="color.id" :value="color.id">
-                  {{ color.colorName }} ({{ color.colorCode }})
-                </option>
-              </select>
-            </div>
+          <div class="form-field full-width">
+            <label>Select Color to Edit</label>
+            <select v-model="selectedColorId" @change="loadSelectedColor">
+              <option :value="null" disabled>-- Choose a color --</option>
+              <option v-for="color in deskColors" :key="color.id" :value="color.id">
+                {{ color.colorName }} ({{ color.colorCode }})
+              </option>
+            </select>
           </div>
 
-          <!-- Edit Fields -->
-          <div v-if="selectedColorId" class="form-row">
-            <div class="form-group">
-              <label for="editColorName" class="form-label">Color Name</label>
+          <div v-if="selectedColorId" class="form-grid">
+            <div class="form-field">
+              <label>Color Name</label>
               <input 
-                id="editColorName"
                 v-model="editForm.colorName" 
                 type="text" 
-                class="form-input"
                 maxlength="50"
                 placeholder="e.g., GREEN"
                 required
               />
             </div>
 
-            <div class="form-group">
-              <label for="editColorCode" class="form-label">Color Code (Hex)</label>
-              <div class="color-input-group">
+            <div class="form-field">
+              <label>Color Code</label>
+              <div class="color-input">
                 <input 
-                  id="editColorCode"
                   v-model="editForm.colorCode" 
                   type="text" 
-                  class="form-input"
                   pattern="^#[0-9A-Fa-f]{6}$"
                   maxlength="7"
                   placeholder="#00FF00"
                   required
                 />
-                <input 
-                  v-model="editForm.colorCode" 
-                  type="color" 
-                  class="color-picker"
-                />
+                <input v-model="editForm.colorCode" type="color" class="color-picker" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="editColorMeaning" class="form-label">Color Meaning</label>
+            <div class="form-field full-width">
+              <label>Color Meaning</label>
               <input 
-                id="editColorMeaning"
                 v-model="editForm.colorMeaning" 
                 type="text" 
-                class="form-input"
                 maxlength="255"
                 placeholder="Description..."
                 required
@@ -213,105 +163,62 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div v-if="selectedColorId" class="form-actions">
-            <button 
-              type="button" 
-              class="button button-secondary" 
-              @click="resetEditForm"
-            >
+          <div v-if="selectedColorId" class="button-group">
+            <button type="button" class="btn btn-secondary" @click="resetEditForm">
               Reset
             </button>
-            <button 
-              type="submit" 
-              class="button button-primary" 
-              :disabled="editSaving"
-            >
-              <span v-if="!editSaving">Update Color</span>
-              <span v-else>Updating...</span>
+            <button type="submit" class="btn btn-primary" :disabled="editSaving">
+              {{ editSaving ? 'Updating...' : 'Update Color' }}
             </button>
-            <button 
-              type="button" 
-              class="button button-danger" 
-              @click="confirmDeleteColor"
-              :disabled="editSaving"
-            >
-              Delete Color
+            <button type="button" class="btn btn-danger" @click="confirmDeleteColor" :disabled="editSaving">
+              Delete
             </button>
           </div>
-
-          <!-- Success/Error Messages -->
-          <transition name="fade">
-            <div v-if="editSuccess" class="success-alert">
-              <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ editSuccess }}
-            </div>
-          </transition>
-          <transition name="fade">
-            <div v-if="editError" class="error-alert-inline">
-              {{ editError }}
-            </div>
-          </transition>
         </form>
       </div>
 
-      <!-- ========================================== -->
       <!-- SECTION 3: ADD NEW DESK COLOR -->
-      <!-- ========================================== -->
-      <div class="settings-section">
-        <h3 class="section-title">
-          <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M12 4v16m8-8H4" />
+      <div class="settings-card">
+        <div class="card-header">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Add New Desk Color
-        </h3>
+          <h3>Add New Desk Color</h3>
+        </div>
 
         <form @submit.prevent="createColor">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="newColorName" class="form-label">Color Name</label>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Color Name</label>
               <input 
-                id="newColorName"
                 v-model="newForm.colorName" 
                 type="text" 
-                class="form-input"
                 maxlength="50"
                 placeholder="e.g., PURPLE"
                 required
               />
             </div>
 
-            <div class="form-group">
-              <label for="newColorCode" class="form-label">Color Code (Hex)</label>
-              <div class="color-input-group">
+            <div class="form-field">
+              <label>Color Code</label>
+              <div class="color-input">
                 <input 
-                  id="newColorCode"
                   v-model="newForm.colorCode" 
                   type="text" 
-                  class="form-input"
                   pattern="^#[0-9A-Fa-f]{6}$"
                   maxlength="7"
                   placeholder="#800080"
                   required
                 />
-                <input 
-                  v-model="newForm.colorCode" 
-                  type="color" 
-                  class="color-picker"
-                />
+                <input v-model="newForm.colorCode" type="color" class="color-picker" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="newColorMeaning" class="form-label">Color Meaning</label>
+            <div class="form-field full-width">
+              <label>Color Meaning</label>
               <input 
-                id="newColorMeaning"
                 v-model="newForm.colorMeaning" 
                 type="text" 
-                class="form-input"
                 maxlength="255"
                 placeholder="What does this color represent?"
                 required
@@ -319,42 +226,54 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="form-actions">
-            <button 
-              type="button" 
-              class="button button-secondary" 
-              @click="resetNewForm"
-            >
+          <div class="button-group">
+            <button type="button" class="btn btn-secondary" @click="resetNewForm">
               Reset
             </button>
-            <button 
-              type="submit" 
-              class="button button-primary" 
-              :disabled="newSaving"
-            >
-              <span v-if="!newSaving">Add Color</span>
-              <span v-else>Adding...</span>
+            <button type="submit" class="btn btn-primary" :disabled="newSaving">
+              {{ newSaving ? 'Adding...' : 'Add Color' }}
             </button>
           </div>
-
-          <!-- Success/Error Messages -->
-          <transition name="fade">
-            <div v-if="newSuccess" class="success-alert">
-              <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ newSuccess }}
-            </div>
-          </transition>
-          <transition name="fade">
-            <div v-if="newError" class="error-alert-inline">
-              {{ newError }}
-            </div>
-          </transition>
         </form>
       </div>
     </div>
+
+    <!-- Toast Notifications -->
+    <transition name="slide-up">
+      <div v-if="showToast" class="toast" :class="toastType">
+        <svg v-if="toastType === 'success'" class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <svg v-else class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ toastMessage }}</span>
+      </div>
+    </transition>
+
+    <!-- Custom Confirm Dialog -->
+    <transition name="fade">
+      <div v-if="showConfirmDialog" class="modal-overlay" @click="cancelDelete">
+        <div class="confirm-dialog" @click.stop>
+          <div class="confirm-header">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h3>Confirm Deletion</h3>
+          </div>
+          <p class="confirm-message">
+            Are you sure you want to delete "<strong>{{ colorToDelete?.colorName }}</strong>"? 
+            This action cannot be undone.
+          </p>
+          <div class="confirm-actions">
+            <button class="btn btn-secondary" @click="cancelDelete">Cancel</button>
+            <button class="btn btn-danger" @click="proceedDelete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -369,21 +288,19 @@ export default {
       loading: true,
       globalError: null,
 
-      // === BOOKING LIMITS ===
+      // Booking Limits
       limitsForm: {
         maxDaysInAdvance: 30,
         maxHoursPerWeek: 20,
       },
       originalLimits: null,
       limitsSaving: false,
-      limitsSuccess: null,
-      limitsError: null,
       limitsErrors: {},
 
-      // === DESK COLORS ===
+      // Desk Colors
       deskColors: [],
 
-      // EDIT COLOR
+      // Edit Color
       selectedColorId: null,
       editForm: {
         colorName: '',
@@ -392,18 +309,23 @@ export default {
       },
       originalEditForm: null,
       editSaving: false,
-      editSuccess: null,
-      editError: null,
 
-      // NEW COLOR
+      // New Color
       newForm: {
         colorName: '',
         colorCode: '#000000',
         colorMeaning: ''
       },
       newSaving: false,
-      newSuccess: null,
-      newError: null,
+
+      // Toast notifications
+      showToast: false,
+      toastMessage: '',
+      toastType: 'success',
+
+      // Confirm dialog
+      showConfirmDialog: false,
+      colorToDelete: null,
     };
   },
 
@@ -432,9 +354,17 @@ export default {
   },
 
   methods: {
-    // ==========================================
-    // INITIAL DATA FETCH
-    // ==========================================
+    // Toast notification
+    showNotification(message, type = 'success') {
+      this.toastMessage = message;
+      this.toastType = type;
+      this.showToast = true;
+      setTimeout(() => {
+        this.showToast = false;
+      }, 3000);
+    },
+
+    // Fetch all data
     async fetchAllData() {
       this.loading = true;
       this.globalError = null;
@@ -452,9 +382,7 @@ export default {
       }
     },
 
-    // ==========================================
-    // BOOKING LIMITS
-    // ==========================================
+    // Booking Limits
     async fetchBookingLimits() {
       const response = await api.get('/admin/booking-time-limits');
       this.limitsForm = {
@@ -489,20 +417,16 @@ export default {
     },
 
     async saveBookingLimits() {
-      this.limitsError = null;
-      this.limitsSuccess = null;
       this.limitsSaving = true;
 
       try {
         const response = await api.put('/admin/booking-time-limits', this.limitsForm);
         this.limitsForm = { ...response.data };
         this.originalLimits = { ...this.limitsForm };
-        this.limitsSuccess = 'Booking limits updated successfully!';
-        setTimeout(() => (this.limitsSuccess = null), 3000);
+        this.showNotification('Booking limits updated successfully!', 'success');
       } catch (err) {
         console.error(err);
-        this.limitsError = err.response?.data?.message || 'Failed to update booking limits';
-        setTimeout(() => (this.limitsError = null), 5000);
+        this.showNotification(err.response?.data?.message || 'Failed to update booking limits', 'error');
       } finally {
         this.limitsSaving = false;
       }
@@ -512,56 +436,44 @@ export default {
       if (this.originalLimits) {
         this.limitsForm = { ...this.originalLimits };
         this.limitsErrors = {};
-        this.limitsError = null;
-        this.limitsSuccess = null;
       }
     },
 
-    // ==========================================
-    // DESK COLORS - FETCH
-    // ==========================================
+    // Desk Colors
     async fetchDeskColors() {
       const response = await api.get('/admin/desk-colors');
       this.deskColors = response.data;
     },
 
-    // ==========================================
-    // EDIT COLOR
-    // ==========================================
     loadSelectedColor() {
       const color = this.deskColors.find(c => c.id === this.selectedColorId);
       if (color) {
         this.editForm = { ...color };
-        this.originalEditForm = { ...color };
-      } else {
-        this.resetEditForm();
-      }
-      this.editError = null;
-      this.editSuccess = null;
+        if (!this.originalEditForm || this.originalEditForm.id !== color.id) {
+      this.originalEditForm = JSON.parse(JSON.stringify(color));
+    }
+
+  } else {
+    this.resetEditForm();
+  }
     },
 
     resetEditForm() {
-      if (this.originalEditForm) {
-        this.editForm = { ...this.originalEditForm };
-      } else {
-        this.editForm = {
-          colorName: '',
-          colorCode: '#000000',
-          colorMeaning: ''
-        };
-      }
-      this.editError = null;
-      this.editSuccess = null;
-    },
+  this.selectedColorId = null;
+  this.editForm = {
+    colorName: '',
+    colorCode: '#000000',
+    colorMeaning: ''
+  };
+  this.originalEditForm = null;
+},
 
     async updateColor() {
       if (!this.selectedColorId) {
-        this.editError = 'Please select a color to edit';
+        this.showNotification('Please select a color to edit', 'error');
         return;
       }
 
-      this.editError = null;
-      this.editSuccess = null;
       this.editSaving = true;
 
       try {
@@ -571,21 +483,17 @@ export default {
           colorMeaning: this.editForm.colorMeaning
         });
 
-        // Update local list
         const index = this.deskColors.findIndex(c => c.id === this.selectedColorId);
         if (index !== -1) {
           this.deskColors.splice(index, 1, response.data);
         }
 
-        this.editSuccess = 'Color updated successfully!';
         this.originalEditForm = { ...response.data };
         this.editForm = { ...response.data };
-        
-        setTimeout(() => (this.editSuccess = null), 3000);
+        this.showNotification('Color updated successfully!', 'success');
       } catch (err) {
         console.error(err);
-        this.editError = err.response?.data?.message || 'Failed to update color';
-        setTimeout(() => (this.editError = null), 5000);
+        this.showNotification(err.response?.data?.message || 'Failed to update color', 'error');
       } finally {
         this.editSaving = false;
       }
@@ -597,68 +505,54 @@ export default {
       const color = this.deskColors.find(c => c.id === this.selectedColorId);
       if (!color) return;
 
-      if (confirm(`Are you sure you want to delete "${color.colorName}"? This action cannot be undone.`)) {
-        this.deleteColor();
-      }
+      this.colorToDelete = color;
+      this.showConfirmDialog = true;
     },
 
-    async deleteColor() {
-      this.editError = null;
-      this.editSuccess = null;
+    cancelDelete() {
+      this.showConfirmDialog = false;
+      this.colorToDelete = null;
+    },
+
+    async proceedDelete() {
+      this.showConfirmDialog = false;
       this.editSaving = true;
 
       try {
         await api.delete(`/admin/desk-colors/${this.selectedColorId}`);
-
-        // Remove from local list
         this.deskColors = this.deskColors.filter(c => c.id !== this.selectedColorId);
-
-        this.editSuccess = 'Color deleted successfully!';
+        this.showNotification('Color deleted successfully!', 'success');
         this.selectedColorId = null;
         this.resetEditForm();
-
-        setTimeout(() => (this.editSuccess = null), 3000);
       } catch (err) {
         console.error(err);
-        this.editError = err.response?.data?.message || 'Failed to delete color';
-        setTimeout(() => (this.editError = null), 5000);
+        this.showNotification(err.response?.data?.message || 'Failed to delete color', 'error');
       } finally {
         this.editSaving = false;
+        this.colorToDelete = null;
       }
     },
 
-    // ==========================================
-    // ADD NEW COLOR
-    // ==========================================
+    // Add New Color
     resetNewForm() {
       this.newForm = {
         colorName: '',
         colorCode: '#000000',
         colorMeaning: ''
       };
-      this.newError = null;
-      this.newSuccess = null;
     },
 
     async createColor() {
-      this.newError = null;
-      this.newSuccess = null;
       this.newSaving = true;
 
       try {
         const response = await api.post('/admin/desk-colors', this.newForm);
-
-        // Add to local list
         this.deskColors.push(response.data);
-
-        this.newSuccess = 'New color added successfully!';
+        this.showNotification('New color added successfully!', 'success');
         this.resetNewForm();
-
-        setTimeout(() => (this.newSuccess = null), 3000);
       } catch (err) {
         console.error(err);
-        this.newError = err.response?.data?.message || 'Failed to add new color';
-        setTimeout(() => (this.newError = null), 5000);
+        this.showNotification(err.response?.data?.message || 'Failed to add new color', 'error');
       } finally {
         this.newSaving = false;
       }
@@ -668,32 +562,18 @@ export default {
 </script>
 
 <style scoped>
-:root {
-  --accent: #ff8a00;
-  --accent-hover: #e67a00;
-  --surface: #fffaf4;
-  --soft: #fff7f0;
-  --border: rgba(255, 170, 64, 0.22);
-  --text-1: #0f172a;
-  --text-2: #5f5b53;
-  --success-bg: #d4edda;
-  --success-text: #155724;
-  --error-bg: #f8d7da;
-  --error-text: #721c24;
-  --btn-height: 48px;
-  --btn-radius: 0.5rem;
-}
-
 .settings-container {
-  max-width: 1200px; 
-  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
+  background: #fffaf4;
   min-height: 100vh;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: var(--text-1);
+  font-family: "Inter", -apple-system, sans-serif;
+}
+
+/* Header */
+.settings-header {
+  margin-bottom: 2rem;
 }
 
 .settings-header h2 {
@@ -704,7 +584,7 @@ export default {
 }
 
 .settings-description {
-  color: var(--text-2);
+  color: #6b7280;
   font-size: 0.875rem;
 }
 
@@ -715,8 +595,8 @@ export default {
 }
 
 .spinner {
-  border: 4px solid var(--soft);
-  border-top: 4px solid var(--accent);
+  border: 4px solid #fff7f0;
+  border-top: 4px solid #ff8a00;
   border-radius: 50%;
   width: 48px;
   height: 48px;
@@ -728,366 +608,408 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-/* Alerts */
+/* Error Alert */
 .error-alert {
-  background: var(--error-bg);
-  border: 1px solid #f5c6cb;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .error-icon {
   width: 24px;
   height: 24px;
-  color: var(--error-text);
+  color: #c33;
   flex-shrink: 0;
 }
 
 .error-title {
   font-weight: 600;
-  color: var(--error-text);
+  color: #c33;
   margin-bottom: 0.25rem;
 }
 
 .error-message {
-  color: var(--error-text);
+  color: #a22;
   font-size: 0.875rem;
+  margin-bottom: 0.5rem;
 }
 
 .retry-button {
-  background: var(--error-text);
+  background: #c33;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   cursor: pointer;
   font-weight: 600;
-  margin-top: 0.5rem;
 }
 
-.error-alert-inline {
-  background: var(--error-bg);
-  color: var(--error-text);
-  border: 1px solid #f5c6cb;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  margin-top: 1rem;
-  font-size: 0.875rem;
-}
-
-.success-alert {
+/* Settings Content */
+.settings-content {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--success-bg);
-  color: var(--success-text);
-  border: 1px solid #c3e6cb;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  margin-top: 1rem;
-  font-size: 0.875rem;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.success-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-/* Info Section */
-.info-section {
-  background: var(--soft);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  gap: 0.75rem;
-}
-
-.info-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.info-section h4 {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 0.25rem;
-}
-
-.info-section p {
-  font-size: 0.875rem;
-  color: var(--text-2);
-}
-
-/* Settings Section */
-.settings-section {
-  background: var(--soft);
-  border: 1px solid var(--border);
+/* Settings Card */
+.settings-card {
+  background: #fff;
+  border: 1px solid rgba(255, 170, 64, 0.22);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  transition: box-shadow 0.2s;
 }
 
-.section-title {
+.settings-card:hover {
+  box-shadow: 0 4px 12px rgba(255, 138, 0, 0.08);
+}
+
+.card-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 170, 64, 0.15);
+}
+
+.card-icon {
+  width: 24px;
+  height: 24px;
+  color: #ff8a00;
+  flex-shrink: 0;
+}
+
+.card-header h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--accent);
+  color: #111827;
+  margin: 0;
+}
+
+/* Info Badge */
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff7f0;
+  border: 1px solid rgba(255, 170, 64, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
   margin-bottom: 1.5rem;
 }
 
-.section-icon {
-  width: 20px;
-  height: 20px;
+.info-badge svg {
+  width: 16px;
+  height: 16px;
+  color: #ff8a00;
 }
 
-/* Form */
-.form-row {
+/* Form Grid */
+.form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; 
+  grid-template-columns: repeat(auto-fit, minmax(1200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
-@media (max-width: 1024px) {
-  .form-row {
-    grid-template-columns: 1fr; 
-  }
-}
 
-.form-group {
+.form-field {
   display: flex;
   flex-direction: column;
 }
 
-.form-group.full-width {
+.form-field.full-width {
   grid-column: 1 / -1;
 }
 
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 0.5rem;
+.form-field label {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
 }
 
-.label-badge {
+.current-value {
   font-size: 0.75rem;
   font-weight: 500;
-  background: var(--accent);
+  background: #ff8a00;
   color: white;
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
 }
 
-.form-input {
+.form-field input[type="text"],
+.form-field input[type="number"],
+.form-field select {
   width: 100%;
-  box-sizing: border-box; 
-  padding: 0.625rem;
-  border: 2px solid var(--border);
+  padding: 0.625rem 0.75rem;
+  border: 2px solid rgba(255, 170, 64, 0.22);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: all 0.2s;
+  background: #fff;
 }
 
-.form-input:focus {
+.form-field input:focus,
+.form-field select:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: #ff8a00;
   box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.1);
 }
 
-.form-input.input-error {
+.form-field input.error {
   border-color: #e14a4a;
-  background-color: #fff5f5;
+  background: #fff5f5;
 }
 
-.form-input.input-error:focus {
-  box-shadow: 0 0 0 3px rgba(225, 74, 74, 0.1);
-}
-
-.input-hint {
+.field-error {
+  display: block;
+  margin-top: 0.375rem;
   font-size: 0.75rem;
-  color: var(--text-2);
-  margin-top: 0.25rem;
-  opacity: 0.7;
+  color: #e14a4a;
 }
 
-.error-message {
+/* Color Input */
+.color-input {
   display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background-color: #fff5f5;
-  border-left: 3px solid #e14a4a;
-  border-radius: 0.25rem;
-  font-size: 0.8125rem;
-  color: #c33;
-  animation: slideDown 0.2s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.error-icon-small {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-
-.warning-icon {
-  width: 24px;
-  height: 24px;
-  color: #f57c00;
-  flex-shrink: 0;
-  margin-top: 0.125rem;
-}
-
-
-.validation-list {
-  list-style: disc;
-  padding-left: 1.25rem;
-  font-size: 0.8125rem;
-  color: #f57c00;
-}
-
-.validation-list li {
-  margin-bottom: 0.25rem;
-}
-
-.changes-indicator {
-  display: flex;
-  align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: #e65100;
-  border: 1px solid #bbdefb;
+}
+
+.color-input input[type="text"] {
+  flex: 1;
+}
+
+.color-picker {
+  width: 60px;
+  height: 38px;
+  padding: 2px;
+  border: 2px solid rgba(255, 170, 64, 0.22);
   border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: #111827;
-}
-
-.info-icon-small {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-start; 
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.button {
-font-family: var(--btn-font-family);
-  font-size: var(--btn-font-size);
-  font-weight: 700;
-  text-transform: none;
-  border-radius: var(--btn-radius);
-  height: var(--btn-height);
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 28px;
+}
+
+.color-picker:hover {
+  border-color: #ff8a00;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.625rem 1.5rem;
   border: none;
-  background-color: var(--btn-bg);
-  color: var(--btn-color);
-  transition: background-color var(--btn-transition),
-              transform var(--btn-transition),
-              opacity var(--btn-transition);
-  user-select: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
   white-space: nowrap;
-  -webkit-font-smoothing: antialiased;
-}
-button:hover:not(:disabled) {
-  background-color: var(--btn-hover-bg);
-  transform: scale(1.02);
 }
 
-button:active:not(:disabled) {
-  background-color: var(--btn-active-bg);
-  transform: scale(0.98);
-}
-
-button:disabled {
+.btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.button-primary,
-.button-secondary {
-  background-color: var(--btn-bg);
-  color: var(--btn-color);
+.btn-primary {
+  background: #ff8a00;
+  color: white;
 }
 
-.saving-text {
+.btn-primary:not(:disabled):hover {
+  background: #e67a00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 138, 0, 0.3);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #374151;
+  border: 2px solid rgba(255, 170, 64, 0.22);
+}
+
+.btn-secondary:not(:disabled):hover {
+  border-color: #ff8a00;
+  background: #fffaf4;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:not(:disabled):hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.spinner-small {
-  border: 2px solid var(--soft);
-  border-top: 2px solid var(--accent);
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  animation: spin 0.8s linear infinite;
-}
-
-.success-alert {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #e65100;
-  color: #111827;
-  border: 1px solid var(--border);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  animation: slideDown 0.3s ease-out;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 500px;
 }
 
-.success-icon {
+.toast.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.toast.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.toast-icon {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
 }
 
+/* Confirm Dialog */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.confirm-header svg {
+  width: 32px;
+  height: 32px;
+  color: #f59e0b;
+}
+
+.confirm-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.confirm-message {
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.confirm-message strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Animations */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.slide-up-enter-active {
+  animation: slideUp 0.3s ease-out;
+}
+
+.slide-up-leave-active {
+  animation: slideUp 0.3s ease-out reverse;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .toast {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    min-width: auto;
+  }
+
+  .confirm-dialog {
+    padding: 1.5rem;
+  }
 }
 </style>

@@ -48,7 +48,7 @@ public class DeskColorService {
 
         validateColorDto(dto);
 
-        if (deskColorRepository.existsByColorName(dto.getColorName())) {
+        if (deskColorRepository.existsByColorName(dto.getColorName().trim().toUpperCase())) {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "COLOR_NAME_EXISTS",
@@ -56,17 +56,26 @@ public class DeskColorService {
             );
         }
 
-        if (deskColorRepository.existsByColorCode(dto.getColorCode())) {
+        if (deskColorRepository.existsByColorCode(dto.getColorCode().trim().toUpperCase())) {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "COLOR_CODE_EXISTS",
                     "Color code '" + dto.getColorCode() + "' is already in use"
             );
         }
+
+        if (deskColorRepository.existsByColorMeaning(dto.getColorMeaning().trim())) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "COLOR_MEANING_EXISTS",
+                    "Color meaning '" + dto.getColorMeaning() + "' already exists"
+            );
+        }
+
         DeskColor color = DeskColor.builder()
-                .colorName(dto.getColorName().toUpperCase())
-                .colorCode(dto.getColorCode().toUpperCase())
-                .colorMeaning(dto.getColorMeaning())
+                .colorName(dto.getColorName().trim().toUpperCase())
+                .colorCode(dto.getColorCode().trim().toUpperCase())
+                .colorMeaning(dto.getColorMeaning().trim())
                 .build();
 
         DeskColor saved = deskColorRepository.save(color);
@@ -79,7 +88,7 @@ public class DeskColorService {
     public DColorDTO updateColor(Long id, DColorDTO dto) {
         log.info("Updating desk color with id: {}", id);
 
-        DeskColor color = deskColorRepository.findById(id)
+        DeskColor existing = deskColorRepository.findById(id)
                 .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "COLOR_NOT_FOUND",
@@ -88,8 +97,12 @@ public class DeskColorService {
 
         validateColorDto(dto);
 
-        if (!color.getColorName().equals(dto.getColorName()) &&
-                deskColorRepository.existsByColorName(dto.getColorName())) {
+        String newName = dto.getColorName().trim().toUpperCase();
+        String newCode = dto.getColorCode().trim().toUpperCase();
+        String newMeaning = dto.getColorMeaning().trim();
+
+        if (!existing.getColorName().equals(newName)
+                && deskColorRepository.existsByColorName(newName)) {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "COLOR_NAME_EXISTS",
@@ -97,8 +110,8 @@ public class DeskColorService {
             );
         }
 
-        if (!color.getColorCode().equals(dto.getColorCode()) &&
-                deskColorRepository.existsByColorCode(dto.getColorCode())) {
+        if (!existing.getColorCode().equals(newCode)
+                && deskColorRepository.existsByColorCode(newCode)) {
             throw new ExceptionResponse(
                     HttpStatus.BAD_REQUEST,
                     "COLOR_CODE_EXISTS",
@@ -106,11 +119,20 @@ public class DeskColorService {
             );
         }
 
-        color.setColorName(dto.getColorName().toUpperCase());
-        color.setColorCode(dto.getColorCode().toUpperCase());
-        color.setColorMeaning(dto.getColorMeaning());
+        if (!existing.getColorMeaning().equals(newMeaning)
+                && deskColorRepository.existsByColorMeaning(newMeaning)) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "COLOR_MEANING_EXISTS",
+                    "Color meaning '" + dto.getColorMeaning() + "' already exists"
+            );
+        }
 
-        DeskColor updated = deskColorRepository.save(color);
+        existing.setColorName(newName);
+        existing.setColorCode(newCode);
+        existing.setColorMeaning(newMeaning);
+
+        DeskColor updated = deskColorRepository.save(existing);
         log.info("Desk color updated successfully: {}", updated.getId());
 
         return toDto(updated);

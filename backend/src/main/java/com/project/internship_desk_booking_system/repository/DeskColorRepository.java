@@ -14,4 +14,5 @@ public interface DeskColorRepository extends JpaRepository<DeskColor, Long> {
 
     boolean existsByColorCode(String colorCode);
 
+    boolean existsByColorMeaning(String colorMeaning);
 }
