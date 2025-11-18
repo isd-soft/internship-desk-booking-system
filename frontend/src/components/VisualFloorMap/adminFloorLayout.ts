@@ -1,12 +1,7 @@
 import { onMounted, ref } from "vue";
 import {
   layout,
-  resetLayout,
-  horizontalDesks,
-  DEFAULT_HEIGHT,
-  DEFAULT_WIDTH,
-  HORIZONTAL_DESK_HEIGHT,
-  HORIZONTAL_DESK_WIDTH
+  resetLayout
 } from "../VisualFloorMap/floorLayout";
 import api from "../../plugins/axios.js";
 

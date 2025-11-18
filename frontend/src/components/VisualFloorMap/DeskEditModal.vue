@@ -83,13 +83,13 @@
 
         <v-select
           label="Select"
+          v-model="zoneDisplay"
           :items="zones.map(z => ({
-            title: `${z.zoneAbv} - ${z.zoneName}`,
-            value: z.id
+            title: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`,
+            value: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`
           }))"
           item-title="title"
           item-value="value"
-          variant="solo-inverted"
         />
 
         <div class="section">
@@ -116,7 +116,16 @@
             Restore Default coordinates
           </v-btn>
 
-            <v-btn v-if=" localDesk.newDesk"
+          <v-btn
+            variant="outlined"
+            class="delete-button"
+            size="x-large"
+            @click="$emit('delete', desk.i)"
+          >
+            delete desk
+          </v-btn>
+
+          <v-btn v-if=" localDesk.newDesk"
             class="confirm-button"
             size="x-large"
             @click="create"
@@ -151,23 +160,44 @@ const emit = defineEmits<{
   (e: "restore", deskId: number): void;
   (e: "cancel"): void;
   (e: "create", desk: any): void;
+  (e: "delete", deskId: number): void;
 }>();
 
+const zoneDisplay = ref('');
+
 const localDesk = ref({ ...props.desk });
-console.log(localDesk);
+
 watch(
   () => props.desk,
   (newDesk) => {
-    if (newDesk) localDesk.value = { ...newDesk };
+    if (newDesk) {
+      localDesk.value = { ...newDesk };
+      if(newDesk.zone){
+        zoneDisplay.value = `${newDesk.zone.zoneId} - ${newDesk.zone.zoneAbv} - ${newDesk.zone.zoneName}`;
+      }
+    }
   },
   { immediate: true }
 );
 
+watch(zoneDisplay, (newZoneDisplay) => {
+  if (newZoneDisplay) {
+    const zoneId = Number(newZoneDisplay.split(' - ')[0]);
+    const matchingZone = zones.value.find((z: any) => z.zoneId === zoneId);
+
+    if (matchingZone) {
+      localDesk.value.zone = matchingZone; 
+    }
+  }
+});
+
 function create(){
+  console.log(localDesk);
   emit("create", localDesk.value);
 }
 
 function confirm() {
+  console.log(localDesk);
   emit("confirm", localDesk.value);
 }
 </script>

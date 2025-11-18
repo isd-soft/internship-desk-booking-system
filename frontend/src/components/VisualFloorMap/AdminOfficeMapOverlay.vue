@@ -20,6 +20,7 @@ import {
 } from "./adminFloorLayout.ts";
 import api from "../../plugins/axios.js";
 import DeskEditModal from "./DeskEditModal.vue";
+import { zones } from "./adminFloorLayout";
 
 const isDraggingNew = ref(false);
 const newDeskPreview = ref<{ x: number; y: number } | null>(null);
@@ -33,6 +34,7 @@ const previewPosition = ref<{ x: number; y: number } | null>(null);
 
 async function createNewDesk(newDesk: any){
   try{
+    console.log(newDesk.h);
     await api.post(
       "/admin/addDesk",
       {
@@ -40,9 +42,26 @@ async function createNewDesk(newDesk: any){
         currentX: newDesk.x,
         currentY: newDesk.y,
         baseX: newDesk.x,
-        baseY: newDesk.y
+        baseY: newDesk.y,
+        height: newDesk.h,
+        width: newDesk.w,
+        zoneDto: {
+          id: newDesk.zone.zoneId,
+          zoneName: newDesk.zone.zoneName,
+          zoneAbv: newDesk.zone.zoneAbv
+          }
     });
+
+    const item = layout.find(item => item.i === String(newDesk.i));
+    console.log(item);
+    if (item) {
+      item.deskName = newDesk.deskName;
+      item.w = newDesk.w;
+      item.h = newDesk.h;
+      item.newDesk = false;
+    }
     console.log(`New desk ${newDesk.deskName} saved`);
+    showEditModal.value = false;
   }catch(err){
     console.error("Failed to create new desk: ", err);
   }
@@ -105,6 +124,7 @@ function handleFloorplanDrop(event: DragEvent) {
     newDesk: true,
     color: "",
     isNonInteractive: false,
+    zone: zones.value[0]
   });
 
   if(isHorizontal){
@@ -133,14 +153,18 @@ async function applyDeskChanges(updated: any) {
     currentX: updated.x,
     currentY: updated.y,
     height: updated.h,
-    width: updated.w
+    width: updated.w,
+    zoneId: updated.zone.zoneId
   });
+
+  const matchingZone = zones.value.find((z: any) => z.zoneId === updated.zone.zoneId);
 
   const item = layout.find(item => item.i === String(updated.i));
   if (item) {
     item.deskName = updated.deskName;
     item.w = updated.w;
     item.h = updated.h;
+    item.zone = matchingZone
   }
   showEditModal.value = false;
 }
@@ -170,7 +194,24 @@ async function restoreDeskDefaults(deskId: number) {
   }
 }
 
+function deleteDeskFromLayout(deskId: string){
+    const index = layout.findIndex(item => item.i === deskId);
 
+    if(index !== -1 ){
+      layout.splice(index, 1);
+      showEditModal.value = false;
+    }
+}
+
+async function deleteDesk(deskId: number){
+  try{
+    const response = await api.delete(`/admin/delete/desk/${deskId}`);
+    deleteDeskFromLayout(String(deskId));
+  }catch(err){
+    console.error("Failed to delete desk from backend: ", err);
+    deleteDeskFromLayout(String(deskId));
+  }
+}
 
 onMounted(async () => {
   resetLayout();
@@ -253,7 +294,7 @@ onMounted(async () => {
             <div
               class="desk-admin"
               @click.stop="openDeskEditor(item)"
-              :class="{ vertical: !horizontalDesks.includes(Number(item.i))}"
+              :class="{ vertical: !(item.w >= item.h)}"
             >
               <span class="desk-label">{{ item.deskName || item.i }}</span>
             </div>
@@ -269,6 +310,7 @@ onMounted(async () => {
     @restore="restoreDeskDefaults"
     @create="createNewDesk"
     @cancel="showEditModal = false"
+    @delete="deleteDesk"
   />
 </template>
 

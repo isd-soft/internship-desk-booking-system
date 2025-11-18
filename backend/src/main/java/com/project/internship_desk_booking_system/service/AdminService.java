@@ -173,6 +173,16 @@ public class AdminService {
                         null :
                         deskDto.baseY()
         );
+        desk.setHeight(
+                deskDto.height() == null ?
+                        null :
+                        deskDto.height()
+        );
+        desk.setWidth(
+                deskDto.width() == null ?
+                        null :
+                        deskDto.width()
+        );
 
         deskRepository.save(desk);
 
