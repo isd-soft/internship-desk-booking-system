@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.jwt;
 
+import com.project.internship_desk_booking_system.enums.AuthProvider;
 import com.project.internship_desk_booking_system.enums.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -52,6 +53,7 @@ public class JwtUtill {
         Object r = parseClaims(token).get("role");
         return (r != null) ? Role.valueOf(r.toString()) : null;
     }
+
 
 
     public boolean validateToken(String token) {
