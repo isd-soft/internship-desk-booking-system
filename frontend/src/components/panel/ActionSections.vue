@@ -3,14 +3,14 @@
     <v-btn
         v-if="isAdmin"
         block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
+        variant="flat"
+        class="neo-btn mb-3 admin-gradient-btn"
+        elevation="3"
         size="large"
-        @click="$router.push('/admin-dashboard')"
+        @click="$router.push('/admin-dashboard/map')"
     >
       <v-icon class="mr-2" size="20">mdi-shield-crown-outline</v-icon>
-      <span class="btn-text">Admin Dashboard </span>
+      <span class="btn-text">Switch to Admin Dashboard</span>
     </v-btn>
 
     <v-btn
@@ -1521,4 +1521,10 @@ const formatDateTime = (dateTime: string | null) => {
 .mobile-controls-overlay {
   display: none;
 }
+
+.admin-gradient-btn {
+  background: linear-gradient(135deg, #e16531 0%, #eadf66 100%) !important;
+  color: white !important;
+}
 </style>
+

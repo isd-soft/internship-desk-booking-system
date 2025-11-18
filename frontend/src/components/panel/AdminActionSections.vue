@@ -1,17 +1,16 @@
 <template>
   <div class="actions-section px-6 pb-4">
-    <!-- Admin only buttons -->
     <v-btn
         v-if="isAdmin"
         block
-        variant="text"
-        class="neo-btn mb-3"
-        elevation="0"
+        variant="flat"
+        class="neo-btn mb-3 admin-gradient-btn"
+        elevation="3"
         size="large"
         @click="$router.push('/dashboard')"
     >
-      <v-icon class="mr-2" size="20">mdi-account-arrow-left</v-icon>
-      <span class="btn-text">User View</span>
+      <v-icon class="mr-2" size="20">mdi-account-convert</v-icon>
+      <span class="btn-text">Switch to User View</span>
     </v-btn>
 
     <v-btn
@@ -190,5 +189,9 @@ onMounted(() => {
   font-weight: 820;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   color: #2b2f3a;
+}
+.admin-gradient-btn {
+  background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
+  color: white !important;
 }
 </style>
