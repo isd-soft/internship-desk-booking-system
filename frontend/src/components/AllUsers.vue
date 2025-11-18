@@ -1,5 +1,5 @@
 <template>
-  <div class="users-container">
+  <div class="users-container" @click="handleOutsideClick">
     <!-- Header -->
     <div class="users-header">
       <h2>Registered Users</h2>
@@ -45,8 +45,8 @@
       <p>No users have made bookings yet</p>
     </div>
 
-<!-- Filters -->
-    <div class="filters">
+    <!-- Filters -->
+    <div v-else class="filters">
       <!-- Search Bar -->
       <div class="search-box">
         <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,8 +73,8 @@
       </select>
     </div>
 
-    <!-- Users List -->
-    <div class="users-grid">
+    <!-- Users Grid -->
+    <div v-if="!loading && !error && users.length > 0" class="users-grid">
       <div 
         v-for="(user, index) in filteredUsers" 
         :key="index" 
@@ -86,27 +86,88 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
+
         <div class="user-info">
           <span class="user-email">{{ user.email }}</span>
           <span class="user-role">{{ user.role }}</span>
         </div>
-        <button @click="copyEmail(user)" class="copy-button" title="Copy email">
-          <svg v-if="!copiedEmail || copiedEmail !== user.email" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <svg v-else fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+
+        <!-- User actions wrapper -->
+        <div class="user-actions">
+          <button 
+            @click.stop="toggleMenu(index)" 
+            class="more-options-btn"
+          >
+            ⋮
+          </button>
+
+          <div v-if="openMenu === index" class="menu-dropdown" @click.stop>
+            <div @click="copyEmail(user, index)">Copy email</div>
+            <div @click="openRoleModal(user)">Change role</div>
+          </div>
+
+          <!-- Local notification tooltip for copy -->
+          <transition name="tooltip-fade">
+            <div v-if="copiedIndex === index" class="copy-tooltip">
+              <svg class="tooltip-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Copied successfully!
+            </div>
+          </transition>
+        </div>
       </div>
     </div>
 
     <!-- No Results -->
-    <div v-if="filteredUsers.length === 0" class="no-results">
+    <div v-if="!loading && !error && users.length > 0 && filteredUsers.length === 0" class="no-results">
       <p>No users found.</p>
     </div>
+
+    <!-- ROLE MODAL -->
+    <transition name="modal-fade">
+      <div v-if="showRoleModal" class="popup-overlay" @click.self="closeRoleModal">
+        <div class="popup-window" @click.stop>
+          <h2 class="popup-title">Change Role</h2>
+          <p class="popup-subtitle">{{ selectedUser.email }}</p>
+
+          <!-- Inline notification in modal -->
+          <transition name="slide-down">
+            <div v-if="modalNotification" :class="['modal-notification', `notification-${modalNotification.type}`]">
+              <svg v-if="modalNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else-if="modalNotification.type === 'error'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{{ modalNotification.message }}</span>
+            </div>
+          </transition>
+
+          <div class="popup-body">
+            <label>Role:</label>
+            <select v-model="selectedUser.role" class="popup-select">
+              <option value="ADMIN">ADMIN</option>
+              <option value="USER">USER</option>
+            </select>
+          </div>
+
+          <div class="popup-actions">
+            <button 
+              class="popup-btn save" 
+              @click="updateRole"
+              :disabled="isRoleUnchanged"
+            >
+              Save
+            </button>
+            <button class="popup-btn cancel" @click="closeRoleModal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -121,10 +182,20 @@ export default {
       error: null,
       searchQuery: '',
       selectedRole: '',
-      copiedEmail: null
+      
+      openMenu: null,
+      selectedUser: null,
+      showRoleModal: false,
+      originalRole: null,
+      
+      copiedIndex: null,
+      copiedTimeout: null,
+      
+      modalNotification: null,
+      modalNotificationTimeout: null,
     };
   },
-
+  
   computed: {
     filteredUsers() {
       return this.users.filter(u => {
@@ -133,14 +204,26 @@ export default {
         return matchesEmail && matchesRole;
       });
     },
+    
     uniqueRoles() {
       const roles = this.users.map(u => u.role);
       return [...new Set(roles)];
+    },
+    
+    isRoleUnchanged() {
+      return this.selectedUser && this.selectedUser.role === this.originalRole;
     }
   },
 
   mounted() {
     this.fetchUsers();
+    document.addEventListener('keydown', this.handleEscKey);
+  },
+  
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.handleEscKey);
+    if (this.copiedTimeout) clearTimeout(this.copiedTimeout);
+    if (this.modalNotificationTimeout) clearTimeout(this.modalNotificationTimeout);
   },
 
   methods: {
@@ -157,14 +240,99 @@ export default {
         this.loading = false;
       }
     },
-
-    async copyEmail(user) {
+    
+    async copyEmail(user, index) {
       try {
         await navigator.clipboard.writeText(user.email);
-        this.copiedEmail = user.email;
-        setTimeout(() => { this.copiedEmail = null; }, 2000);
+        
+        if (this.copiedTimeout) clearTimeout(this.copiedTimeout);
+
+        this.copiedIndex = index;
+        
+        this.copiedTimeout = setTimeout(() => {
+          this.copiedIndex = null;
+        }, 1500);
+        
       } catch (err) {
         console.error('Failed to copy email:', err);
+      }
+      
+      this.openMenu = null;
+    },
+    
+    showModalNotification(message, type = 'success') {
+      if (this.modalNotificationTimeout) {
+        clearTimeout(this.modalNotificationTimeout);
+      }
+      
+      this.modalNotification = { message, type };
+  
+      if (type === 'success') {
+        this.modalNotificationTimeout = setTimeout(() => {
+          this.modalNotification = null;
+          setTimeout(() => {
+            this.closeRoleModal();
+          }, 500);
+        }, 2000);
+      }
+    },
+    
+    toggleMenu(index) {
+      this.openMenu = this.openMenu === index ? null : index;
+    },
+    
+    openRoleModal(user) {
+      this.selectedUser = { ...user };
+      this.originalRole = user.role;
+      this.showRoleModal = true;
+      this.openMenu = null;
+      this.modalNotification = null;
+    },
+    
+    closeRoleModal() {
+      this.showRoleModal = false;
+      this.selectedUser = null;
+      this.originalRole = null;
+      this.modalNotification = null;
+      if (this.modalNotificationTimeout) {
+        clearTimeout(this.modalNotificationTimeout);
+      }
+    },
+    
+    async updateRole() {
+      if (this.isRoleUnchanged) {
+        this.showModalNotification("User already has the chosen role.", 'warning');
+        return;
+      }
+      
+      try {
+        await api.patch('/admin/users/role', {
+          email: this.selectedUser.email,
+          role: this.selectedUser.role
+        });
+        
+        this.showModalNotification("User role changed successfully!", 'success');
+        this.fetchUsers();
+        
+      } catch (err) {
+        this.showModalNotification(
+          err.response?.data?.message || "Failed to update user role.", 
+          'error'
+        );
+      }
+    },
+    
+    handleOutsideClick(event) {
+      if (this.openMenu !== null) {
+        this.openMenu = null;
+      }
+    },
+    
+    handleEscKey(event) {
+      if (event.key === 'Escape') {
+        if (this.showRoleModal) {
+          this.closeRoleModal();
+        }
       }
     }
   }
@@ -321,10 +489,17 @@ export default {
   font-size: 0.875rem;
 }
 
+/* Filters */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
 /* Search */
 .search-box {
   position: relative;
-  margin-bottom: 1.5rem;
+  flex: 1;
 }
 
 .search-icon {
@@ -369,11 +544,28 @@ export default {
   color: #111827;
 }
 
-/* Results Info */
-.results-info {
+/* Role Filter */
+.role-filter {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid rgba(255, 170, 64, 0.22);
+  border-radius: 0.75rem;
+  background-color: #fff;
+  color: #111827;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
   font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
+}
+
+.role-filter:hover {
+  background-color: #fff7f0;
+  border-color: #ff8a00;
+}
+
+.role-filter:focus {
+  outline: none;
+  border-color: #ff8a00;
+  box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.1);
 }
 
 /* Users Grid */
@@ -381,7 +573,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 100%; /* ocupă tot containerul */
+  width: 100%;
 }
 
 .user-card {
@@ -417,7 +609,6 @@ export default {
   color: #ff8a00;
 }
 
-
 .user-info {
   display: flex;
   justify-content: space-between;
@@ -431,6 +622,8 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
+  color: #111827;
 }
 
 .user-role {
@@ -438,25 +631,101 @@ export default {
   margin-left: 15px;
   text-align: right;
   white-space: nowrap;
+  color: #6b7280;
+  font-size: 0.875rem;
 }
 
-.copy-button {
+/* User Actions */
+.user-actions {
+  position: relative; 
+  display: inline-block;
+}
+
+.more-options-btn {
   background: none;
   border: none;
-  padding: 0.5rem;
+  font-size: 20px;
   cursor: pointer;
+  padding: 5px 10px;
   color: #6b7280;
   transition: color 0.2s;
-  flex-shrink: 0;
 }
 
-.copy-button:hover {
+.more-options-btn:hover {
   color: #ff8a00;
 }
 
-.copy-button svg {
-  width: 18px;
-  height: 18px;
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 5px;
+  background: white;
+  border: 1px solid rgba(255, 170, 64, 0.22);
+  border-radius: 8px;
+  padding: 5px 0;
+  min-width: 140px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.menu-dropdown div {
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #111827;
+  transition: background 0.2s;
+}
+
+.menu-dropdown div:hover {
+  background: #fff7f0;
+  color: #ff8a00;
+}
+
+/* Copy Tooltip - Local notification */
+.copy-tooltip {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 10px;
+  background: #ff8a00;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.813rem;
+  font-weight: 500;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(255, 138, 0, 0.3);
+  z-index: 200;
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 5px solid #ff8a00;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.tooltip-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tooltip-fade-enter-active, .tooltip-fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.tooltip-fade-enter-from, .tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) translateX(10px);
 }
 
 /* No Results */
@@ -467,32 +736,223 @@ export default {
   font-size: 0.875rem;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .users-container {
-    padding: 1rem;
-  }
-}
-.filters {
+/* Modal Overlay */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
 }
 
-.role-filter {
-  padding: 5px 50px;
-  margin-left: auto; 
-  border: 1px solid #ffaa4038;
-  border-radius: 6px;
-  background-color: #fff7f0;
+/* Modal Window */
+.popup-window {
+  background: white;
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+}
+
+.modal-fade-enter-active {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-fade-leave-active {
+  animation: modalFadeOut 0.2s ease-in;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+.popup-title {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+  font-weight: 600;
   color: #111827;
-  font-weight: 500;
-  cursor: pointer;
+}
+
+.popup-subtitle {
+  margin-bottom: 20px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Modal Inline Notification */
+.modal-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #fff7f0;
+  border: 1px solid rgba(255, 170, 64, 0.3);
+  color: #111827;
+  font-size: 0.875rem;
+}
+
+.notification-icon {
+  width: 20px;
+  height: 20px;
+  color: #ff8a00;
+  flex-shrink: 0;
+}
+
+.notification-success {
+  background: #fff7f0;
+  border-color: rgba(255, 170, 64, 0.3);
+}
+
+.notification-error {
+  background: #fff7f0;
+  border-color: rgba(255, 170, 64, 0.3);
+}
+
+.notification-warning {
+  background: #fff7f0;
+  border-color: rgba(255, 170, 64, 0.3);
+}
+
+.slide-down-enter-active, .slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.popup-body label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+  color: #111827;
+  font-size: 0.875rem;
+}
+
+.popup-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  border: 2px solid rgba(255, 170, 64, 0.22);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background: #fff;
+  color: #111827;
   transition: all 0.2s;
 }
 
-.role-filter:hover {
-  background-color: #ffeed8;
-  border-color: #ffaa40;
+.popup-select:focus {
+  outline: none;
+  border-color: #ff8a00;
+  box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.1);
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.popup-btn {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.popup-btn.save {
+  background: #ff8a00;
+  color: white;
+}
+
+.popup-btn.save:hover:not(:disabled) {
+  background: #e67a00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 138, 0, 0.3);
+}
+
+.popup-btn.save:disabled {
+  background: #ddd;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.popup-btn.cancel {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.popup-btn.cancel:hover {
+  background: #e5e7eb;
+}
+
+/* Responsive */
+.notification-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 250px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: 15px;
+  line-height: 1;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s, transform 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+  opacity: 0;
+  transform: translateY(-20px);
 }
 </style>

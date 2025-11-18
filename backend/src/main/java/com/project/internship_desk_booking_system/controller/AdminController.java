@@ -175,4 +175,13 @@ public class AdminController {
     public ResponseEntity<List<ZoneDto>> getAllZones() {
         return ResponseEntity.ok(adminService.getAllZones());
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/users/role")
+    public ResponseEntity<EmailRoleDTO> updateUserRole(
+            @RequestBody @Valid EmailRoleDTO dto
+    ) {
+        log.info("Admin request to change user role: {}", dto);
+        return ResponseEntity.ok(adminService.updateUserRole(dto));
+    }
 }
