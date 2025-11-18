@@ -41,10 +41,10 @@
             density="comfortable"
             hide-details
             class="modern-input"
-            placeholder="Enter desk name"
+            placeholder="Enter x coordinate"
           />
         </div>
-
+        
         <div class="section">
           <div class="section-title">Y</div>
           <v-text-field
@@ -53,9 +53,44 @@
             density="comfortable"
             hide-details
             class="modern-input"
-            placeholder="Enter desk name"
+            placeholder="Enter y coordinate"
           />
         </div>
+
+        <div class="section">
+          <div class="section-title">Height</div>
+          <v-text-field
+            v-model.number="localDesk.h"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="modern-input"
+            placeholder="Enter desk height"
+          />
+        </div>
+
+        <div class="section">
+          <div class="section-title">Width</div>
+          <v-text-field
+            v-model.number="localDesk.w"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="modern-input"
+            placeholder="Enter desk width"
+          />
+        </div>
+
+        <v-select
+          label="Select"
+          v-model="zoneDisplay"
+          :items="zones.map(z => ({
+            title: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`,
+            value: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`
+          }))"
+          item-title="title"
+          item-value="value"
+        />
 
         <div class="section">
           <div class="section-title">Disable desk</div>
@@ -82,6 +117,23 @@
           </v-btn>
 
           <v-btn
+            variant="outlined"
+            class="delete-button"
+            size="x-large"
+            @click="$emit('delete', desk.i)"
+          >
+            delete desk
+          </v-btn>
+
+          <v-btn v-if=" localDesk.newDesk"
+            class="confirm-button"
+            size="x-large"
+            @click="create"
+          >
+            Create desk
+          </v-btn>
+
+          <v-btn v-else
             class="confirm-button"
             size="x-large"
             @click="confirm"
@@ -96,6 +148,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
+import { zones } from "./adminFloorLayout";
 
 const props = defineProps<{
   visible: boolean;
@@ -106,19 +159,45 @@ const emit = defineEmits<{
   (e: "confirm", desk: any): void;
   (e: "restore", deskId: number): void;
   (e: "cancel"): void;
+  (e: "create", desk: any): void;
+  (e: "delete", deskId: number): void;
 }>();
+
+const zoneDisplay = ref('');
 
 const localDesk = ref({ ...props.desk });
 
 watch(
   () => props.desk,
   (newDesk) => {
-    if (newDesk) localDesk.value = { ...newDesk };
+    if (newDesk) {
+      localDesk.value = { ...newDesk };
+      if(newDesk.zone){
+        zoneDisplay.value = `${newDesk.zone.zoneId} - ${newDesk.zone.zoneAbv} - ${newDesk.zone.zoneName}`;
+      }
+    }
   },
   { immediate: true }
 );
 
+watch(zoneDisplay, (newZoneDisplay) => {
+  if (newZoneDisplay) {
+    const zoneId = Number(newZoneDisplay.split(' - ')[0]);
+    const matchingZone = zones.value.find((z: any) => z.zoneId === zoneId);
+
+    if (matchingZone) {
+      localDesk.value.zone = matchingZone; 
+    }
+  }
+});
+
+function create(){
+  console.log(localDesk);
+  emit("create", localDesk.value);
+}
+
 function confirm() {
+  console.log(localDesk);
   emit("confirm", localDesk.value);
 }
 </script>

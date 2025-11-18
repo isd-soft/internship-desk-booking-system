@@ -24,6 +24,8 @@ public class DeskMapper {
                 desk.getCurrentY(),
                 desk.getBaseX(),
                 desk.getBaseY(),
+                desk.getHeight(),
+                desk.getWidth(),
                 desk.getReasonOfDeletion()
         );
     }

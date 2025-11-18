@@ -33,6 +33,8 @@ public class BookingMapper {
                     null,
                     null,
                     null,
+                    null,
+                    null,
                     null
             );
         } else {
