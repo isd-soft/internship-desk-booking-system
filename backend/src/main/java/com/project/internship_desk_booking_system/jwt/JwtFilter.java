@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.jwt;
 
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
+import com.project.internship_desk_booking_system.enums.AuthProvider;
 import com.project.internship_desk_booking_system.enums.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -52,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 Role role = jwtUtil.extractRole(token);
 
                 var auth = new UsernamePasswordAuthenticationToken(
-                        new CustomUserPrincipal(email, null, role),
+                        new CustomUserPrincipal(email, null,role),
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
                 );
