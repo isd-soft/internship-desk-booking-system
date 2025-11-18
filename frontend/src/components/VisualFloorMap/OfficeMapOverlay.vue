@@ -21,6 +21,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  activeColorFilter: {
+    type: String,
+    default: null,
+  },
 });
 
 const emit = defineEmits([
@@ -120,6 +124,11 @@ const bookedDesks = ref<Set<string>>(new Set());
 
 function isDeskFavourite(id: string | number) {
   return favStore.isFav(Number(id));
+}
+
+function isDeskDimmed(item: any) {
+  if (!props.activeColorFilter) return false;
+  return item.color !== props.activeColorFilter;
 }
 
 function handleDeskClick(item: any) {
@@ -253,6 +262,7 @@ watch(
               favourite: isDeskFavourite(item.i),
               vertical: !(item.w >= item.h),
               'non-interactive': item.isNonInteractive,
+              'dimmed': isDeskDimmed(item),
             }"
             @click="handleDeskClick(item)"
             :style="{
@@ -293,6 +303,22 @@ watch(
 </template>
 
 <style scoped>
+.desk.dimmed {
+  opacity: 0.5 !important;
+  filter: grayscale(0.6);
+  transition: all 0.3s ease;
+}
+
+:deep(.vgl-item:has(.desk.dimmed)) {
+  opacity: 0.5 !important;
+  filter: grayscale(0.6);
+  transition: all 0.3s ease;
+}
+
+:deep(.vgl-item:has(.desk.dimmed):hover) {
+  transform: translateY(-3px) scale(1.02) !important;
+}
+
 .desk.non-interactive {
   pointer-events: none !important;
   cursor: default !important;
