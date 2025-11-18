@@ -20,6 +20,10 @@ interface Props {
     isTemporarilyAvailable: boolean;
     tempFrom: string | null;
     tempUntil: string | null;
+    currentX: number | null;
+    currentY: number | null ;
+    baseX: number | null ;
+    baseY: number | null ;
     rawData?: any;
   };
   error: String;
@@ -34,6 +38,10 @@ interface Emits {
     isTemporarilyAvailable: boolean;
     temporaryAvailableFrom: string | null;
     temporaryAvailableUntil: string | null;
+    currentX: number | null ;
+    currentY: number | null ;
+    baseX: number | null ;
+    baseY: number | null ;
   }): void;
 }
 
@@ -65,6 +73,10 @@ const deskForm = reactive({
   isTemporarilyAvailable: false,
   temporaryAvailableFrom: null as string | null,
   temporaryAvailableUntil: null as string | null,
+  currentX: 0,
+  currentY: 0,
+  baseX: 0,
+  baseY: 0
 });
 
 watch(() => deskForm.zoneId, (newZoneId) => {
@@ -76,7 +88,7 @@ watch(() => deskForm.zoneId, (newZoneId) => {
 });
 
 const canEnableTemporaryAvailability = computed(() => {
-  return deskForm.type === "SHARED" && deskForm.status === "ACTIVE";
+  return deskForm.type === "ASSIGNED" && deskForm.status === "ACTIVE";
 });
 
 // Computed: Validation message
@@ -84,8 +96,8 @@ const tempAvailabilityHint = computed(() => {
   if (!deskForm.type) {
     return "Select a desk type first";
   }
-  if (deskForm.type !== "SHARED") {
-    return "Only available for Shared desks";
+  if (deskForm.type !== "ASSIGNED") {
+    return "Only available for Assigned desks";
   }
   if (deskForm.status === "DEACTIVATED") {
     return "Cannot set temporary availability on deactivated desks";
@@ -93,7 +105,7 @@ const tempAvailabilityHint = computed(() => {
   return "Make this desk temporarily available for booking";
 });
 watch(() => deskForm.type, (newType) => {
-  if (newType !== "SHARED" && deskForm.isTemporarilyAvailable) {
+  if (newType !== "ASSIGNED" && deskForm.isTemporarilyAvailable) {
     deskForm.isTemporarilyAvailable = false;
     deskForm.temporaryAvailableFrom = null;
     deskForm.temporaryAvailableUntil = null;
@@ -154,6 +166,10 @@ watch(
         deskForm.isTemporarilyAvailable = desk.isTemporarilyAvailable;
         deskForm.temporaryAvailableFrom = desk.tempFrom;
         deskForm.temporaryAvailableUntil = desk.tempUntil;
+        deskForm.currentX = desk.currentX;
+        deskForm.currentY = desk.currentY;
+        deskForm.baseX = desk.baseX;
+        deskForm.baseY = desk.baseY;
       } else {
         resetForm();
       }
@@ -172,6 +188,10 @@ function resetForm() {
   deskForm.isTemporarilyAvailable = false;
   deskForm.temporaryAvailableFrom = null;
   deskForm.temporaryAvailableUntil = null;
+  deskForm.currentX = 0;
+  deskForm.currentY = 0;
+  deskForm.baseX = 0;
+  deskForm.baseY = 0
 }
 
 function handleSave() {
@@ -182,6 +202,10 @@ function handleSave() {
     isTemporarilyAvailable: deskForm.isTemporarilyAvailable,
     temporaryAvailableFrom: deskForm.isTemporarilyAvailable ? deskForm.temporaryAvailableFrom : null,
     temporaryAvailableUntil: deskForm.isTemporarilyAvailable ? deskForm.temporaryAvailableUntil : null,
+    currentX: deskForm.currentX,
+    currentY: deskForm.currentY,
+    baseX: deskForm.baseX,
+    baseY: deskForm.baseY
   });
 }
 
@@ -282,7 +306,24 @@ function closeModal() {
             </button>
           </div>
         </div>
-
+        <div class="section">
+        </div>
+        <div class="section">
+          <div class="id-label">Saved X: {{ desk?.baseX }}</div>
+          <input
+              v-model="deskForm.currentX"
+              type="number"
+              class="custom-input"
+              placeholder="Enter desk coordinates"
+          />
+          <div class="id-label">Saved Y: {{ desk?.baseY }}</div>
+          <input
+              v-model="deskForm.currentY"
+              type="number"
+              class="custom-input"
+              placeholder="Enter desk coordinates"
+          />
+        </div>
         <div class="section">
           <div class="section-title">Temporary Availability</div>
           <label
