@@ -108,36 +108,12 @@
 
           <div class="action-buttons-container">
             <v-btn
-              v-if="canCancelBooking"
-              size="small"
-              color="red"
-              variant="text"
-              class="cancel-btn"
-              @click.stop="cancelBooking"
-              :disabled="isCancelProcessing || isProcessing"
-            >
-              Cancel
-              <v-icon size="16" class="ml-1">mdi-close</v-icon>
-              <v-progress-circular
-                v-if="isCancelProcessing"
-                indeterminate
-                size="16"
-                width="2"
-                class="ml-2"
-              />
-            </v-btn>
-
-            <v-btn
-              :disabled="isProcessing || isCancelProcessing"
+              :disabled="isProcessing"
               class="confirm-button"
               size="x-large"
               @click.stop="confirmBooking"
             >
-              {{
-                isBooked || canCancelBooking
-                  ? "Update Booking"
-                  : "Confirm Booking"
-              }}
+              Confirm Booking
               <template v-if="isProcessing">
                 <v-progress-circular
                   indeterminate

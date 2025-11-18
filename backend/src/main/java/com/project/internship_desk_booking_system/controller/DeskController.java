@@ -22,20 +22,20 @@ public class DeskController {
     private final DeskService deskService;
     private final BookingAvailabilityService bookingAvailabilityService;
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{deskId}/availability")
     public ResponseEntity<DeskAvailabilityResponse> getDeskAvailability(@PathVariable Long deskId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok().body(bookingAvailabilityService.getDeskAvailability(deskId, date));
     }
 
 
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/coordinates")
     public ResponseEntity<List<DeskCoordinatesDTO>> getCoordinates() {
         return ResponseEntity.ok(deskService.getCoordinates());
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/gray")
     public ResponseEntity<List<DeskColorDTO>> getGrayDesks(
             @RequestParam("localDate") LocalDate localDate
@@ -44,7 +44,7 @@ public class DeskController {
                 .ok(deskService.getGrayDesks(localDate));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/blue")
     public ResponseEntity<List<DeskColorDTO>> getBlueDesks(
             @RequestParam("localDate") LocalDate localDate
