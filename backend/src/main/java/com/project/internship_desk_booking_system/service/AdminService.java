@@ -418,6 +418,29 @@ public class AdminService {
 
         Long newUserId = bookingUpdateCommand.userId();
         Long currentUserId = existingBooking.getUser().getId();
+        Long newDeskId = bookingUpdateCommand.deskId();
+        Long currentDeskId = existingBooking.getDesk().getId();
+        if (newDeskId != null && !newDeskId.equals(currentDeskId)) {
+
+            Desk newDesk = deskRepository.findById(newDeskId)
+                    .orElseThrow(() -> new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "DESK_NOT_FOUND",
+                    "Desk with id " + bookingUpdateCommand.deskId() + " not found"
+            ));
+
+
+            if (newDesk.getType() == DeskType.ASSIGNED) {
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "DESK_ASSIGNED",
+                        "A assigned desk cant have active bookings");
+            }
+
+            //bookingValidation.validateTemporaryWindow(newDesk,bookingUpdateCommand.startTime(),bookingUpdateCommand.endTime());
+
+        }
+
 
         LocalDateTime finalStartTime = bookingUpdateCommand.startTime() != null
                 ? bookingUpdateCommand.startTime()

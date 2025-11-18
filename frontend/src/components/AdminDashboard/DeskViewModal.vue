@@ -15,6 +15,8 @@ interface Props {
     isTemporarilyAvailable: boolean;
     tempFrom: string | null;
     tempUntil: string | null;
+    currentX: number;
+    currentY: number;
     rawData?: any;
   };
 }
@@ -147,6 +149,17 @@ function handleEdit() {
         <div v-else class="no-temp-availability">
           <v-icon size="24" class="no-temp-icon">mdi-information-outline</v-icon>
           <span>No temporary availability configured</span>
+        </div>
+
+
+        <div class="info-section">
+          <div class="info-row">
+            <div class="info-label">
+              <v-icon size="18" class="info-icon">mdi-map-marker</v-icon>
+             X:{{desk?.currentX}}
+              Y:{{desk?.currentY}}
+            </div>
+          </div>
         </div>
       </v-card-text>
 
