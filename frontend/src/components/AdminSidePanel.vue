@@ -1,5 +1,5 @@
 <template>
-  <v-sheet class="user-panel d-flex flex-column" :style="panelStyle">
+  <v-sheet v-if="modelValue" class="user-panel d-flex flex-column" :style="panelStyle">
     <PanelHeader />
 
     <AdminActionSections
@@ -65,6 +65,14 @@ const updateLayout = () => {
   winW.value = window.innerWidth;
   itemsPerPage.value = winW.value < 900 ? 2 : 3;
 };
+
+defineProps({
+  modelValue: {
+    type: Boolean,
+    default: true
+  }
+});
+defineEmits(['update:modelValue']);
 
 onMounted(() => {
   updateLayout();
