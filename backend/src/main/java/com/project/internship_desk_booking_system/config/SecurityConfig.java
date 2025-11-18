@@ -42,7 +42,6 @@ public class SecurityConfig {
     private final CustomAuthEntryPoint authEntryPoint;
 
     private final LdapProperties ldapProps;
-    private final LdapHealthChecker ldapHealthChecker;
 
     @Bean
     @ConditionalOnProperty(name = "app.ldap.enabled", havingValue = "true")
@@ -56,7 +55,6 @@ public class SecurityConfig {
         return ctx;
     }
 
-
     @Bean
     public AuthenticationManager authenticationManager(DaoAuthenticationProvider daoProvider, @Autowired(required = false) LdapContextSource ldapContext, SafeLdapAuthenticationProvider ldapProvider) {
         List<AuthenticationProvider> providers = new ArrayList<>();
@@ -68,7 +66,6 @@ public class SecurityConfig {
         providers.add(daoProvider);
         return new ProviderManager(providers);
     }
-
 
     @Bean
     public SafeLdapAuthenticationProvider safeLdapProvider(
@@ -93,7 +90,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/swagger-resources/**",
+                                "/webjars/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()

@@ -1,7 +1,6 @@
 package com.project.internship_desk_booking_system.jwt;
 
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
-import com.project.internship_desk_booking_system.enums.AuthProvider;
 import com.project.internship_desk_booking_system.enums.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,7 +23,6 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtill jwtUtil;
-
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,22 +47,26 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             if (jwtUtil.validateToken(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 String email = jwtUtil.extractEmail(token);
                 Role role = jwtUtil.extractRole(token);
 
                 var auth = new UsernamePasswordAuthenticationToken(
-                        new CustomUserPrincipal(email, null,role),
+                        new CustomUserPrincipal(email, null, role),
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
                 );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                auth.setDetails(new WebAuthenticationDetailsSource()
+                        .buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
-            filterChain.doFilter(request, response);
-
         } catch (Exception ex) {
-;
+            SecurityContextHolder.clearContext();
         }
+
+        filterChain.doFilter(request, response);
     }
 }
