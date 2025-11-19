@@ -3,11 +3,7 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
-import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
-import com.project.internship_desk_booking_system.dto.DeskDto;
-import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
-import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
-import com.project.internship_desk_booking_system.dto.ZoneDto;
+import com.project.internship_desk_booking_system.dto.*;
 import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -15,25 +11,22 @@ import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
+import com.project.internship_desk_booking_system.mapper.ImageMapper;
 import com.project.internship_desk_booking_system.mapper.ZoneMapper;
-import com.project.internship_desk_booking_system.repository.BookingRepository;
-import com.project.internship_desk_booking_system.repository.DeskRepository;
-import com.project.internship_desk_booking_system.repository.UserRepository;
-import com.project.internship_desk_booking_system.repository.ZoneRepository;
+import com.project.internship_desk_booking_system.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -48,6 +41,8 @@ public class AdminService {
     private final BookingTimeLimitsService bookingTimeLimitsService;
     private final BookingServiceValidation bookingValidation;
     private final ZoneMapper zoneMapper;
+    private final ImageRepository imageRepository;
+    private final ImageMapper imageMapper;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -689,6 +684,48 @@ public class AdminService {
             zoneDtoList.add(zoneDTO);
         }
         return zoneDtoList;
+    }
+
+    //this method should not work right now
+    public List<ImageDto> getAllImages(){
+        List<Image> images = imageRepository.findAll();
+        if(images.isEmpty()){
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "IMAGES_NOT_FOUND",
+                    "Images are not found"
+            );
+        }
+        return images
+                .stream()
+                .map(imageMapper::toImageDto)
+                .toList();
+    }
+
+    @Transactional
+    public void uploadImage(
+            MultipartFile file
+    ){
+        Image newImage = new Image();
+        newImage.setFileName(file.getOriginalFilename());
+
+        try {
+            newImage.setImageData(file.getBytes());
+        } catch (Exception e){
+            throw new ExceptionResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "CANNOT_READ_IMAGE_FILE",
+                    "Can't read image file"
+            );
+        }
+        log.info(
+                "id:{} fileName {} ContentType {}",
+                newImage.getId(),
+                newImage.getFileName(),
+                newImage.getContentType()
+        );
+        newImage.setContentType(file.getContentType());
+        imageRepository.save(newImage);
     }
 
 }
