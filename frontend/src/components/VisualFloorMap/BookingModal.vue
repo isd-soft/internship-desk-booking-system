@@ -108,36 +108,12 @@
 
           <div class="action-buttons-container">
             <v-btn
-              v-if="canCancelBooking"
-              size="small"
-              color="red"
-              variant="text"
-              class="cancel-btn"
-              @click.stop="cancelBooking"
-              :disabled="isCancelProcessing || isProcessing"
-            >
-              Cancel
-              <v-icon size="16" class="ml-1">mdi-close</v-icon>
-              <v-progress-circular
-                v-if="isCancelProcessing"
-                indeterminate
-                size="16"
-                width="2"
-                class="ml-2"
-              />
-            </v-btn>
-
-            <v-btn
-              :disabled="isProcessing || isCancelProcessing"
+              :disabled="isProcessing"
               class="confirm-button"
               size="x-large"
               @click.stop="confirmBooking"
             >
-              {{
-                isBooked || canCancelBooking
-                  ? "Update Booking"
-                  : "Confirm Booking"
-              }}
+              Confirm Booking
               <template v-if="isProcessing">
                 <v-progress-circular
                   indeterminate
@@ -772,7 +748,7 @@ function contactSupport() {
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-weight: 600;
   color: #171717;
   cursor: pointer;
@@ -825,6 +801,7 @@ function contactSupport() {
   background: #fafafa;
   transform: translateY(-1.5px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .favourite-button:hover:not(:disabled)::before {
@@ -833,7 +810,7 @@ function contactSupport() {
 
 .favourite-button:active:not(:disabled) {
   transform: translateY(0px) scale(0.98);
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
@@ -855,7 +832,8 @@ function contactSupport() {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   border-color: #fca5a5;
   color: #dc2626;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .favourite-button.active::before {
@@ -871,12 +849,15 @@ function contactSupport() {
   border-color: #f87171;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
   transform: translateY(-1.5px);
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .favourite-button.active:active:not(:disabled) {
   background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
   transform: translateY(0px) scale(0.98);
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 2px 6px rgba(220, 38, 38, 0.1);
 }
 
@@ -948,10 +929,11 @@ function contactSupport() {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fafafa;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
 }
 
 .alert-icon {
@@ -965,8 +947,9 @@ function contactSupport() {
 }
 
 .error-icon {
-  background: #f3e8e8;
-  color: #7f1d1d;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
 }
 
 .lunch-alert {
@@ -988,13 +971,13 @@ function contactSupport() {
 
 .alert-title {
   font-weight: 800;
-  color: #1f2937;
-  font-size: 14px;
+  color: #991b1b;
+  font-size: 15px;
   letter-spacing: 0.2px;
 }
 
 .alert-message {
-  color: #4b5563;
+  color: #7f1d1d;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;

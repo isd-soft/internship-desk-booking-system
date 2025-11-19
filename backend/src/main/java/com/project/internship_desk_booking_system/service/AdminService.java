@@ -8,6 +8,7 @@ import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
+import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
@@ -27,6 +28,20 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+
+/**
+ * Service used by administrators to manage desks, zones, users and bookings.
+ * <p>
+ * Provides operations such as:
+ * <ul>
+ *   <li>CRUD operations for desks (including soft delete & restore)</li>
+ *   <li>Updating desk coordinates and availability windows</li>
+ *   <li>Editing and cancelling bookings</li>
+ *   <li>User management (role changes, deleting users)</li>
+ *   <li>Zone retrieval and mapping</li>
+ * </ul>
+ * This service contains business rules and validations related to desk booking workflow.
+ */
 
 @Slf4j
 @Service
@@ -54,7 +69,15 @@ public class AdminService {
         }
         deskRepository.deleteById(userId);
     }
-
+    /**
+     * Makes non-sharred Desks TemporarilyAvailable
+     *
+     * @param desk, isTemporarilyAvailable
+     * @return the period of LocalDateTime (from-until) when the desk was set TemporarilyAvailable
+     * @throws ExceptionResponse if the desk was not enabled TemporarilyAvailable,
+     * "from" date is after "until" date,
+     * "until" date is set in the past
+     */
     private void applyTemporaryAvailability(
             Desk desk,
             Boolean isTemporarilyAvailable,
@@ -117,7 +140,12 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Creates new desk with deskName, Zone, type, status, TemporaryAvailability for 20 days, map coordinates
+     *
+     * @param deskDto
+     * @return new deskDto mapped to deskRepository
+     */
     public DeskDto addDesk(
             DeskDto deskDto
     ) {
@@ -131,7 +159,7 @@ public class AdminService {
         Zone zone = zoneRepository.findById(deskDto.zoneDto().getId())
                 .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneDto()));
         Desk desk = new Desk();
-        desk.setDeskName(deskDto.displayName());
+        desk.setDeskName(normalizeName(deskDto.displayName()));
         desk.setZone(zone);
 
         desk.setType(
@@ -187,7 +215,13 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Deactivates an existing desk and sets it Temporary Unavailable
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public DeskDto deactivateDesk(
             Long id
@@ -206,7 +240,13 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Activates an existing desk
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     public DeskDto activateDesk(
             Long id
     ) {
@@ -222,7 +262,16 @@ public class AdminService {
         log.info("Desk {} activated successfully", id);
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Edites an existing desk
+     *
+     * @param id, DeskUpdsteDto
+     * @return updates desk with what was changed (displayName, Zone, type, status,
+     * TemporaryAvailability, map coordinates
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository,
+     * if the deskName already exists in database, because of the unique contraints,
+     * if the zoneId was not found in the ZoneRepository
+     */
     @Transactional
     public DeskDto editDesk(
             Long id,
@@ -238,7 +287,7 @@ public class AdminService {
                 ));
 
         if (updates.displayName() != null) {
-            desk.setDeskName(updates.displayName());
+            desk.setDeskName(normalizeName(updates.displayName()));
         }
         if (updates.zoneId() != null) {
             Zone zone = zoneRepository.findById(updates.zoneId())
@@ -290,7 +339,17 @@ public class AdminService {
     }
 
 // Update the deleteDesk method in AdminService.java
-
+    /**
+     * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
+     * so the Admin could restore it.
+     * <p>
+     * If the desk has active or scheduled bookings, they will be cancelled
+     * before completing the deletion.
+     *
+     * @param id     the ID of the desk
+     * @param reason optional reason for deletion
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id)
@@ -353,7 +412,7 @@ public class AdminService {
     }
 
     @Transactional
-    public Integer saveAll(
+    public Integer saveAllDesks(
             List<DeskDto> updates
     ){
         int count = 0;
@@ -511,6 +570,29 @@ public class AdminService {
 
         Long newUserId = bookingUpdateCommand.userId();
         Long currentUserId = existingBooking.getUser().getId();
+        Long newDeskId = bookingUpdateCommand.deskId();
+        Long currentDeskId = existingBooking.getDesk().getId();
+        if (newDeskId != null && !newDeskId.equals(currentDeskId)) {
+
+            Desk newDesk = deskRepository.findById(newDeskId)
+                    .orElseThrow(() -> new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "DESK_NOT_FOUND",
+                    "Desk with id " + bookingUpdateCommand.deskId() + " not found"
+            ));
+
+
+            if (newDesk.getType() == DeskType.ASSIGNED) {
+                throw new ExceptionResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "DESK_ASSIGNED",
+                        "A assigned desk cant have active bookings");
+            }
+
+            //bookingValidation.validateTemporaryWindow(newDesk,bookingUpdateCommand.startTime(),bookingUpdateCommand.endTime());
+
+        }
+
 
         LocalDateTime finalStartTime = bookingUpdateCommand.startTime() != null
                 ? bookingUpdateCommand.startTime()
@@ -727,5 +809,33 @@ public class AdminService {
         newImage.setContentType(file.getContentType());
         imageRepository.save(newImage);
     }
+
+    @Transactional
+    public EmailRoleDTO updateUserRole(EmailRoleDTO dto) {
+        log.info("Admin requested to update role for email: {}", dto.getEmail());
+
+        User user = userRepository.findByEmailIgnoreCase(dto.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("User with email {} not found", dto.getEmail());
+                    return new IllegalArgumentException("User not found");
+                });
+
+        Role oldRole = user.getRole();
+        user.setRole(dto.getRole());
+        userRepository.save(user);
+
+        log.info("Updated user role: {} -> {}", oldRole, dto.getRole());
+
+        return new EmailRoleDTO(user.getEmail(), user.getRole());
+    }
+
+    private String normalizeName(String name) {
+        if (name == null) return null;
+
+        return name
+                .trim()
+                .replaceAll("\\s+", " ");
+    }
+
 
 }

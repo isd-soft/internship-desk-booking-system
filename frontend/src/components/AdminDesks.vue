@@ -337,8 +337,7 @@ const filteredDesks = computed(() => {
     const search = searchQuery.value.toLowerCase();
     filtered = filtered.filter((d) =>
         d.displayName?.toLowerCase().includes(search) ||
-        d.deskStatus?.toLowerCase().includes(search) ||
-        d.type?.toLowerCase().includes(search) ||
+        d.id?.toString().includes(search)  ||
         d.zoneDto?.zoneName?.toLowerCase().includes(search)
     );
   }
@@ -355,6 +354,10 @@ const filteredDesks = computed(() => {
     tempFrom: d.temporaryAvailableFrom,
     tempUntil: d.temporaryAvailableUntil,
     hasActiveBookings: d.hasActiveBookings || false,
+    currentX: d.currentX,
+    currentY: d.currentY,
+    baseX: d.baseX,
+    baseY: d.baseY,
     rawData: d
   }));
 });
@@ -365,6 +368,7 @@ const fetchDesks = async () => {
     loading.value = true;
     error.value = null;
     const response = await api.get('/admin/desks');
+
     desks.value = response.data;
   } catch (err) {
     console.error('Error fetching desks:', err);
@@ -387,6 +391,7 @@ function onView(item) {
 
 function onEdit(item) {
   selectedDesk.value = item;
+  console.log(selectedDesk.value);
   showEditModal.value = true;
 }
 

@@ -58,7 +58,7 @@ const isPanelOpen = ref(true);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 24px;
   overflow-y: auto;
   background: #fff;

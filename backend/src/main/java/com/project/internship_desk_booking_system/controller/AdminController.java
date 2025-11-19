@@ -4,6 +4,11 @@ import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
 import com.project.internship_desk_booking_system.dto.*;
+import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
+import com.project.internship_desk_booking_system.dto.DeskDto;
+import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
+import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
+import com.project.internship_desk_booking_system.dto.ZoneDto;
 import com.project.internship_desk_booking_system.service.AdminService;
 import com.project.internship_desk_booking_system.service.BookingService;
 import com.project.internship_desk_booking_system.service.DeskService;
@@ -18,6 +23,25 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+/**
+ * REST controller exposing administrative operations for desks, bookings, zones, and users.
+ * <p>
+ * This controller is restricted to users  with the {@PreAuthorize ADMIN} role and allows:
+ * <ul>
+ *     <li>Desk management (create, edit, activate, deactivate, delete, restore)</li>
+ *     <li>Desk coordinates updates and layout synchronization</li>
+ *     <li>Booking management (cancel, edit)</li>
+ *     <li>User role management</li>
+ *     <li>Retrieval of zones, statuses, and enum-based metadata</li>
+ *     <li>Fetching registered users for reporting</li>
+ * </ul>
+ *
+ * All business logic is delegated to {@link AdminService}, {@link DeskService},
+ * and {@link BookingService}.
+ *
+ * <p><b>Base URL:</b> {@code /api/v1/admin}</p>
+ */
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -176,7 +200,7 @@ public class AdminController {
             @RequestBody List<DeskDto> updates
     ){
         return ResponseEntity.ok(
-                adminService.saveAll(updates)
+                adminService.saveAllDesks(updates)
         );
     }
 
@@ -207,5 +231,11 @@ public class AdminController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .build();
+    @PatchMapping("/users/role")
+    public ResponseEntity<EmailRoleDTO> updateUserRole(
+            @RequestBody @Valid EmailRoleDTO dto
+    ) {
+        log.info("Admin request to change user role: {}", dto);
+        return ResponseEntity.ok(adminService.updateUserRole(dto));
     }
 }

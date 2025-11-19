@@ -17,21 +17,21 @@ import java.util.List;
 public class FavouriteDesksController {
     private final FavouriteDesksService favouriteDesksService;
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping("/{deskId}")
     public ResponseEntity<Void> addFavourite(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long deskId) {
         favouriteDesksService.addFavouriteDesk(principal.getEmail(), deskId);
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @DeleteMapping("/{deskId}")
     public ResponseEntity<Void> removeFavourite(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable Long deskId) {
         favouriteDesksService.removeFavouriteDesk(principal.getEmail(), deskId);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping()
     public ResponseEntity<List<FavouriteDesksDTO>> getAllFavouriteDesks(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(favouriteDesksService.getFavouriteDesks(principal.getEmail()));

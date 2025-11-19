@@ -62,7 +62,7 @@
           v-for="hour in hours"
           :key="`marker-${hour}`"
           class="hour-marker"
-          :class="{ 'lunch-hour': hour === LUNCH_HOUR }"
+          :class="{ 'lunch-hour': hour === LUNCH_HOUR || hour === 14 }"
           :style="{ left: `${getHourPosition(hour)}%` }"
         >
           <span class="marker-label">{{ hour }}:00</span>
@@ -70,17 +70,13 @@
       </div>
 
       <div class="time-display">
-        <div class="time-info">
-          <span class="time-label">Selected Time</span>
-          <span class="time-value"
-            >{{ formatTime(startHour) }} - {{ formatTime(endHour) }}</span
-          >
+        <div class="time-range">
+          <span class="range-time">{{ formatTime(startHour) }}</span>
+          <span class="range-separator">—</span>
+          <span class="range-time">{{ formatTime(endHour) }}</span>
         </div>
         <div class="duration-badge">
-          <span class="duration-value">{{ selectedDuration }}</span>
-          <span class="duration-unit">{{
-            selectedDuration === 1 ? "hour" : "hours"
-          }}</span>
+          {{ selectedDuration }}h
         </div>
       </div>
 
@@ -161,8 +157,6 @@ const availabilitySlots = ref<{ hour: number; status: SlotStatus }[]>([]);
 const isLoading = ref(false);
 const trackRef = ref<HTMLElement | null>(null);
 const dragState = ref<null | "start" | "end">(null);
-const rafId = ref<number | null>(null);
-const pendingMouseEvent = ref<MouseEvent | null>(null);
 
 const quickCasts = computed<QuickCast[]>(() => {
   const slots = availabilitySlots.value;
@@ -446,54 +440,42 @@ function onTrackMouseDown(event: MouseEvent) {
 function handleMouseMove(event: MouseEvent) {
   if (!dragState.value || !trackRef.value) return;
 
-  pendingMouseEvent.value = event;
+  const rect = trackRef.value.getBoundingClientRect();
+  const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+  const percentage = x / rect.width;
+  const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
 
-  if (rafId.value !== null) return;
+  const exactHour = MIN_HOUR.value + percentage * totalSpan;
+  let hour = Math.round(exactHour);
 
-  rafId.value = requestAnimationFrame(() => {
-    rafId.value = null;
+  // Ограничиваем границами
+  hour = Math.max(MIN_HOUR.value, Math.min(hour, MAX_HOUR.value));
 
-    const evt = pendingMouseEvent.value;
-    if (!evt || !trackRef.value) return;
-
-    const rect = trackRef.value.getBoundingClientRect();
-    const x = Math.max(0, Math.min(evt.clientX - rect.left, rect.width));
-    const percentage = x / rect.width;
-    const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
-
-    const exactHour = MIN_HOUR.value + percentage * totalSpan;
-    let hour = Math.round(exactHour);
-
-    if (hour < MIN_HOUR.value) hour = MIN_HOUR.value;
-    if (hour > MAX_HOUR.value) hour = MAX_HOUR.value;
-
-    if (dragState.value === "start") {
-      const maxStart = props.endHour - 1;
-      if (hour >= maxStart) hour = maxStart;
-
-      if (props.startHour !== hour) {
-        emit("update:startHour", hour);
-      }
+  if (dragState.value === "start") {
+    if (hour < props.endHour) {
+      // Нормальное движение start handle влево и вправо
+      emit("update:startHour", hour);
     } else {
-      // 'end'
-      const minEnd = props.startHour + 1;
-      if (hour <= minEnd) hour = minEnd;
-
-      if (props.endHour !== hour) {
-        emit("update:endHour", hour);
-      }
+      // Переключаем ручки когда start достигает или превышает end
+      emit("update:startHour", props.endHour);
+      emit("update:endHour", hour);
+      dragState.value = "end";
     }
-  });
+  } else if (dragState.value === "end") {
+    if (hour > props.startHour) {
+      // Нормальное движение end handle влево и вправо
+      emit("update:endHour", hour);
+    } else {
+      // Переключаем ручки когда end достигает или меньше start
+      emit("update:endHour", props.startHour);
+      emit("update:startHour", hour);
+      dragState.value = "start";
+    }
+  }
 }
 
 function handleMouseUp() {
   dragState.value = null;
-  pendingMouseEvent.value = null;
-
-  if (rafId.value !== null) {
-    cancelAnimationFrame(rafId.value);
-    rafId.value = null;
-  }
 }
 
 onMounted(() => {
@@ -504,11 +486,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("mousemove", handleMouseMove);
   window.removeEventListener("mouseup", handleMouseUp);
-
-  if (rafId.value !== null) {
-    cancelAnimationFrame(rafId.value);
-    rafId.value = null;
-  }
 });
 </script>
 
@@ -567,8 +544,6 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   cursor: pointer;
   overflow: visible;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -597,13 +572,12 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   bottom: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: filter 0.1s ease-out, transform 0.1s ease-out;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
-  will-change: filter, transform;
 }
 
 .timeline-slot:last-child {
@@ -611,8 +585,8 @@ onBeforeUnmount(() => {
 }
 
 .timeline-slot:hover:not(.slot-busy) {
-  filter: brightness(1.1);
-  transform: scaleY(1.1);
+  filter: brightness(1.15);
+  transform: scaleY(1.08);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
   z-index: 1;
 }
@@ -620,16 +594,16 @@ onBeforeUnmount(() => {
 .timeline-slot.slot-free {
   background: linear-gradient(
     180deg,
-    rgba(34, 197, 94, 0.45) 0%,
-    rgba(22, 163, 74, 0.35) 100%
+    rgba(52, 211, 153, 0.5) 0%,
+    rgba(16, 185, 129, 0.4) 100%
   );
 }
 
 .timeline-slot.slot-busy {
   background: linear-gradient(
     180deg,
-    rgba(248, 113, 113, 0.45) 0%,
-    rgba(239, 68, 68, 0.35) 100%
+    rgba(251, 146, 146, 0.5) 0%,
+    rgba(248, 113, 113, 0.4) 100%
   );
   cursor: not-allowed;
 }
@@ -648,51 +622,48 @@ onBeforeUnmount(() => {
 .timeline-range {
   position: absolute;
   height: 100%;
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-    width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .timeline-range.range-free {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
-  box-shadow: 0 2px 12px rgba(34, 197, 94, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 20px rgba(34, 197, 94, 0.2);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 20px rgba(52, 211, 153, 0.25);
 }
 
 .timeline-range.range-busy {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
-  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 20px rgba(239, 68, 68, 0.2);
+  background: linear-gradient(135deg, #fb9292 0%, #f87171 50%, #ef4444 100%);
+  box-shadow: 0 2px 12px rgba(248, 113, 113, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 20px rgba(251, 146, 146, 0.2);
 }
 
 .timeline-handle {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-  border: 3px solid #2a2a2a;
+  border: 2.5px solid #2a2a2a;
   border-radius: 50%;
   cursor: grab;
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.08s ease-out, border-color 0.08s ease-out, box-shadow 0.08s ease-out;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .timeline-handle:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5),
-    0 0 0 4px rgba(239, 68, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border-color: #ef4444;
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4),
+    0 0 0 3px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: #3b82f6;
 }
 
 .timeline-handle:active {
   cursor: grabbing;
-  transform: translate(-50%, -50%) scale(1.1);
-  border-color: #dc2626;
+  transform: translate(-50%, -50%) scale(1.05);
+  border-color: #2563eb;
 }
 
 .handle-time {
@@ -700,83 +671,68 @@ onBeforeUnmount(() => {
   top: -32px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #ffffff;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   pointer-events: none;
   font-family: inherit;
   opacity: 0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.1s ease-out, transform 0.1s ease-out;
 }
 
 .timeline-handle:hover .handle-time,
 .timeline-handle:active .handle-time {
   opacity: 1;
-  top: -40px;
-  transform: translateX(-50%) scale(1.05);
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .time-display {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #f9fafb;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.time-info {
+.time-range {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
 }
 
-.time-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9ca3af;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+.range-time {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
 }
 
-.time-value {
-  font-size: 15px;
-  font-weight: 700;
-  color: #171717;
-  letter-spacing: 0.2px;
+.range-separator {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .duration-badge {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #171717 0%, #262626 100%);
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(23, 23, 23, 0.15);
-}
-
-.duration-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
-  color: #ffffff;
-  line-height: 1;
-}
-
-.duration-unit {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: #0f0f0f;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15);
+  font-variant-numeric: tabular-nums;
 }
 
 .lunch-warning {
@@ -882,21 +838,33 @@ onBeforeUnmount(() => {
   font-weight: 600;
   font-family: inherit;
 }
+
+.label-lunch {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.label-lunch.has-overlap {
+  color: rgb(255, 255, 255);
+  font-weight: 700;
+  padding-bottom: 4px;
+  border-bottom: 3px solid #ffffff;
+}
 .lunch-tooltip :deep(.v-overlay__content) {
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%) !important;
-  border: 2px solid #fbbf24 !important;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%) !important;
+  border: 1px solid #2a2a2a !important;
   border-radius: 16px !important;
   padding: 0 !important;
-  box-shadow: 0 12px 40px rgba(251, 191, 36, 0.35),
-    0 0 0 1px rgba(251, 191, 36, 0.1) !important;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px);
 }
 
 .tooltip-content {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px 18px;
+  gap: 14px;
+  padding: 18px 20px;
   position: relative;
   overflow: hidden;
 }
@@ -907,8 +875,15 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #fbbf24 100%);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ffffff 20%,
+    #ffffff 80%,
+    transparent 100%
+  );
+  opacity: 0.15;
   background-size: 200% 100%;
   animation: shimmer 3s ease-in-out infinite;
 }
@@ -927,7 +902,7 @@ onBeforeUnmount(() => {
   font-size: 28px;
   flex-shrink: 0;
   line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.2));
   animation: pulse-warning 2s ease-in-out infinite;
 }
 
@@ -935,25 +910,33 @@ onBeforeUnmount(() => {
   0%,
   100% {
     transform: scale(1);
+    opacity: 0.9;
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.08);
+    opacity: 1;
   }
 }
 
 .tooltip-text {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: #78350f;
-  line-height: 1.6;
+  color: #d4d4d4;
+  line-height: 1.65;
+  letter-spacing: 0.1px;
 }
 
 .tooltip-text strong {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   font-weight: 800;
-  color: #92400e;
+  color: #ffffff;
   display: block;
-  margin-bottom: 4px;
-  font-size: 14px;
-  letter-spacing: 0.2px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 </style>

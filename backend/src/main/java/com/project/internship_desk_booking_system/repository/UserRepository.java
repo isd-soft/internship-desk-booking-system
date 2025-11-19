@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT DISTINCT new com.project.internship_desk_booking_system.dto.EmailRoleDTO(u.email, u.role) " +
+    @Query("SELECT u.email, u.role " +
             "FROM User u " +
             "WHERE u.id > 1 " +
             "ORDER BY u.email ASC")
