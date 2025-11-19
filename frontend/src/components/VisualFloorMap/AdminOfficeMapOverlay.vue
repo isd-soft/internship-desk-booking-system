@@ -2,24 +2,23 @@
 import { onMounted, ref } from "vue";
 import {
   layout,
-  colNum,
   rowHeight,
-  totalRows,
-  IMAGE_WIDTH_PX,
-  IMAGE_HEIGHT_PX,
   loadDesksFromBackend,
   resetLayout,
-  horizontalDesks,
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   HORIZONTAL_DESK_HEIGHT,
-  HORIZONTAL_DESK_WIDTH
+  HORIZONTAL_DESK_WIDTH,
+  imageDimensions,
+  getImageFromBackend,
+  imageUrl,
 } from "../VisualFloorMap/floorLayout";
 import {
   getAllDesksFromBackend
 } from "../VisualFloorMap/adminFloorLayout";
 import api from "../../plugins/axios.js";
 import DeskEditModal from "./DeskEditModal.vue";
+import FileUploader from "../FileUploader.vue";
 import { zones } from "./adminFloorLayout";
 
 const isDraggingNew = ref(false);
@@ -73,7 +72,7 @@ function onDragStart(event: DragEvent, data: { w: number; h: number; isHorizonta
   isDraggingTemplate.value = true;
 
   const ghost = document.createElement('div');
-  ghost.style.width = `${data.w * (IMAGE_WIDTH_PX / colNum)}px`;
+  ghost.style.width = `${data.w}px`;
   ghost.style.height = `${data.h * rowHeight}px`;
   ghost.style.background = 'rgba(59, 130, 246, 0.4)';
   ghost.style.border = '2px dashed #3b82f6';
@@ -93,11 +92,11 @@ function handleFloorplanDragOver(event: DragEvent) {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  const gridX = Math.floor(x / (IMAGE_WIDTH_PX / colNum));
+  const gridX = Math.floor(x);
   const gridY = Math.floor(y / rowHeight);
 
   previewPosition.value = {
-    x: gridX * (IMAGE_WIDTH_PX / colNum),
+    x: gridX,
     y: gridY * rowHeight
   };
 }
@@ -108,7 +107,7 @@ function handleFloorplanDrop(event: DragEvent) {
   event.preventDefault();
 
   const { w, h, isHorizontal } = dragTemplateData.value;
-  const gridX = Math.floor((event.clientX - (event.currentTarget as HTMLElement).getBoundingClientRect().left) / (IMAGE_WIDTH_PX / colNum));
+  const gridX = Math.floor((event.clientX - (event.currentTarget as HTMLElement).getBoundingClientRect().left));
   const gridY = Math.floor((event.clientY - (event.currentTarget as HTMLElement).getBoundingClientRect().top) / rowHeight);
 
   const newId = layout.length === 0 
@@ -127,10 +126,6 @@ function handleFloorplanDrop(event: DragEvent) {
     isNonInteractive: false,
     zone: zones.value[0]
   });
-
-  if(isHorizontal){
-    horizontalDesks.push(newId);
-  }
 
   isDraggingTemplate.value = false;
   dragTemplateData.value = null;
@@ -267,6 +262,7 @@ async function saveAllChanges(){
 
 onMounted(async () => {
   resetLayout();
+  getImageFromBackend(2);
   await getAllDesksFromBackend();
 });
 </script>
@@ -274,36 +270,45 @@ onMounted(async () => {
 <template>
   <div class="admin-container">
     <div class="toolbar">
+      <div class="center-group">
+        <span class="drag-hint"> 🛈 Drag and drop</span>
+
+        <div class="desk-templates">
+          <div
+              class="desk-template vertical"
+              draggable="true"
+              @dragstart="onDragStart($event, { w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT, isHorizontal: false })"
+          >
+            <span class="label">Vertical Desk</span>
+          </div>
+
+          <div
+              class="desk-template horizontal"
+              draggable="true"
+              @dragstart="onDragStart($event, { w: HORIZONTAL_DESK_WIDTH, h: HORIZONTAL_DESK_HEIGHT, isHorizontal: true })"
+          >
+            <span class="label">Horizontal Desk</span>
+          </div>
+        </div>
+      </div>
       <div class="toolbar-actions">
-        <button @click="saveAllChanges" class="btn btn-success">
-          Save all
+        <button @click="saveAllChanges" class="btn btn-success mdi mdi-content-save">
+          <span>Save</span>
         </button>
-        <button @click="restoreAllDesks" class="btn btn-default">
-          Restore all to defaults
+        <button @click="restoreAllDesks" class="btn btn-default mdi mdi-backup-restore">
+          <span>Restore</span>
         </button>
       </div>
 
-      <div class="desk-templates">
-        <div
-          class="desk-template vertical"
-          draggable="true"
-          @dragstart="onDragStart($event, { w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT, isHorizontal: false })"
-        >
-          <span class="label">Vertical Desk</span>
-        </div>
-        <div
-          class="desk-template horizontal"
-          draggable="true"
-          @dragstart="onDragStart($event, { w: HORIZONTAL_DESK_WIDTH, h: HORIZONTAL_DESK_HEIGHT, isHorizontal: true })"
-        >
-          <span class="label">Horizontal Desk</span>
-        </div>
-      </div>
     </div>
+
 
     <div class="floorplan-container">
       <div
         class="floorplan-inner"
+        :style="{
+        width: imageDimensions.width + 'px',
+        height: imageDimensions.height + 'px',}"
         :class="{ 'adding-mode': isDraggingTemplate }"
         @dragover="handleFloorplanDragOver"
         @drop="handleFloorplanDrop"
@@ -311,7 +316,7 @@ onMounted(async () => {
         @dragenter.prevent
       >
         <img
-          src="/floorplan/Floor.png"
+          :src="imageUrl"
           alt="Office floor plan"
           class="floorplan-bg"
           draggable="false"
@@ -323,17 +328,17 @@ onMounted(async () => {
           :style="{
             left: newDeskPreview.x + 'px',
             top: newDeskPreview.y + 'px',
-            width: (IMAGE_WIDTH_PX / colNum) + 'px',
+            width: (imageDimensions.value.width) + 'px',
             height: rowHeight + 'px',
           }"
         ></div>
 
         <GridLayout
           v-model:layout="layout"
-          :col-num="colNum"
+          :col-num="imageDimensions.width"
           :row-height="rowHeight"
-          :width="IMAGE_WIDTH_PX"
-          :max-rows="totalRows"
+          :width="imageDimensions.width"
+          :max-rows="imageDimensions.height"
           :margin="[0, 0]"
           :responsive="false"
           :vertical-compact="false"
@@ -354,7 +359,7 @@ onMounted(async () => {
           </template>
         </GridLayout>
       </div>
-    </div>    
+    </div>
   </div>
   <DeskEditModal
     :visible="showEditModal"
@@ -370,57 +375,142 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar {
-  background: white;
-  padding: 16px 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  z-index: 10;
+  justify-content: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
 }
-
-.toolbar-actions {
+.center-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.desk-templates {
   display: flex;
   gap: 12px;
 }
+.toolbar-actions {
+  position: absolute;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+}
+.drag-hint {
+  font-size: 14px;
+  color: #555;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+
 
 .btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.btn-primary {
-  background: #3b82f6;
-  color: white;
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.btn-secondary {
-  background: #6b7280;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #4b5563;
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-success {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
 }
 
 .btn-success:hover {
-  background: #059669;
+  background: linear-gradient(135deg, #059669, #047857);
 }
 
+.btn-default {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-default:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #4b5563;
+}
+
+.desk-templates {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.desk-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px dashed rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+  cursor: grab;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.desk-template:hover {
+  border-color: #667eea;
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+}
+
+.desk-template:active {
+  cursor: grabbing;
+  transform: translateY(-1px) scale(0.98);
+}
+
+.desk-template .label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b5563;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.desk-template.vertical::before {
+  content: '';
+  width: 28px;
+  height: 42px;
+  background:#27313b;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.desk-template.horizontal::before {
+  content: '';
+  width: 42px;
+  height: 28px;
+  background:#27313b;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
 .floorplan-container {
   display: flex;
   justify-content: center;
@@ -434,8 +524,6 @@ onMounted(async () => {
   background: #f4f6fb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 2px solid #e5e7eb;
-  width: 987px;
-  height: 643px;
   flex-shrink: 0;
 }
 

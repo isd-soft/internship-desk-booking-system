@@ -12,23 +12,36 @@ import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.mapper.DeskMapper;
+import com.project.internship_desk_booking_system.mapper.ImageMapper;
 import com.project.internship_desk_booking_system.mapper.ZoneMapper;
-import com.project.internship_desk_booking_system.repository.BookingRepository;
-import com.project.internship_desk_booking_system.repository.DeskRepository;
-import com.project.internship_desk_booking_system.repository.UserRepository;
-import com.project.internship_desk_booking_system.repository.ZoneRepository;
+import com.project.internship_desk_booking_system.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+
+/**
+ * Service used by administrators to manage desks, zones, users and bookings.
+ * <p>
+ * Provides operations such as:
+ * <ul>
+ *   <li>CRUD operations for desks (including soft delete & restore)</li>
+ *   <li>Updating desk coordinates and availability windows</li>
+ *   <li>Editing and cancelling bookings</li>
+ *   <li>User management (role changes, deleting users)</li>
+ *   <li>Zone retrieval and mapping</li>
+ * </ul>
+ * This service contains business rules and validations related to desk booking workflow.
+ */
 
 @Slf4j
 @Service
@@ -44,6 +57,8 @@ public class AdminService {
     private final BookingServiceValidation bookingValidation;
     private final ZoneMapper zoneMapper;
     private final AdminServiceValidation adminServiceValidation;
+    private final ImageRepository imageRepository;
+    private final ImageMapper imageMapper;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -57,6 +72,21 @@ public class AdminService {
     }
 
     private void applyTemporaryAvailability(Desk desk, Boolean isTemporarilyAvailable, LocalDateTime from, LocalDateTime until) {
+    /**
+     * Makes non-sharred Desks TemporarilyAvailable
+     *
+     * @param desk, isTemporarilyAvailable
+     * @return the period of LocalDateTime (from-until) when the desk was set TemporarilyAvailable
+     * @throws ExceptionResponse if the desk was not enabled TemporarilyAvailable,
+     * "from" date is after "until" date,
+     * "until" date is set in the past
+     */
+    private void applyTemporaryAvailability(
+            Desk desk,
+            Boolean isTemporarilyAvailable,
+            LocalDateTime from,
+            LocalDateTime until
+    ) {
         boolean enabled = Boolean.TRUE.equals(isTemporarilyAvailable);
         desk.setIsTemporarilyAvailable(enabled);
         if (enabled) {
@@ -95,6 +125,24 @@ public class AdminService {
     public DeskDto addDesk(DeskDto deskDto) {
         log.info("Adding new desk: name={}, zone={}, type={}, status={}", deskDto.displayName(), deskDto.zoneDto().getId(), deskDto.type(), deskDto.deskStatus());
         Zone zone = zoneRepository.findById(deskDto.zoneDto().getId()).orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneDto()));
+    /**
+     * Creates new desk with deskName, Zone, type, status, TemporaryAvailability for 20 days, map coordinates
+     *
+     * @param deskDto
+     * @return new deskDto mapped to deskRepository
+     */
+    public DeskDto addDesk(
+            DeskDto deskDto
+    ) {
+        log.info(
+                "Adding new desk: name={}, zone={}, type={}, status={}",
+                deskDto.displayName(),
+                deskDto.zoneDto().getId(),
+                deskDto.type(),
+                deskDto.deskStatus()
+        );
+        Zone zone = zoneRepository.findById(deskDto.zoneDto().getId())
+                .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneDto()));
         Desk desk = new Desk();
         desk.setDeskName(normalizeName(deskDto.displayName()));
         desk.setZone(zone);
@@ -115,7 +163,13 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Deactivates an existing desk and sets it Temporary Unavailable
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public DeskDto deactivateDesk(Long id) {
         log.info("Deactivating desk with id {}", id);
@@ -133,6 +187,16 @@ public class AdminService {
     }
 
     public DeskDto activateDesk(Long id) {
+    /**
+     * Activates an existing desk
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
+    public DeskDto activateDesk(
+            Long id
+    ) {
         log.info("Activating desk with id {}", id);
 
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
@@ -141,7 +205,16 @@ public class AdminService {
         log.info("Desk {} activated successfully", id);
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Edites an existing desk
+     *
+     * @param id, DeskUpdsteDto
+     * @return updates desk with what was changed (displayName, Zone, type, status,
+     * TemporaryAvailability, map coordinates
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository,
+     * if the deskName already exists in database, because of the unique contraints,
+     * if the zoneId was not found in the ZoneRepository
+     */
     @Transactional
     public DeskDto editDesk(Long id, DeskUpdateDTO updates) {
         log.info("Editing desk with id {}", id);
@@ -191,7 +264,17 @@ public class AdminService {
     }
 
 // Update the deleteDesk method in AdminService.java
-
+    /**
+     * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
+     * so the Admin could restore it.
+     * <p>
+     * If the desk has active or scheduled bookings, they will be cancelled
+     * before completing the deletion.
+     *
+     * @param id     the ID of the desk
+     * @param reason optional reason for deletion
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
@@ -244,6 +327,9 @@ public class AdminService {
 
     @Transactional
     public Integer saveAll(List<DeskDto> updates) {
+    public Integer saveAllDesks(
+            List<DeskDto> updates
+    ){
         int count = 0;
         for (DeskDto deskDto : updates) {
             boolean changed = false;
@@ -463,6 +549,48 @@ public class AdminService {
             zoneDtoList.add(zoneDTO);
         }
         return zoneDtoList;
+    }
+
+    //this method should not work right now
+    public List<ImageDto> getAllImages(){
+        List<Image> images = imageRepository.findAll();
+        if(images.isEmpty()){
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    "IMAGES_NOT_FOUND",
+                    "Images are not found"
+            );
+        }
+        return images
+                .stream()
+                .map(imageMapper::toImageDto)
+                .toList();
+    }
+
+    @Transactional
+    public void uploadImage(
+            MultipartFile file
+    ){
+        Image newImage = new Image();
+        newImage.setFileName(file.getOriginalFilename());
+
+        try {
+            newImage.setImageData(file.getBytes());
+        } catch (Exception e){
+            throw new ExceptionResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "CANNOT_READ_IMAGE_FILE",
+                    "Can't read image file"
+            );
+        }
+        log.info(
+                "id:{} fileName {} ContentType {}",
+                newImage.getId(),
+                newImage.getFileName(),
+                newImage.getContentType()
+        );
+        newImage.setContentType(file.getContentType());
+        imageRepository.save(newImage);
     }
 
     @Transactional

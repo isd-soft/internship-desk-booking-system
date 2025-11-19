@@ -921,38 +921,71 @@ export default {
 .popup-btn.cancel:hover {
   background: #e5e7eb;
 }
-
 /* Responsive */
-.notification-popup {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 25px;
-  border-radius: 8px;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 250px;
-}
+@media (max-width: 768px) {
+  .users-container {
+    padding: 1rem;
+  }
 
-.close-btn {
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 1.5rem;
-  cursor: pointer;
-  margin-left: 15px;
-  line-height: 1;
-}
+  .users-header h2 {
+    font-size: 1.5rem;
+  }
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.5s, transform 0.5s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
-  opacity: 0;
-  transform: translateY(-20px);
+  .filters {
+    flex-direction: column;
+  }
+
+  .role-filter {
+    width: 100%;
+  }
+
+  .user-card {
+    padding: 10px 15px;
+  }
+
+  .user-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .user-role {
+    margin-left: 0;
+    font-size: 0.75rem;
+  }
+
+  .copy-tooltip {
+    right: auto;
+    left: 50%;
+    top: auto;
+    bottom: 100%;
+    transform: translateX(-50%);
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .copy-tooltip::after {
+    right: auto;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #ff8a00;
+    border-bottom: none;
+  }
+
+  .popup-window {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .popup-actions {
+    flex-direction: column-reverse;
+  }
+
+  .popup-btn {
+    width: 100%;
+  }
 }
 </style>

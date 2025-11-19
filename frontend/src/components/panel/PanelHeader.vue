@@ -1,5 +1,5 @@
 <template>
-  <div class="panel-header pa-6 pb-4">
+  <div class="panel-header pa-4 pb-3">
     <div class="header-inner">
       <div class="head-left">
         <p class="welcome-text animate-fade" v-if="userEmail">

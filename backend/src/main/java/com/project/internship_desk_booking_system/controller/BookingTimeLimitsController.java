@@ -7,6 +7,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+/**
+ * REST controller responsible for managing booking time limit policies.
+ * <p>
+ * Provides administrative endpoints that allow:
+ * <ul>
+ *     <li>Retrieving the currently active booking time policy</li>
+ *     <li>Updating global system constraints such as maximum days allowed in advance
+ *          and maximum booking hours per week </li>
+ * </ul>
+ *
+ * This controller is restricted to users with the {@PreAuthorize ADMIN} role and is used
+ * to enforce business rules regarding how far in advance users can book (min-1, max-365 d)
+ * and how many hours they may reserve within a given week (min-1, max-168 h).
+ *
+ * <p><b>Base URL:</b> {@code /api/v1/admin/booking-time-limits}</p>
+ *
+ * All business logic is delegated to {@link BookingTimeLimitsService},
+ * data are stored in the DB.
+ */
 
 @Slf4j
 @RestController
