@@ -33,8 +33,20 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+
+/**
+ * Service used by administrators to manage desks, zones, users and bookings.
+ * <p>
+ * Provides operations such as:
+ * <ul>
+ *   <li>CRUD operations for desks (including soft delete & restore)</li>
+ *   <li>Updating desk coordinates and availability windows</li>
+ *   <li>Editing and cancelling bookings</li>
+ *   <li>User management (role changes, deleting users)</li>
+ *   <li>Zone retrieval and mapping</li>
+ * </ul>
+ * This service contains business rules and validations related to desk booking workflow.
+ */
 
 @Slf4j
 @Service
@@ -60,7 +72,15 @@ public class AdminService {
         }
         deskRepository.deleteById(userId);
     }
-
+    /**
+     * Makes non-sharred Desks TemporarilyAvailable
+     *
+     * @param desk, isTemporarilyAvailable
+     * @return the period of LocalDateTime (from-until) when the desk was set TemporarilyAvailable
+     * @throws ExceptionResponse if the desk was not enabled TemporarilyAvailable,
+     * "from" date is after "until" date,
+     * "until" date is set in the past
+     */
     private void applyTemporaryAvailability(
             Desk desk,
             Boolean isTemporarilyAvailable,
@@ -123,7 +143,12 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Creates new desk with deskName, Zone, type, status, TemporaryAvailability for 20 days, map coordinates
+     *
+     * @param deskDto
+     * @return new deskDto mapped to deskRepository
+     */
     public DeskDto addDesk(
             DeskDto deskDto
     ) {
@@ -193,7 +218,13 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Deactivates an existing desk and sets it Temporary Unavailable
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public DeskDto deactivateDesk(
             Long id
@@ -212,7 +243,13 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Activates an existing desk
+     *
+     * @param id
+     * @return updates desk status mapped to DeskDto
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     public DeskDto activateDesk(
             Long id
     ) {
@@ -228,7 +265,16 @@ public class AdminService {
         log.info("Desk {} activated successfully", id);
         return deskMapper.toDto(desk);
     }
-
+    /**
+     * Edites an existing desk
+     *
+     * @param id, DeskUpdsteDto
+     * @return updates desk with what was changed (displayName, Zone, type, status,
+     * TemporaryAvailability, map coordinates
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository,
+     * if the deskName already exists in database, because of the unique contraints,
+     * if the zoneId was not found in the ZoneRepository
+     */
     @Transactional
     public DeskDto editDesk(
             Long id,
@@ -296,7 +342,17 @@ public class AdminService {
     }
 
 // Update the deleteDesk method in AdminService.java
-
+    /**
+     * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
+     * so the Admin could restore it.
+     * <p>
+     * If the desk has active or scheduled bookings, they will be cancelled
+     * before completing the deletion.
+     *
+     * @param id     the ID of the desk
+     * @param reason optional reason for deletion
+     * @throws ExceptionResponse if the deskId was not found in the DeskRepository
+     */
     @Transactional
     public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id)
@@ -359,7 +415,7 @@ public class AdminService {
     }
 
     @Transactional
-    public Integer saveAll(
+    public Integer saveAllDesks(
             List<DeskDto> updates
     ){
         int count = 0;

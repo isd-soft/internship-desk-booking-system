@@ -11,7 +11,27 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+/**
+ * REST controller responsible for managing desk color configurations used in the system.
+ * <p>
+ * Provides administrative endpoints that allow:
+ * <ul>
+ *     <li>Retrieving all available desk color definitions</li>
+ *     <li>Fetching a specific desk color by its ID</li>
+ *     <li>Creating new color entries</li>
+ *     <li>Updating existing desk color configurations</li>
+ *     <li>Deleting desk colors that are no longer needed</li>
+ * </ul>
+ *
+ * This controller is accessible only to users  with the {@PreAuthorize ADMIN} role and is
+ * used to configure the color metadata associated with desks, which can influence
+ * UI display, categorization, or visual grouping within the booking system.
+ *
+ * <p><b>Base URL:</b> {@code /api/v1/admin/desk-colors}</p>
+ *
+ * All business logic is delegated to {@link DeskColorService},
+ * data are stored in the DB.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/desk-colors")
