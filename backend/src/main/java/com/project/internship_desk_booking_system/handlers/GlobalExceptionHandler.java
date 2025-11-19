@@ -20,24 +20,6 @@ import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(HttpClientErrorException.BadRequest.class)
-    public ResponseEntity<String> handleBadRequest(
-            Exception e
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(e.getMessage());
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<String> handleNoSuchElementException(
-            Exception e
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(e.getMessage());
-    }
-
     @ExceptionHandler(ExceptionResponse.class)
     public ResponseEntity<Map<String, Object>> handleCustom(ExceptionResponse ex, HttpServletRequest req) {
         HttpStatus status = ex.getStatusOverride() != null ? ex.getStatusOverride() : HttpStatus.BAD_REQUEST;
