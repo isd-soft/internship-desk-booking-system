@@ -2,6 +2,9 @@
   <div class="panel-header pa-6 pb-4">
     <div class="header-inner">
       <div class="head-left">
+        <p class="welcome-text animate-fade" v-if="userEmail">
+          Welcome, <span class="user-email">{{ userEmail }}</span>
+        </p>
         <h2 class="header-title animate-fade">Quick Actions</h2>
         <div class="title-accent"></div>
         <p class="header-subtitle animate-fade-delay">
@@ -19,7 +22,15 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const userEmail = ref('');
+
+onMounted(() => {
+  userEmail.value = localStorage.getItem('email') || '';
+});
+</script>
 
 <style scoped>
 .panel-header {
@@ -35,6 +46,19 @@
 
 .head-left {
   min-width: 0;
+}
+
+.welcome-text {
+  font-size: clamp(0.8rem, 0.75rem + 0.2vw, 0.9rem);
+  color: var(--text-2);
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  opacity: 0.75;
+}
+
+.user-email {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .header-title {
