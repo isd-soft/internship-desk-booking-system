@@ -3,12 +3,8 @@ package com.project.internship_desk_booking_system.controller;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
-import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
-import com.project.internship_desk_booking_system.dto.DeskDto;
-import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
-import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
-import com.project.internship_desk_booking_system.dto.ZoneDto;
-import com.project.internship_desk_booking_system.entity.Desk;
+import com.project.internship_desk_booking_system.dto.*;
+import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.AdminService;
 import com.project.internship_desk_booking_system.service.BookingService;
 import com.project.internship_desk_booking_system.service.DeskService;
@@ -17,9 +13,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -167,7 +165,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/desks/restoreCoordinates")
-    public ResponseEntity<Void> restoreCoordinates(){
+    public ResponseEntity<Void> restoreCoordinates() {
         adminService.restoreCoordinates();
         return ResponseEntity.ok().build();
     }
@@ -176,7 +174,7 @@ public class AdminController {
     @PatchMapping("/desks/saveAll")
     public ResponseEntity<Integer> saveAll(
             @RequestBody List<DeskDto> updates
-    ){
+    ) {
         return ResponseEntity.ok(
                 adminService.saveAll(updates)
         );
@@ -196,9 +194,9 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/role")
     public ResponseEntity<EmailRoleDTO> updateUserRole(
-            @RequestBody @Valid EmailRoleDTO dto
+            @RequestBody @Valid EmailRoleDTO dto, @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         log.info("Admin request to change user role: {}", dto);
-        return ResponseEntity.ok(adminService.updateUserRole(dto));
+        return ResponseEntity.ok(adminService.updateUserRole(dto, principal));
     }
 }
