@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import SidePanel from "./SidePanel.vue";
 import OfficeMapOverlay from "../components/VisualFloorMap/OfficeMapOverlay.vue";
 import DatePicker from "../components/DatePicker.vue";
@@ -14,6 +14,7 @@ import {
 
 const sidePanelRef = ref(null);
 const activeLegendFilter = ref(null);
+const hoveredLegendFilter = ref(null);
 
 const reloadColors = async () => {
   resetLayout();
@@ -83,13 +84,31 @@ const legends = [
   { color: "#E1BEE7", label: "Your booking", icon: "mdi-minus-circle", deskColor: "PURPLE" },
 ];
 
+function handleLegendClick(deskColor) {
+  // Toggle: если уже активен этот фильтр - убираем, иначе устанавливаем
+  if (activeLegendFilter.value === deskColor) {
+    activeLegendFilter.value = null;
+  } else {
+    activeLegendFilter.value = deskColor;
+  }
+}
+
 function handleLegendHover(deskColor) {
-  activeLegendFilter.value = deskColor;
+  // Показываем hover только если нет активного клика
+  if (activeLegendFilter.value === null) {
+    hoveredLegendFilter.value = deskColor;
+  }
 }
 
 function handleLegendLeave() {
-  activeLegendFilter.value = null;
+  // Убираем hover
+  hoveredLegendFilter.value = null;
 }
+
+// Computed для определения текущего активного фильтра
+const currentActiveFilter = computed(() => {
+  return activeLegendFilter.value || hoveredLegendFilter.value;
+});
 </script>
 
 <template>
@@ -108,7 +127,7 @@ function handleLegendLeave() {
         <div class="embedded-map">
           <OfficeMapOverlay
             :selectedDateISO="selectedDate"
-            :activeColorFilter="activeLegendFilter"
+            :activeColorFilter="currentActiveFilter"
             @booking-created="handleBookingCreated"
             @booking-cancelled="handleBookingCancelled"
             @favourite-toggled="handleFavouriteToggled"
@@ -119,7 +138,8 @@ function handleLegendLeave() {
             v-for="(item, index) in legends"
             :key="index"
             class="legend-badge"
-            :class="{ 'legend-active': activeLegendFilter === item.deskColor }"
+            :class="{ 'legend-active': activeLegendFilter === item.deskColor || hoveredLegendFilter === item.deskColor }"
+            @click="handleLegendClick(item.deskColor)"
             @mouseenter="handleLegendHover(item.deskColor)"
             @mouseleave="handleLegendLeave"
           >
@@ -259,7 +279,7 @@ function handleLegendLeave() {
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: default;
+  cursor: pointer;
   overflow: hidden;
   flex: 1 1 0;
   min-height: 24px;
