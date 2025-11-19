@@ -137,7 +137,7 @@ public class AdminService {
         Zone zone = zoneRepository.findById(deskDto.zoneDto().getId())
                 .orElseThrow(() -> new RuntimeException("Zone not found: " + deskDto.zoneDto()));
         Desk desk = new Desk();
-        desk.setDeskName(deskDto.displayName());
+        desk.setDeskName(normalizeName(deskDto.displayName()));
         desk.setZone(zone);
 
         desk.setType(
@@ -244,7 +244,7 @@ public class AdminService {
                 ));
 
         if (updates.displayName() != null) {
-            desk.setDeskName(updates.displayName());
+            desk.setDeskName(normalizeName(updates.displayName()));
         }
         if (updates.zoneId() != null) {
             Zone zone = zoneRepository.findById(updates.zoneId())
@@ -733,5 +733,14 @@ public class AdminService {
 
         return new EmailRoleDTO(user.getEmail(), user.getRole());
     }
+
+    private String normalizeName(String name) {
+        if (name == null) return null;
+
+        return name
+                .trim()
+                .replaceAll("\\s+", " ");
+    }
+
 
 }
