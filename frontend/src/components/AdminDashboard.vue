@@ -1,42 +1,40 @@
 <script setup>
 import AdminSidePanel from "../components/AdminSidePanel.vue";
-import { ref } from "vue";
+import { ref, computed } from "vue";
+
 const isPanelOpen = ref(true);
+const isPanelExpanded = ref(true);
+const drawerWidth = ref(360); // Default width - will be updated by drawer
+
+// Handle expansion state change from panel
+const handleExpandedChange = (expanded) => {
+  isPanelExpanded.value = expanded;
+};
+
+// Handle drawer width changes
+const handleDrawerWidthChange = (width) => {
+  drawerWidth.value = width;
+};
+
+// Compute content area margin
+const contentMargin = computed(() => {
+  return isPanelOpen.value ? drawerWidth.value : 0;
+});
 </script>
 
 <template>
   <div class="layout">
-    <!-- Close button - shows when panel is open -->
-    <v-btn
-        v-if="isPanelOpen"
-        icon
-        class="panel-toggle-btn close"
-        size="small"
-        variant="text"
-        @click="isPanelOpen = false"
-    >
-      <v-icon>mdi-close</v-icon>
-    </v-btn>
-
-    <!-- Open button - shows when panel is closed -->
-    <v-btn
-        v-else
-        icon
-        class="panel-toggle-btn open"
-        color="primary"
-        elevation="3"
-        size="large"
-        @click="isPanelOpen = true"
-    >
-      <v-icon>mdi-menu</v-icon>
-    </v-btn>
-
     <AdminSidePanel
         v-model="isPanelOpen"
         @update:modelValue="isPanelOpen = $event"
+        @update:expanded="handleExpandedChange"
+        @update:drawerWidth="handleDrawerWidthChange"
     />
 
-    <div class="content-area" :class="{ 'panel-closed': !isPanelOpen }">
+    <div 
+      class="content-area" 
+      :style="{ marginLeft: `${contentMargin}px` }"
+    >
       <router-view />
     </div>
   </div>
@@ -47,52 +45,27 @@ const isPanelOpen = ref(true);
   display: flex;
   height: 100vh;
   position: relative;
-}
-
-.layout > :first-child {
-  flex-shrink: 0;
+  overflow: hidden;
+  width: 100vw;
 }
 
 .content-area {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fff;
-  transition: all 0.3s ease;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+  flex: 1;
 }
 
 .content-area > * {
   width: 100%;
   max-width: 100%;
-}
-
-.panel-toggle-btn {
-  position: fixed !important;
-  z-index: 999;
-}
-
-.panel-toggle-btn.close {
-  top: 12px;
-  left: 650px;
-  background: rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.panel-toggle-btn.close:hover {
-  background: rgba(255, 138, 0, 0.1) !important;
-}
-
-.panel-toggle-btn.open {
-  top: 20px;
-  left: 20px;
-  width: 48px !important;
-  height: 48px !important;
-  min-width: 48px !important;
-  border-radius: 50% !important;
 }
 
 @media (max-width: 900px) {
@@ -102,6 +75,7 @@ const isPanelOpen = ref(true);
 
   .content-area {
     padding: 16px;
+    margin-left: 0 !important;
   }
 }
 </style>
