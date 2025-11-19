@@ -17,7 +17,7 @@ import {
 } from "../VisualFloorMap/floorLayout";
 import {
   getAllDesksFromBackend
-} from "./adminFloorLayout.ts";
+} from "../VisualFloorMap/adminFloorLayout";
 import api from "../../plugins/axios.js";
 import DeskEditModal from "./DeskEditModal.vue";
 import { zones } from "./adminFloorLayout";
@@ -31,6 +31,7 @@ const selectedDesk = ref<any>(null);
 const isDraggingTemplate = ref(false);
 const dragTemplateData = ref<{ w: number; h: number; isHorizontal: boolean } | null>(null);
 const previewPosition = ref<{ x: number; y: number } | null>(null);
+const isDraggingDesk = ref(false);
 
 async function createNewDesk(newDesk: any){
   try{
@@ -143,6 +144,10 @@ function handleFloorplanDragLeave() {
 }
 
 function openDeskEditor(item: any) {
+  if (isDraggingDesk.value) {
+    isDraggingDesk.value = false;
+    return;
+  }
   selectedDesk.value = { ...item }; 
   showEditModal.value = true;
 }
@@ -342,6 +347,7 @@ onMounted(async () => {
           :use-css-transforms="true"
           :is-draggable="true"
           :is-resizable="false"
+          @layout-updated="isDraggingDesk = true"
         >
           <template #item="{ item }">
             <div
