@@ -2,16 +2,15 @@
 import { onMounted, ref, onBeforeUnmount, computed, watch } from "vue";
 import {
   layout,
-  colNum,
   rowHeight,
-  totalRows,
-  IMAGE_WIDTH_PX,
-  IMAGE_HEIGHT_PX,
   loadDesksFromBackend,
   resetLayout,
   horizontalDesks,
   loadAllColors,
   selectedDate as sharedSelectedDate,
+  imageUrl,
+  getImageFromBackend,
+  imageDimensions,
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 import { useFavouritesStore } from "@/stores/favourites";
@@ -32,7 +31,7 @@ const emit = defineEmits([
 const favStore = useFavouritesStore();
 
 const container = ref<HTMLElement | null>(null);
-const containerWidth = ref<number>(IMAGE_WIDTH_PX);
+const containerWidth = ref<number>(imageDimensions.value.width);
 const containerHeightAvailable = ref<number | null>(null);
 const scale = ref<number>(1);
 const isMobileView = ref(window.innerWidth <= 768);
@@ -40,16 +39,18 @@ const showLegend = ref(!isMobileView.value);
 
 // dont remove please !!
 const scaledContainerHeight = computed(() =>
-  Math.round(IMAGE_HEIGHT_PX * scale.value)
+  Math.round(imageDimensions.value.height * scale.value)
 );
 // dont remove please !!
 const scaledHeightCompensation = computed(() =>
-  scale.value >= 1 ? 0 : Math.round(IMAGE_HEIGHT_PX * (1 - scale.value))
+  scale.value >= 1 ? 0 : Math.round(imageDimensions.value.height * (1 - scale.value))
 );
 
 onMounted(async () => {
   resetLayout();
   loadDesksFromBackend();
+  getImageFromBackend(1);
+  console.log(imageUrl);
   await favStore.ensureLoaded();
 
   const updateScale = () => {
@@ -62,8 +63,8 @@ onMounted(async () => {
       return;
     }
 
-    const scaleByWidth = availW / IMAGE_WIDTH_PX;
-    const scaleByHeight = availH / IMAGE_HEIGHT_PX;
+    const scaleByWidth = availW / imageDimensions.value.width;
+    const scaleByHeight = availH / imageDimensions.value.height;
     const newScale = Math.max(0.1, Math.min(scaleByWidth, scaleByHeight));
     scale.value = newScale;
   };
@@ -83,7 +84,7 @@ onMounted(async () => {
   };
 
   if (container.value) {
-    containerWidth.value = container.value.clientWidth || IMAGE_WIDTH_PX;
+    containerWidth.value = container.value.clientWidth || imageDimensions.value.width;
     containerHeightAvailable.value = container.value.clientHeight || null;
     updateScale();
   }
@@ -218,24 +219,24 @@ watch(
     <div
       class="floorplan-inner"
       :style="{
-        width: IMAGE_WIDTH_PX + 'px',
-        height: IMAGE_HEIGHT_PX + 'px',
+        width: imageDimensions.width + 'px',
+        height: imageDimensions.height + 'px',
         transform: 'scale(' + scale + ')',
         transformOrigin: 'center center',
       }"
     >
       <img
-        src="/floorplan/Floor.png"
+        :src="imageUrl"
         alt="Office floor plan"
         class="floorplan-bg"
         draggable="false"
       />
       <GridLayout
         v-model:layout="layout"
-        :col-num="colNum"
+        :col-num="imageDimensions.width"
         :row-height="rowHeight"
-        :width="IMAGE_WIDTH_PX"
-        :max-rows="totalRows"
+        :width="imageDimensions.width"
+        :max-rows="imageDimensions.height"
         :margin="[0, 0]"
         :responsive="false"
         :vertical-compact="false"
@@ -323,8 +324,6 @@ watch(
 }
 
 .floorplan-inner {
-  width: 987px;
-  height: 643px;
   position: relative;
   background: #f4f6fb;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);

@@ -2,24 +2,23 @@
 import { onMounted, ref } from "vue";
 import {
   layout,
-  colNum,
   rowHeight,
-  totalRows,
-  IMAGE_WIDTH_PX,
-  IMAGE_HEIGHT_PX,
   loadDesksFromBackend,
   resetLayout,
-  horizontalDesks,
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   HORIZONTAL_DESK_HEIGHT,
-  HORIZONTAL_DESK_WIDTH
+  HORIZONTAL_DESK_WIDTH,
+  imageDimensions,
+  getImageFromBackend,
+  imageUrl,
 } from "../VisualFloorMap/floorLayout";
 import {
   getAllDesksFromBackend
 } from "./adminFloorLayout.ts";
 import api from "../../plugins/axios.js";
 import DeskEditModal from "./DeskEditModal.vue";
+import FileUploader from "../FileUploader.vue";
 import { zones } from "./adminFloorLayout";
 
 const isDraggingNew = ref(false);
@@ -72,7 +71,7 @@ function onDragStart(event: DragEvent, data: { w: number; h: number; isHorizonta
   isDraggingTemplate.value = true;
 
   const ghost = document.createElement('div');
-  ghost.style.width = `${data.w * (IMAGE_WIDTH_PX / colNum)}px`;
+  ghost.style.width = `${data.w}px`;
   ghost.style.height = `${data.h * rowHeight}px`;
   ghost.style.background = 'rgba(59, 130, 246, 0.4)';
   ghost.style.border = '2px dashed #3b82f6';
@@ -92,11 +91,11 @@ function handleFloorplanDragOver(event: DragEvent) {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  const gridX = Math.floor(x / (IMAGE_WIDTH_PX / colNum));
+  const gridX = Math.floor(x);
   const gridY = Math.floor(y / rowHeight);
 
   previewPosition.value = {
-    x: gridX * (IMAGE_WIDTH_PX / colNum),
+    x: gridX,
     y: gridY * rowHeight
   };
 }
@@ -107,7 +106,7 @@ function handleFloorplanDrop(event: DragEvent) {
   event.preventDefault();
 
   const { w, h, isHorizontal } = dragTemplateData.value;
-  const gridX = Math.floor((event.clientX - (event.currentTarget as HTMLElement).getBoundingClientRect().left) / (IMAGE_WIDTH_PX / colNum));
+  const gridX = Math.floor((event.clientX - (event.currentTarget as HTMLElement).getBoundingClientRect().left));
   const gridY = Math.floor((event.clientY - (event.currentTarget as HTMLElement).getBoundingClientRect().top) / rowHeight);
 
   const newId = layout.length === 0 
@@ -126,10 +125,6 @@ function handleFloorplanDrop(event: DragEvent) {
     isNonInteractive: false,
     zone: zones.value[0]
   });
-
-  if(isHorizontal){
-    horizontalDesks.push(newId);
-  }
 
   isDraggingTemplate.value = false;
   dragTemplateData.value = null;
@@ -262,6 +257,7 @@ async function saveAllChanges(){
 
 onMounted(async () => {
   resetLayout();
+  getImageFromBackend(2);
   await getAllDesksFromBackend();
 });
 </script>
@@ -293,12 +289,18 @@ onMounted(async () => {
         >
           <span class="label">Horizontal Desk</span>
         </div>
+        <div>
+          <FileUploader/>
+        </div>
       </div>
     </div>
 
     <div class="floorplan-container">
       <div
         class="floorplan-inner"
+        :style="{
+        width: imageDimensions.width + 'px',
+        height: imageDimensions.height + 'px',}"
         :class="{ 'adding-mode': isDraggingTemplate }"
         @dragover="handleFloorplanDragOver"
         @drop="handleFloorplanDrop"
@@ -306,7 +308,7 @@ onMounted(async () => {
         @dragenter.prevent
       >
         <img
-          src="/floorplan/Floor.png"
+          :src="imageUrl"
           alt="Office floor plan"
           class="floorplan-bg"
           draggable="false"
@@ -318,17 +320,17 @@ onMounted(async () => {
           :style="{
             left: newDeskPreview.x + 'px',
             top: newDeskPreview.y + 'px',
-            width: (IMAGE_WIDTH_PX / colNum) + 'px',
+            width: (imageDimensions.value.width) + 'px',
             height: rowHeight + 'px',
           }"
         ></div>
 
         <GridLayout
           v-model:layout="layout"
-          :col-num="colNum"
+          :col-num="imageDimensions.width"
           :row-height="rowHeight"
-          :width="IMAGE_WIDTH_PX"
-          :max-rows="totalRows"
+          :width="imageDimensions.width"
+          :max-rows="imageDimensions.height"
           :margin="[0, 0]"
           :responsive="false"
           :vertical-compact="false"
@@ -428,8 +430,6 @@ onMounted(async () => {
   background: #f4f6fb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 2px solid #e5e7eb;
-  width: 987px;
-  height: 643px;
   flex-shrink: 0;
 }
 

@@ -1,23 +1,21 @@
-import { reactive, ref } from "vue";
+import { reactive, ref, markRaw } from "vue";
 import api from "../../plugins/axios";
 
 export const IMAGE_WIDTH_PX = 987;
 export const IMAGE_HEIGHT_PX = 643;
 
+//this variable is going to be initialized when image is gotten from backend
+export const imageDimensions = ref({width: 0, height: 0});
+
 export const colNum = IMAGE_WIDTH_PX;
 export const rowHeight = 1;
 export const totalRows = IMAGE_HEIGHT_PX;
-
-export const floorImage = "/floorplan/Floor.png";
 
 export const layout = reactive<any[]>([]);
 
 export const deskCoordinates = ref<Array<{ id: number; x: number; y: number }>>(
   []
 );
-export const horizontalDesks = [
-  5, 10, 15, 20, 25, 30, 31, 32, 33, 34, 39, 44, 49, 54, 59, 60, 61, 62, 63,
-];
 export const DeskColors = ref<Array<{ deskId: number; deskColor: string }>>([]);
 
 export const selectedDate = ref<string>(new Date().toISOString().split("T")[0]);
@@ -27,6 +25,33 @@ export const DEFAULT_HEIGHT = 50;
 
 export const HORIZONTAL_DESK_WIDTH = 55;
 export const HORIZONTAL_DESK_HEIGHT = 26;
+
+export const imageUrl = ref('');
+
+export async function getImageFromBackend(imageId:number) {
+  try {
+    const response = await api.get(`/admin/images/${imageId}`,{
+      responseType:'blob'
+    });
+  
+    const blob = await response.data;
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      imageDimensions.value = {
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      };
+      console.log('Image dimensions:', imageDimensions.value);
+    };
+    img.src = url;
+    imageUrl.value = url;
+    
+  
+  } catch (err) {
+    console.error("Error loading image", err)
+  }
+}
 
 async function getColors() {
   try {
