@@ -92,6 +92,19 @@
             </div>
           </div>
 
+          <!-- Inline notification for Booking Limits -->
+          <transition name="slide-down">
+            <div v-if="limitsNotification" :class="['inline-notification', `notification-${limitsNotification.type}`]">
+              <svg v-if="limitsNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>{{ limitsNotification.message }}</span>
+            </div>
+          </transition>
+
           <div class="button-group">
             <button type="button" class="btn btn-secondary" @click="resetLimitsForm" :disabled="!hasLimitsChanges">
               Reset
@@ -163,6 +176,19 @@
             </div>
           </div>
 
+          <!-- Inline notification for Edit Color -->
+          <transition name="slide-down">
+            <div v-if="editNotification && selectedColorId" :class="['inline-notification', `notification-${editNotification.type}`]">
+              <svg v-if="editNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>{{ editNotification.message }}</span>
+            </div>
+          </transition>
+
           <div v-if="selectedColorId" class="button-group">
             <button type="button" class="btn btn-secondary" @click="resetEditForm">
               Reset
@@ -226,6 +252,19 @@
             </div>
           </div>
 
+          <!-- Inline notification for Add New Color -->
+          <transition name="slide-down">
+            <div v-if="newNotification" :class="['inline-notification', `notification-${newNotification.type}`]">
+              <svg v-if="newNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>{{ newNotification.message }}</span>
+            </div>
+          </transition>
+
           <div class="button-group">
             <button type="button" class="btn btn-secondary" @click="resetNewForm">
               Reset
@@ -238,23 +277,9 @@
       </div>
     </div>
 
-    <!-- Toast Notifications -->
-    <transition name="slide-up">
-      <div v-if="showToast" class="toast" :class="toastType">
-        <svg v-if="toastType === 'success'" class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <svg v-else class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>{{ toastMessage }}</span>
-      </div>
-    </transition>
-
     <!-- Custom Confirm Dialog -->
-    <transition name="fade">
-      <div v-if="showConfirmDialog" class="modal-overlay" @click="cancelDelete">
+    <transition name="modal-fade">
+      <div v-if="showConfirmDialog" class="modal-overlay" @click.self="cancelDelete">
         <div class="confirm-dialog" @click.stop>
           <div class="confirm-header">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -296,6 +321,8 @@ export default {
       originalLimits: null,
       limitsSaving: false,
       limitsErrors: {},
+      limitsNotification: null,
+      limitsNotificationTimeout: null,
 
       // Desk Colors
       deskColors: [],
@@ -309,6 +336,8 @@ export default {
       },
       originalEditForm: null,
       editSaving: false,
+      editNotification: null,
+      editNotificationTimeout: null,
 
       // New Color
       newForm: {
@@ -317,11 +346,8 @@ export default {
         colorMeaning: ''
       },
       newSaving: false,
-
-      // Toast notifications
-      showToast: false,
-      toastMessage: '',
-      toastType: 'success',
+      newNotification: null,
+      newNotificationTimeout: null,
 
       // Confirm dialog
       showConfirmDialog: false,
@@ -351,17 +377,58 @@ export default {
 
   mounted() {
     this.fetchAllData();
+    document.addEventListener('keydown', this.handleEscKey);
+  },
+
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.handleEscKey);
+    if (this.limitsNotificationTimeout) clearTimeout(this.limitsNotificationTimeout);
+    if (this.editNotificationTimeout) clearTimeout(this.editNotificationTimeout);
+    if (this.newNotificationTimeout) clearTimeout(this.newNotificationTimeout);
   },
 
   methods: {
-    // Toast notification
-    showNotification(message, type = 'success') {
-      this.toastMessage = message;
-      this.toastType = type;
-      this.showToast = true;
-      setTimeout(() => {
-        this.showToast = false;
-      }, 3000);
+    // Inline notifications
+    showLimitsNotification(message, type = 'success') {
+      if (this.limitsNotificationTimeout) {
+        clearTimeout(this.limitsNotificationTimeout);
+      }
+      
+      this.limitsNotification = { message, type };
+      
+      if (type === 'success') {
+        this.limitsNotificationTimeout = setTimeout(() => {
+          this.limitsNotification = null;
+        }, 3000);
+      }
+    },
+
+    showEditNotification(message, type = 'success') {
+      if (this.editNotificationTimeout) {
+        clearTimeout(this.editNotificationTimeout);
+      }
+      
+      this.editNotification = { message, type };
+      
+      if (type === 'success') {
+        this.editNotificationTimeout = setTimeout(() => {
+          this.editNotification = null;
+        }, 3000);
+      }
+    },
+
+    showNewNotification(message, type = 'success') {
+      if (this.newNotificationTimeout) {
+        clearTimeout(this.newNotificationTimeout);
+      }
+      
+      this.newNotification = { message, type };
+      
+      if (type === 'success') {
+        this.newNotificationTimeout = setTimeout(() => {
+          this.newNotification = null;
+        }, 3000);
+      }
     },
 
     // Fetch all data
@@ -423,10 +490,10 @@ export default {
         const response = await api.put('/admin/booking-time-limits', this.limitsForm);
         this.limitsForm = { ...response.data };
         this.originalLimits = { ...this.limitsForm };
-        this.showNotification('Booking limits updated successfully!', 'success');
+        this.showLimitsNotification('Booking limits updated successfully!', 'success');
       } catch (err) {
         console.error(err);
-        this.showNotification(err.response?.data?.message || 'Failed to update booking limits', 'error');
+        this.showLimitsNotification(err.response?.data?.message || 'Failed to update booking limits', 'error');
       } finally {
         this.limitsSaving = false;
       }
@@ -436,6 +503,7 @@ export default {
       if (this.originalLimits) {
         this.limitsForm = { ...this.originalLimits };
         this.limitsErrors = {};
+        this.limitsNotification = null;
       }
     },
 
@@ -450,27 +518,28 @@ export default {
       if (color) {
         this.editForm = { ...color };
         if (!this.originalEditForm || this.originalEditForm.id !== color.id) {
-      this.originalEditForm = JSON.parse(JSON.stringify(color));
-    }
-
-  } else {
-    this.resetEditForm();
-  }
+          this.originalEditForm = JSON.parse(JSON.stringify(color));
+        }
+      } else {
+        this.resetEditForm();
+      }
+      this.editNotification = null;
     },
 
     resetEditForm() {
-  this.selectedColorId = null;
-  this.editForm = {
-    colorName: '',
-    colorCode: '#000000',
-    colorMeaning: ''
-  };
-  this.originalEditForm = null;
-},
+      this.selectedColorId = null;
+      this.editForm = {
+        colorName: '',
+        colorCode: '#000000',
+        colorMeaning: ''
+      };
+      this.originalEditForm = null;
+      this.editNotification = null;
+    },
 
     async updateColor() {
       if (!this.selectedColorId) {
-        this.showNotification('Please select a color to edit', 'error');
+        this.showEditNotification('Please select a color to edit', 'error');
         return;
       }
 
@@ -490,10 +559,10 @@ export default {
 
         this.originalEditForm = { ...response.data };
         this.editForm = { ...response.data };
-        this.showNotification('Color updated successfully!', 'success');
+        this.showEditNotification('Color updated successfully!', 'success');
       } catch (err) {
         console.error(err);
-        this.showNotification(err.response?.data?.message || 'Failed to update color', 'error');
+        this.showEditNotification(err.response?.data?.message || 'Failed to update color', 'error');
       } finally {
         this.editSaving = false;
       }
@@ -521,12 +590,15 @@ export default {
       try {
         await api.delete(`/admin/desk-colors/${this.selectedColorId}`);
         this.deskColors = this.deskColors.filter(c => c.id !== this.selectedColorId);
-        this.showNotification('Color deleted successfully!', 'success');
-        this.selectedColorId = null;
-        this.resetEditForm();
+        this.showEditNotification('Color deleted successfully!', 'success');
+        
+        setTimeout(() => {
+          this.selectedColorId = null;
+          this.resetEditForm();
+        }, 2000);
       } catch (err) {
         console.error(err);
-        this.showNotification(err.response?.data?.message || 'Failed to delete color', 'error');
+        this.showEditNotification(err.response?.data?.message || 'Failed to delete color', 'error');
       } finally {
         this.editSaving = false;
         this.colorToDelete = null;
@@ -540,6 +612,7 @@ export default {
         colorCode: '#000000',
         colorMeaning: ''
       };
+      this.newNotification = null;
     },
 
     async createColor() {
@@ -548,15 +621,24 @@ export default {
       try {
         const response = await api.post('/admin/desk-colors', this.newForm);
         this.deskColors.push(response.data);
-        this.showNotification('New color added successfully!', 'success');
-        this.resetNewForm();
+        this.showNewNotification('New color added successfully!', 'success');
+        
+        setTimeout(() => {
+          this.resetNewForm();
+        }, 2000);
       } catch (err) {
         console.error(err);
-        this.showNotification(err.response?.data?.message || 'Failed to add new color', 'error');
+        this.showNewNotification(err.response?.data?.message || 'Failed to add new color', 'error');
       } finally {
         this.newSaving = false;
       }
     },
+
+    handleEscKey(event) {
+      if (event.key === 'Escape' && this.showConfirmDialog) {
+        this.cancelDelete();
+      }
+    }
   }
 };
 </script>
@@ -661,6 +743,7 @@ export default {
   border-radius: 0.75rem;
   padding: 1.5rem;
   transition: box-shadow 0.2s;
+  position: relative;
 }
 
 .settings-card:hover {
@@ -713,7 +796,7 @@ export default {
 /* Form Grid */
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(1200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(900px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -749,7 +832,7 @@ export default {
 .form-field input[type="text"],
 .form-field input[type="number"],
 .form-field select {
-  width: 100%;
+  width: fit-content;
   padding: 0.625rem 0.75rem;
   border: 2px solid rgba(255, 170, 64, 0.22);
   border-radius: 0.5rem;
@@ -780,10 +863,12 @@ export default {
 /* Color Input */
 .color-input {
   display: flex;
+  width: fit-content;
   gap: 0.5rem;
 }
 
 .color-input input[type="text"] {
+  width: fit-content;
   flex: 1;
 }
 
@@ -798,6 +883,51 @@ export default {
 
 .color-picker:hover {
   border-color: #ff8a00;
+}
+
+/* Inline Notifications */
+.inline-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #fff7f0;
+  border: 1px solid rgba(255, 170, 64, 0.3);
+  color: #111827;
+  font-size: 0.875rem;
+}
+
+.notification-icon {
+  width: 20px;
+  height: 20px;
+  color: #ff8a00;
+  flex-shrink: 0;
+}
+
+.notification-success {
+  background: #fff7f0;
+  border-color: rgba(255, 170, 64, 0.3);
+}
+
+.notification-error {
+  background: #fff7f0;
+  border-color: rgba(255, 170, 64, 0.3);
+}
+
+.slide-down-enter-active, .slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
 }
 
 /* Buttons */
@@ -856,42 +986,6 @@ export default {
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-/* Toast Notification */
-.toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  min-width: 300px;
-  max-width: 500px;
-}
-
-.toast.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.toast.error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.toast-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
 /* Confirm Dialog */
 .modal-overlay {
   position: fixed;
@@ -899,11 +993,12 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  backdrop-filter: blur(2px);
 }
 
 .confirm-dialog {
@@ -913,6 +1008,36 @@ export default {
   max-width: 500px;
   width: 90%;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-fade-enter-active {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-fade-leave-active {
+  animation: modalFadeOut 0.2s ease-in;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
 }
 
 .confirm-header {
@@ -964,25 +1089,6 @@ export default {
   opacity: 0;
 }
 
-.slide-up-enter-active {
-  animation: slideUp 0.3s ease-out;
-}
-
-.slide-up-leave-active {
-  animation: slideUp 0.3s ease-out reverse;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .settings-container {
@@ -999,13 +1105,6 @@ export default {
 
   .btn {
     width: 100%;
-  }
-
-  .toast {
-    bottom: 1rem;
-    right: 1rem;
-    left: 1rem;
-    min-width: auto;
   }
 
   .confirm-dialog {
