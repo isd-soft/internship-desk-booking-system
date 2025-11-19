@@ -8,6 +8,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+/**
+ * Service responsible for managing system-wide booking time limit policies by ADMIN role users.
+ * <p>
+ * A booking time limit policy defines global constraints for the booking feature,
+ * including:
+ * <ul>
+ *     <li>The maximum number of days in advance a user is allowed to create a booking</li>
+ *     <li>The maximum number of booking hours a user can accumulate per week</li>
+ * </ul>
+ *
+ * The system is expected to maintain exactly one active policy at any time.
+ * This service provides methods to retrieve the currently active policy
+ * and to update its values stored in DB.
+ *
+ * <p>
+ * All logic relies on {@link BookingTimeLimitsRepository} and maintains domain safety
+ * using {@link ExceptionResponse} for error propagation and clear API feedback.
+ * </p>
+ */
 
 @Slf4j
 @Service
@@ -34,7 +53,16 @@ public class BookingTimeLimitsService {
                 policy.getId(), policy.getMaxDaysInAdvance(), policy.getMaxHoursPerWeek());
         return policy;
     }
-
+    /**
+     * Updates the currently active booking time limits policy with the new values provided.
+     * <p>
+     * The system must always have exactly one active policy. This method loads that policy,
+     * applies the updated limits, and saves the changes.
+     *
+     * @param request the new policy values (maxDaysInAdvance, maxHoursPerWeek)
+     * @return the updated {@link BookingTimeLimits} entity
+     * @throws ExceptionResponse if no active policy exists in the system
+     */
     @Transactional
     public BookingTimeLimits updatePolicy(BookingTimeLimits request) {
         log.info("Updating booking time limits policy: maxDaysInAdvance={}, maxHoursPerWeek={}",

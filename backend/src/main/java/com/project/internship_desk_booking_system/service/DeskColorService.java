@@ -13,7 +13,28 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
+/**
+ * Service layer responsible for managing by ADMIN role users - desk color metadata used within the booking system.
+ * <p>
+ * Provides CRUD operations for desk colors, including:
+ * <ul>
+ *     <li>Retrieving all defined colors</li>
+ *     <li>Fetching a color by its identifier</li>
+ *     <li>Creating new desk color definitions</li>
+ *     <li>Updating existing desk color attributes</li>
+ *     <li>Deleting color entries</li>
+ * </ul>
+ *
+ * Additionally, this service ensures:
+ * <ul>
+ *     <li>Validation of color fields such as name, meaning, and HEX code format</li>
+ *     <li>Uniqueness constraints for color name, color code, and meaning</li>
+ *     <li>Transformation between entity objects and data transfer objects</li>
+ * </ul>
+ *
+ * All operations interact with {@link DeskColorRepository} and make use of custom
+ * exception handling via {@link ExceptionResponse} to enforce domain rules and improve API clarity.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
