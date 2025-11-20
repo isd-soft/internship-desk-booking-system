@@ -1,5 +1,5 @@
 <template>
-  <div class="actions-section px-6 pb-4">
+  <div class="actions-section px-4 pb-3 pt-2">
     <v-btn
         v-if="isAdmin"
         block
