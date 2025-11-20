@@ -9,7 +9,7 @@ import {
   loadAllColors,
   selectedDate as sharedSelectedDate,
   imageUrl,
-  getImageFromBackend,
+  getBackgroundFromBackend,
   imageDimensions,
 } from "../VisualFloorMap/floorLayout";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
@@ -53,7 +53,7 @@ const scaledHeightCompensation = computed(() =>
 onMounted(async () => {
   resetLayout();
   loadDesksFromBackend();
-  getImageFromBackend(1);
+  getBackgroundFromBackend();
   console.log(imageUrl);
   await favStore.ensureLoaded();
 

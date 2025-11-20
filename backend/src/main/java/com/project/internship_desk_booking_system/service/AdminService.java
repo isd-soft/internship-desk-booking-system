@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service used by administrators to manage desks, zones, users and bookings.
@@ -539,7 +540,7 @@ public class AdminService {
         return zoneDtoList;
     }
 
-    public List<ImageDto> getAllImages() {
+    public List<ImageItemDto> getListOfAllImages() {
         List<Image> images = imageRepository.findAll();
         if (images.isEmpty()) {
             throw new ExceptionResponse(
@@ -550,7 +551,7 @@ public class AdminService {
         }
         return images
                 .stream()
-                .map(imageMapper::toImageDto)
+                .map(imageMapper::toImageItem)
                 .toList();
     }
 
@@ -604,6 +605,31 @@ public class AdminService {
 
         log.info("Updated user role: {} -> {}", oldRole, dto.getRole());
         return new EmailRoleDTO(targetUser.getEmail(), targetUser.getRole());
+    }
+
+
+    @Transactional
+    public void setBackgroundImage(
+            Long id
+    ){
+        Image newBackground = imageRepository
+                .findById(id)
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        String.format(
+                                "Image with id %d not found",
+                                id
+                        )
+                ));
+
+        Optional<Image> backgroundImage = imageRepository.findBackground();
+
+        backgroundImage
+                .filter(img -> !img.getId().equals(id))
+                .ifPresent(img -> img.setBackground(false));
+
+        newBackground.setBackground(true);
     }
 
     private String normalizeName(String name) {

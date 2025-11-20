@@ -8,11 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RequestMapping(("/api/v1/images"))
@@ -22,11 +18,28 @@ public class ImageController {
     private final ImageService imageService;
 
     @PreAuthorize("hasRole('USER')")
-    @GetMapping("/images/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<byte[]> getImageById(
             @PathVariable("id") Long id
     ) {
         Image image = imageService.getImageById(id);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        httpHeaders.setContentType(
+                MediaType.valueOf(image.getContentType()));
+
+        return new ResponseEntity<>(
+                image.getImageData(),
+                httpHeaders,
+                HttpStatus.OK
+        );
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/background")
+    public ResponseEntity<byte[]> getBackgroundImage() {
+        Image image = imageService.getBackgroundImage();
 
         HttpHeaders httpHeaders = new HttpHeaders();
 
