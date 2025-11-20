@@ -23,11 +23,4 @@ public class AdminServiceValidation {
             throw new ExceptionResponse(HttpStatus.CONFLICT,"IS_ADMIN","You cannot change your role");
         }
     }
-
-    public void validateAssignedRoleIsAllowed(Role newRole) {
-        if (newRole != Role.USER) {
-            throw new ExceptionResponse(HttpStatus.NOT_FOUND,"ROLE_NOT_FOUND","You can only assign USER/ADMIN role");
-        }
-    }
-
 }
