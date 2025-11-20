@@ -263,9 +263,15 @@ async function deleteDesk(deskId: number){
 async function restoreAllDesks(){
   try{
     await api.patch("/admin/desks/restoreCoordinates");
+    toast.success("Restored succesfuly", {
+      timeout: 2000
+    });
     resetLayout();
     await getAllDesksFromBackend();
   }catch(err){
+    toast.error("Erorr in restoring", {
+      timeout: 2000
+    });
     console.error("Failed to restore all desks to default: ", err)
   }
 }
@@ -341,7 +347,10 @@ onMounted(async () => {
     </div>
 
 
-    <div class="floorplan-container">
+    <div class="floorplan-container"
+    :style="{
+      'max-height': imageDimensions.height + 'px'
+    }">
       <div
         class="floorplan-inner"
         :style="{
@@ -416,7 +425,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
+  padding-left: 24px;
+  padding-right: 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
 }
