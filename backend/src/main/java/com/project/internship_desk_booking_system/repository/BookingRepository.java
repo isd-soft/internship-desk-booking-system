@@ -54,9 +54,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endTime") LocalDateTime endTime
     );
 
-    @EntityGraph(attributePaths = {"user", "desk"})
-    List<Booking> findByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
-
 
     @Query("""
     SELECT COUNT(b) > 0 FROM Booking b
@@ -70,6 +67,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             LocalDateTime startTime,
             LocalDateTime endTime
     );
+
+    @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId")
+    List<Booking> findBookingsByDeskId(Long deskId);
 
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
@@ -117,6 +117,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
+    @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId AND b.status = 'SCHEDULED' AND b.startTime > CURRENT_TIMESTAMP")
+    List<Booking> findScheduledBookingsByDeskId(@Param("deskId") Long deskId);
 
     long countBookingByStartTimeAfter(LocalDateTime startTime);
 

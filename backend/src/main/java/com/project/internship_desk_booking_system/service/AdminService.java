@@ -265,9 +265,6 @@ public class AdminService {
         return deskMapper.toDto(desk);
     }
 
-
-// Update the deleteDesk method in AdminService.java
-
     /**
      * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
      * so the Admin could restore it.
@@ -281,21 +278,37 @@ public class AdminService {
      */
     @Transactional
     public void deleteDesk(Long id, String reason) {
-        Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
-        List<Booking> bookings = new ArrayList<>();
+        Desk desk = deskRepository.findById(id)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
         if (hasActiveBookings(desk)) {
-            log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
-            bookings.addAll(bookingRepository.findActiveBookingsForDesk(id));
-            bookingRepository.cancelAllActiveBookingsForDesk(id);
-            log.info("All active bookings for desk {} have been cancelled", id);
+            throw new ExceptionResponse(HttpStatus.CONFLICT, "ACTIVE_BOOKING_CONFLICT", "Can't delete desk with active booking on it");
         }
+
         if (hasScheduledBookings(desk)) {
-            log.info("Desk {} has scheduled bookings. Cancelling them before deletion.", id);
-            bookings.addAll(bookingRepository.findPendingBookingsForDesk(id));
-            bookingRepository.cancelAllPendingBookingsForDesk(id);
-            log.info("All scheduled bookings for desk {} have been cancelled", id);
+            log.info("Desk {} has scheduled bookings. Processing cancellations and notifications.", id);
+
+            List<Booking> scheduledBookings = bookingRepository.findScheduledBookingsByDeskId(id);
+
+            for (Booking booking : scheduledBookings) {
+                booking.setStatus(BookingStatus.CANCELLED);
+                try {
+                    String userEmail = booking.getUser().getEmail();
+                    emailService.sendCancelledBookingEmail(
+                            userEmail,
+                            booking.getId(),
+                            desk.getDeskName(),
+                            desk.getZone().getZoneAbv(),
+                            OffsetDateTime.now()
+                    );
+                    log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
+                } catch (Exception e) {
+                    log.error("Failed to send cancellation email for booking {}: {}", booking.getId(), e.getMessage());
+                }
+            }
+
+            bookingRepository.saveAll(scheduledBookings);
         }
 
         desk.setIsDeleted(true);
@@ -304,24 +317,6 @@ public class AdminService {
 
         deskRepository.save(desk);
         log.info("Desk {} soft deleted successfully with reason: {}", id, reason);
-        for (Booking booking : bookings) {
-            try {
-                String userEmail = booking.getUser().getEmail();
-                emailService.sendCancelledBookingEmail(
-                        userEmail,
-                        booking.getId(),
-                        booking.getDesk().getDeskName(),
-                        booking.getDesk().getZone().getZoneAbv(),
-                        OffsetDateTime.now()
-                );
-                log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
-            } catch (Exception e) {
-                log.error("Failed to send cancellation email for booking {}: {}",
-                        booking.getId(), e.getMessage());
-            }
-        }
-
-        log.info("Sent {} cancellation emails for deleted desk {}", bookings.size(), id);
     }
 
     @Transactional
