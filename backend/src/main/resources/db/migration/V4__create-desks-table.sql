@@ -19,6 +19,6 @@ CREATE TABLE desk (
                       width INTEGER NOT NULL,
 
                       CONSTRAINT fk_desk_zone FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE RESTRICT,
-                      CONSTRAINT chk_desk_type CHECK (type IN ('ASSIGNED', 'SHARED', 'UNAVAILABLE')),
+                      CONSTRAINT chk_desk_type CHECK (type IN ('ASSIGNED', 'SHARED', 'UNAVAILABLE','DELETED')),
                       CONSTRAINT chk_desk_status CHECK (status IN ('ACTIVE', 'DEACTIVATED'))
 );
