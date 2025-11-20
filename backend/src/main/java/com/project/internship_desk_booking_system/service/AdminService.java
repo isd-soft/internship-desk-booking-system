@@ -591,7 +591,7 @@ public class AdminService {
         return zoneDtoList;
     }
 
-    public List<ImageItemDto> getListOfAllImages() {
+    public List<ImageDto> getAllImages() {
         List<Image> images = imageRepository.findAll();
         if (images.isEmpty()) {
             throw new ExceptionResponse(
@@ -602,7 +602,7 @@ public class AdminService {
         }
         return images
                 .stream()
-                .map(imageMapper::toImageItem)
+                .map(imageMapper::toImageDto)
                 .toList();
     }
 

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, defineEmits } from 'vue';
 import api from "../plugins/axios.js";
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
 
 const selectedFile = ref<File | null>(null);
 const preview = ref<string | null>(null);
 const uploading = ref(false);
-const uploadStatus = ref<{ type: 'success' | 'error'; message: string } | null>(null);
+const emit = defineEmits(['uploaded']);
 
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -19,8 +22,6 @@ function handleFileSelect(event: Event) {
       preview.value = reader.result as string;
     };
     reader.readAsDataURL(file);
-    
-    uploadStatus.value = null;
   }
 }
 
@@ -28,7 +29,6 @@ async function uploadImage() {
   if (!selectedFile.value) return;
   
   uploading.value = true;
-  uploadStatus.value = null;
   
   const formData = new FormData();
   formData.append('file', selectedFile.value);
@@ -40,21 +40,19 @@ async function uploadImage() {
       }
     });
     
-    uploadStatus.value = {
-      type: 'success',
-      message: `Image uploaded successfully! ID: ${response.data.id}`
-    };
+    toast.success("Success", {
+      timeout: 2000
+    });
+
+    emit('uploaded');
     
-    setTimeout(() => {
-      selectedFile.value = null;
-      preview.value = null;
-    }, 2000);
+    selectedFile.value = null;
+   preview.value = null;
     
   } catch (error: any) {
-    uploadStatus.value = {
-      type: 'error',
-      message: error.response?.data?.message || 'Upload failed'
-    };
+    toast.error("Error uploading an image", {
+      timeout: 2000
+    });
   } finally {
     uploading.value = false;
   }
@@ -63,13 +61,12 @@ async function uploadImage() {
 function clearSelection() {
   selectedFile.value = null;
   preview.value = null;
-  uploadStatus.value = null;
 }
 </script>
 
 <template>
   <div class="upload-container">
-    <h2>Upload Floor Plan Image</h2>
+    <h2>Upload background image</h2>
     
     <div class="upload-area">
       <input
@@ -80,15 +77,10 @@ function clearSelection() {
         style="display: none"
       />
       <label for="file-upload" class="upload-label">
-        <div class="upload-icon">📤</div>
+        <v-icon size="40">mdi-upload</v-icon>
         <p>Click to upload image</p>
-        <p class="upload-hint">PNG, JPG, GIF up to 10MB</p>
+        <p class="upload-hint">PNG, JPG up to 10MB</p>
       </label>
-    </div>
-    
-    <div v-if="preview" class="preview-container">
-      <img :src="preview" alt="Preview" class="preview-image" />
-      <button @click="clearSelection" class="clear-button">✕</button>
     </div>
 
     <div v-if="selectedFile" class="file-info">
@@ -106,9 +98,6 @@ function clearSelection() {
       </div>
     </div>
     
-    <div v-if="uploadStatus" :class="['status', uploadStatus.type]">
-      {{ uploadStatus.message }}
-    </div>
     
     <button
       @click="uploadImage"
@@ -122,7 +111,7 @@ function clearSelection() {
 
 <style scoped>
 .upload-container {
-  max-width: 600px;
+  max-width: 400px;
   margin: 0 auto;
   padding: 2rem;
   background: white;
@@ -162,15 +151,6 @@ h2 {
   font-size: 0.875rem;
   color: #6b7280;
   margin-top: 0.5rem;
-}
-
-.preview-container {
-  position: relative;
-  margin-bottom: 1.5rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
-  background: #f9fafb;
 }
 
 .preview-image {

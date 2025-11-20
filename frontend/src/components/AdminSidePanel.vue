@@ -156,6 +156,21 @@
         <span>Deleted Desks</span>
       </v-tooltip>
 
+      <v-tooltip location="left">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            icon
+            variant="text"
+            class="rail-icon-btn"
+            v-bind="props"
+            @click="openAdmin('background-gallery')"
+          >
+            <v-icon size="24">mdi-camera-burst</v-icon>
+          </v-btn>
+        </template>
+        <span>Background gallery</span>
+      </v-tooltip>
+
       <v-divider class="my-2 mx-2"></v-divider>
 
       <v-tooltip location="left">
@@ -297,7 +312,7 @@ const details = ref<{ open: boolean; item: any | null }>({
   item: null,
 });
 
-function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | "settings"| "deleted-desks") {
+function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | "settings"| "deleted-desks" | "background-gallery") {
   const role = localStorage.getItem("role");
 
   if (String(role).toUpperCase() !== "ADMIN") {
@@ -309,7 +324,7 @@ function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | 
     return;
   }
 
-  const validPages = ["bookings", "desks", "users","statistics", "map", "settings", "deleted-desks"];
+  const validPages = ["bookings", "desks", "users","statistics", "map", "settings", "deleted-desks", "background-gallery"];
   const path = validPages.includes(page)
       ? `/admin-dashboard/${page}`
       : "/admin-dashboard";

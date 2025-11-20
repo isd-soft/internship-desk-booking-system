@@ -216,9 +216,9 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/images")
-    public ResponseEntity<List<ImageItemDto>> getAllListOfAllImages() {
+    public ResponseEntity<List<ImageDto>> getAllImages() {
         return ResponseEntity
-                .ok(adminService.getListOfAllImages());
+                .ok(adminService.getAllImages());
     }
 
     @PreAuthorize("hasRole('ADMIN')")

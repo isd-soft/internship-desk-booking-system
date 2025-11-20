@@ -4,5 +4,6 @@ public record ImageDto(
         Long id,
         String file_name,
         String content_type,
-        byte[] image_data
+        byte[] image_data,
+        boolean isBackground
 ) { }

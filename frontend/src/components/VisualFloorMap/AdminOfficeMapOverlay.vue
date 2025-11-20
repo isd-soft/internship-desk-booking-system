@@ -18,8 +18,8 @@ import {
 } from "../VisualFloorMap/adminFloorLayout";
 import api from "../../plugins/axios.js";
 import DeskEditModal from "./DeskEditModal.vue";
-import FileUploader from "../FileUploader.vue";
 import { zones } from "./adminFloorLayout";
+import { useToast } from "vue-toastification";
 
 const isDraggingNew = ref(false);
 const newDeskPreview = ref<{ x: number; y: number } | null>(null);
@@ -31,6 +31,7 @@ const isDraggingTemplate = ref(false);
 const dragTemplateData = ref<{ w: number; h: number; isHorizontal: boolean } | null>(null);
 const previewPosition = ref<{ x: number; y: number } | null>(null);
 const isDraggingDesk = ref(false);
+const toast = useToast();
 
 async function createNewDesk(newDesk: any){
   try{
@@ -162,6 +163,17 @@ function updateDesk(updated){
 }
 
 async function applyDeskChanges(updated: any) {
+  if(checkLowerThanZeroOrMoreThan(updated.x, imageDimensions.value.width)){
+    toast.error("{x} is invalid", {
+      timeout: 2000
+    });
+    return;
+  } else if (checkLowerThanZeroOrMoreThan(updated.y, imageDimensions.value.height)){
+    toast.error("{y} is invalid", {
+      timeout: 2000
+    });
+    return;
+  }
   await api.patch(`/admin/edit/desk/${Number(updated.i)}`, {
     displayName: updated.deskName,
     currentX: updated.x,
@@ -169,6 +181,10 @@ async function applyDeskChanges(updated: any) {
     height: updated.h,
     width: updated.w,
     zoneId: updated.zone.zoneId
+  });
+
+  toast.success("Success", {
+    timeout: 2000
   });
 
   updateDesk(updated);
@@ -210,7 +226,26 @@ function deleteDeskFromLayout(deskId: string){
     }
 }
 
+function checkLowerThanZeroOrMoreThan(toCheck: number, max: number){
+  return toCheck < 0 || toCheck > max;
+}
+
 function closeModal(updated: any){
+  if(checkLowerThanZeroOrMoreThan(updated.x, imageDimensions.value.width)){
+    showEditModal.value = false;
+    toast.warn("{x} is invalid", {
+      timeout: 2000
+    });
+    return;
+  }
+  if(checkLowerThanZeroOrMoreThan(updated.y, imageDimensions.value.height)){
+    showEditModal.value = false;
+    toast.warn("{y} is invalid", {
+      timeout: 2000
+    });
+    return;
+  }
+
   updateDesk(updated);
   showEditModal.value = false;
 }
@@ -254,6 +289,9 @@ async function saveAllChanges(){
     "/admin/desks/saveAll",
     allDesks
   );
+  toast.success("Saved!", {
+    timeout: 2000
+  });
     console.log(`Saved ${response.data} desks`);
   }catch(err){
     console.error("Failed to save all the desks: ", err)
@@ -288,9 +326,6 @@ onMounted(async () => {
               @dragstart="onDragStart($event, { w: HORIZONTAL_DESK_WIDTH, h: HORIZONTAL_DESK_HEIGHT, isHorizontal: true })"
           >
             <span class="label">Horizontal Desk</span>
-          </div>
-          <div>
-            <FileUploader/>
           </div>
         </div>
       </div>

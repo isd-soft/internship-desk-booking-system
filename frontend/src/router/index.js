@@ -11,6 +11,7 @@ import AdminBookings from "../components/AdminBookings.vue";
 import AdminDashboard from "../components/AdminDashboard.vue";
 import SettingsPage from "../components/SettingsPage.vue";
 import DeletedDesksPage from "@/components/DeletedDesksPage.vue";
+import BackgroundGallery from "../components/BackgroundGallery.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -39,6 +40,7 @@ const routes = [
             {path: "settings", name: "Settings", component: SettingsPage},
             {path: "deleted-desks", name:"b Deleted Desks", component: DeletedDesksPage },
             {path: "map", name: "Map", component: Map},
+            {path: "background-gallery", name:"background-gallery", component: BackgroundGallery}
         ],
     },
 ];
