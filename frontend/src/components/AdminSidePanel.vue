@@ -9,20 +9,7 @@
     elevation="4"
     :order="0"
   >
-    <!-- Toggle button -->
-    <div class="toggle-section" :class="{ 'rail-mode': !isExpanded }">
-      <v-btn
-        icon
-        variant="text"
-        size="small"
-        @click="togglePanel"
-        class="toggle-btn"
-      >
-        <v-icon>{{ isExpanded ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
-      </v-btn>
-    </div>
-
-    <PanelHeader v-if="isExpanded" />
+    <PanelHeader v-if="isExpanded" @toggle="togglePanel" />
 
     <AdminActionSections
         v-if="isExpanded"
@@ -31,9 +18,24 @@
         @openAdmin="openAdmin"
         @logout="logout"
     />
-
-    <!-- Rail icons (visible when collapsed) -->
     <div v-if="!isExpanded" class="rail-icons">
+      <v-tooltip location="right">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            icon
+            variant="text"
+            class="rail-icon-btn toggle-rail-btn"
+            v-bind="props"
+            @click="togglePanel"
+          >
+            <v-icon size="24">mdi-chevron-right</v-icon>
+          </v-btn>
+        </template>
+        <span>Expand Menu</span>
+      </v-tooltip>
+
+      <v-divider class="my-2 mx-2"></v-divider>
+
       <v-tooltip location="left">
         <template v-slot:activator="{ props }">
           <v-btn
@@ -354,29 +356,6 @@ function logout() {
   flex-direction: column;
 }
 
-.toggle-section {
-  padding: 8px 12px;
-  display: flex;
-  justify-content: flex-start;
-  border-bottom: 1px solid var(--panel-sep);
-  min-height: 48px;
-}
-
-.toggle-section.rail-mode {
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.toggle-btn {
-  color: var(--accent) !important;
-  transition: all 0.3s ease;
-}
-
-.toggle-btn:hover {
-  background: rgba(255, 138, 0, 0.1) !important;
-  transform: scale(1.1);
-}
-
 .rail-icons {
   display: flex;
   flex-direction: column;
@@ -392,6 +371,16 @@ function logout() {
   border-radius: 12px !important;
   transition: all 0.2s ease;
   color: var(--text-1) !important;
+}
+
+.rail-icon-btn.toggle-rail-btn {
+  background: rgba(255, 138, 0, 0.05) !important;
+  border: 1px solid rgba(255, 138, 0, 0.2);
+}
+
+.rail-icon-btn.toggle-rail-btn:hover {
+  background: rgba(255, 138, 0, 0.15) !important;
+  border-color: var(--accent);
 }
 
 .rail-icon-btn:hover {
