@@ -104,6 +104,19 @@
       <span class="btn-text">Deleted Desks</span>
     </v-btn>
 
+    <v-btn
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3"
+      elevation="0"
+      size="large"
+      @click="$emit('openAdmin', 'background-gallery')"
+    >
+      <v-icon class="mr-2" size="20">mdi-camera-burst</v-icon>
+      <span class="btn-text">Background gallery</span>
+    </v-btn>
+
     <v-divider class="my-2"></v-divider>
 
     <v-btn
