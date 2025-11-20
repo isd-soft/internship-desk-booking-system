@@ -62,6 +62,9 @@ public class AdminService {
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
     private final EmailService emailService;
+    private final FavouriteDesksService favouriteDesksService;
+
+    private final DeskDiffService diffService;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -211,6 +214,8 @@ public class AdminService {
         log.info("Editing desk with id {}", id);
 
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
+        Desk oldDesk = diffService.copy(desk);
+
 
         if (updates.displayName() != null) {
             String newName = normalizeName(updates.displayName());
@@ -250,6 +255,10 @@ public class AdminService {
         }
 
         deskRepository.save(desk);
+
+        List<String> changes = diffService.diff(oldDesk, desk);
+
+        favouriteDesksService.notifyUsersAboutDeskChanges(desk, changes);
 
         log.info("Desk {} updated successfully", id);
 

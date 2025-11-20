@@ -1,6 +1,7 @@
-package com.project.internship_desk_booking_system.service;
+package com.project.internship_desk_booking_system.service.impl;
 
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
+import com.project.internship_desk_booking_system.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -101,67 +104,27 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
-    public void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {
-        String formattedDate = dateTime.toLocalDate().toString();
-        String formattedTime = dateTime.toLocalTime().withSecond(0).withNano(0).toString();
+    public void sendImportantDeskRelatedEmail(String toEmail, String deskName, List<String> changes) {
+        String subject = "Desk Updated – ISD";
 
-        String subject = "Important Desk Information – ISD";
+        String changesHtml = changes.stream()
+                .map(change -> "<li>" + change + "</li>")
+                .collect(Collectors.joining());
+
         String html = """
-                <p>Hello,</p>
-                <p>There is an important update regarding your assigned desk.</p>
-                <p><strong>Details:</strong></p>
-                <ul>
-                    <li><strong>Desk:</strong> %s</li>
-                    <li><strong>Zone:</strong> %s</li>
-                    <li><strong>Date:</strong> %s</li>
-                    <li><strong>Time:</strong> %s</li>
-                </ul>
-                <p>Please check the ISD Booking System for more information.</p>
-                """.formatted(deskName, zone, formattedDate, formattedTime);
+            <p>Hello,</p>
+            <p>The desk <strong>%s</strong> has been updated.</p>
+            
+            <p><strong>Changes:</strong></p>
+            <ul style="padding-left:16px;">
+                %s
+            </ul>
+            
+            <p>Please check the ISD Booking System for more details.</p>
+            """.formatted(deskName, changesHtml);
 
         sendHtml(toEmail, subject, wrap(html));
 
-    }
-
-    private String wrap(String innerHtml) {
-        String template = """
-                <div style='font-family:Segoe UI,Roboto,Arial,sans-serif;
-                            font-size:14px;line-height:1.6;color:#111;
-                            background-color:#f9f9f9;padding:24px 0'>
-                  <div style='max-width:580px;margin:0 auto;
-                              background:#fff;
-                              border:1px solid #eee;
-                              border-radius:8px;
-                              box-shadow:0 2px 6px rgba(0,0,0,0.05);
-                              overflow:hidden;'>
-                
-                    <!-- HEADER -->
-                    <div style='background:linear-gradient(135deg, #ff8a00, #ffb347);
-                                text-align:center;
-                                padding:28px 0;'>
-                      <div style='color:#fff;
-                                  font-weight:700;
-                                  font-size:22px;
-                                  letter-spacing:0.5px;'>
-                        ISD Booking System
-                      </div>
-                    </div>
-                
-                    <!-- BODY -->
-                    <div style='padding:28px 24px;'>
-                      %s
-                    </div>
-                
-                    <!-- FOOTER -->
-                    <div style='font-size:12px;color:#888;
-                                text-align:center;border-top:1px solid #eee;
-                                padding:16px 0;background-color:#fafafa;'>
-                      This is an automated message. Please do not reply to this email.
-                    </div>
-                  </div>
-                </div>
-                """;
-        return String.format(template, innerHtml);
     }
 
     @Override
@@ -244,4 +207,45 @@ public class EmailServiceImpl implements EmailService {
         sendHtml(toEmail, subject, wrap(html));
     }
 
+
+    private String wrap(String innerHtml) {
+        String template = """
+                <div style='font-family:Segoe UI,Roboto,Arial,sans-serif;
+                            font-size:14px;line-height:1.6;color:#111;
+                            background-color:#f9f9f9;padding:24px 0'>
+                  <div style='max-width:580px;margin:0 auto;
+                              background:#fff;
+                              border:1px solid #eee;
+                              border-radius:8px;
+                              box-shadow:0 2px 6px rgba(0,0,0,0.05);
+                              overflow:hidden;'>
+                
+                    <!-- HEADER -->
+                    <div style='background:linear-gradient(135deg, #ff8a00, #ffb347);
+                                text-align:center;
+                                padding:28px 0;'>
+                      <div style='color:#fff;
+                                  font-weight:700;
+                                  font-size:22px;
+                                  letter-spacing:0.5px;'>
+                        ISD Booking System
+                      </div>
+                    </div>
+                
+                    <!-- BODY -->
+                    <div style='padding:28px 24px;'>
+                      %s
+                    </div>
+                
+                    <!-- FOOTER -->
+                    <div style='font-size:12px;color:#888;
+                                text-align:center;border-top:1px solid #eee;
+                                padding:16px 0;background-color:#fafafa;'>
+                      This is an automated message. Please do not reply to this email.
+                    </div>
+                  </div>
+                </div>
+                """;
+        return String.format(template, innerHtml);
+    }
 }
