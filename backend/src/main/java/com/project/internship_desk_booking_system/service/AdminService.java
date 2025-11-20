@@ -435,12 +435,37 @@ public class AdminService {
     }
 
     @Transactional
-    public BookingResponse cancelBooking(Long bookingId) {
-        Booking booking = findBookingById(bookingId);
-        log.info("Cancelling booking with id {}", bookingId);
-        booking.setStatus(BookingStatus.CANCELLED);
+    public BookingResponse cancelBooking(Long bookingId, String reason) {
+        Booking bookingToCancel = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found"));
 
-        return bookingMapper.toResponse(booking);
+        if (bookingToCancel.getStatus() == BookingStatus.CANCELLED) {
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "ALREADY_CANCELLED",
+                    "This booking is already cancelled"
+            );
+        }
+        bookingToCancel.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(bookingToCancel);
+
+        String userEmail = bookingToCancel.getUser().getEmail();
+
+        try {
+            emailService.sendCancelBookingAdminEmail(
+                    reason,
+                    userEmail,
+                    bookingToCancel.getId(),
+                    bookingToCancel.getDesk().getDeskName(),
+                    bookingToCancel.getDesk().getZone().getZoneName(),
+                    OffsetDateTime.now()
+            );
+        } catch (Exception e) {
+            log.error("Failed to send cancellation email for booking {}: {}",
+                    bookingId, e.getMessage(), e);
+        }
+
+        return bookingMapper.toResponse(bookingToCancel);
     }
 
     @Transactional

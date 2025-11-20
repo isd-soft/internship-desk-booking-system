@@ -117,10 +117,11 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("cancel/booking/{id}")
     public ResponseEntity<BookingResponse> cancelBooking(
-            @PathVariable("id") Long bookingId
-    ) {
+            @PathVariable("id") Long bookingId,
+            @RequestBody CancelBookingDTO request
+    ){
         return ResponseEntity
-                .ok(adminService.cancelBooking(bookingId));
+                .ok(adminService.cancelBooking(bookingId, request.getReason()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
