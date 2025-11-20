@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service used by administrators to manage desks, zones, users and bookings.
@@ -69,14 +70,15 @@ public class AdminService {
         }
         deskRepository.deleteById(userId);
     }
+
     /**
      * Makes non-sharred Desks TemporarilyAvailable
      *
      * @param desk, isTemporarilyAvailable
      * @return the period of LocalDateTime (from-until) when the desk was set TemporarilyAvailable
      * @throws ExceptionResponse if the desk was not enabled TemporarilyAvailable,
-     * "from" date is after "until" date,
-     * "until" date is set in the past
+     *                           "from" date is after "until" date,
+     *                           "until" date is set in the past
      */
     private void applyTemporaryAvailability(
             Desk desk,
@@ -140,6 +142,7 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
+
     /**
      * Creates new desk with deskName, Zone, type, status, TemporaryAvailability for 20 days, map coordinates
      *
@@ -215,6 +218,7 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
+
     /**
      * Deactivates an existing desk and sets it Temporary Unavailable
      *
@@ -240,6 +244,7 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
+
     /**
      * Activates an existing desk
      *
@@ -262,6 +267,7 @@ public class AdminService {
         log.info("Desk {} activated successfully", id);
         return deskMapper.toDto(desk);
     }
+
     /**
      * Edites an existing desk
      *
@@ -269,8 +275,8 @@ public class AdminService {
      * @return updates desk with what was changed (displayName, Zone, type, status,
      * TemporaryAvailability, map coordinates
      * @throws ExceptionResponse if the deskId was not found in the DeskRepository,
-     * if the deskName already exists in database, because of the unique contraints,
-     * if the zoneId was not found in the ZoneRepository
+     *                           if the deskName already exists in database, because of the unique contraints,
+     *                           if the zoneId was not found in the ZoneRepository
      */
     @Transactional
     public DeskDto editDesk(
@@ -324,10 +330,10 @@ public class AdminService {
         if (updates.baseY() != null) {
             desk.setBaseY(updates.baseY());
         }
-        if(updates.height() != null){
+        if (updates.height() != null) {
             desk.setHeight(updates.height());
         }
-        if(updates.width() != null){
+        if (updates.width() != null) {
             desk.setWidth(updates.width());
         }
 
@@ -339,6 +345,7 @@ public class AdminService {
     }
 
 // Update the deleteDesk method in AdminService.java
+
     /**
      * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
      * so the Admin could restore it.
@@ -397,11 +404,11 @@ public class AdminService {
     }
 
     @Transactional
-    public void restoreCoordinates(){
+    public void restoreCoordinates() {
         deskRepository.restoreCoordinates();
     }
 
-    public List<DeskDto>    getAllDesks(){
+    public List<DeskDto> getAllDesks() {
         List<Desk> desks = deskRepository.findAll();
         List<DeskDto> deskDtoList = new ArrayList<>();
         for (Desk desk : desks) {
@@ -414,9 +421,9 @@ public class AdminService {
     @Transactional
     public Integer saveAllDesks(
             List<DeskDto> updates
-    ){
+    ) {
         int count = 0;
-        for(DeskDto deskDto : updates){
+        for (DeskDto deskDto : updates) {
             boolean changed = false;
 
             log.info(
@@ -425,43 +432,43 @@ public class AdminService {
             );
             Desk desk = getDeskOrCreate(deskDto);
 
-            if(!deskDto.displayName().equals(desk.getDeskName())){
+            if (!deskDto.displayName().equals(desk.getDeskName())) {
                 desk.setDeskName(deskDto.displayName());
                 changed = true;
             }
-            if(!deskDto.zoneDto().getId().equals(desk.getZone().getId())){
+            if (!deskDto.zoneDto().getId().equals(desk.getZone().getId())) {
                 Zone zone = zoneRepository
                         .findById(deskDto.zoneDto().getId())
-                                .orElseThrow(()-> new ExceptionResponse(
-                                        HttpStatus.NOT_FOUND,
-                                        "ZONE_NOT_FOUND",
-                                        String.format(
-                                                "Zone with id %d not found",
-                                                deskDto.zoneDto().getId()
-                                        )
-                                ));
+                        .orElseThrow(() -> new ExceptionResponse(
+                                HttpStatus.NOT_FOUND,
+                                "ZONE_NOT_FOUND",
+                                String.format(
+                                        "Zone with id %d not found",
+                                        deskDto.zoneDto().getId()
+                                )
+                        ));
 
                 desk.setZone(zone);
                 changed = true;
             }
-            if(!deskDto.currentX().equals(desk.getCurrentX())){
+            if (!deskDto.currentX().equals(desk.getCurrentX())) {
                 desk.setCurrentX(deskDto.currentX());
                 changed = true;
             }
-            if(!deskDto.currentY().equals(desk.getCurrentY())){
+            if (!deskDto.currentY().equals(desk.getCurrentY())) {
                 desk.setCurrentY(deskDto.currentY());
                 changed = true;
             }
-            if(!deskDto.height().equals(desk.getHeight())){
+            if (!deskDto.height().equals(desk.getHeight())) {
                 desk.setHeight(deskDto.height());
                 changed = true;
             }
-            if(!deskDto.width().equals(desk.getWidth())){
+            if (!deskDto.width().equals(desk.getWidth())) {
                 desk.setWidth(deskDto.width());
                 changed = true;
             }
 
-            if(changed || desk.getId() == null){
+            if (changed || desk.getId() == null) {
                 deskRepository.save(desk);
                 count++;
             }
@@ -471,7 +478,7 @@ public class AdminService {
 
     private Desk getDeskOrCreate(
             DeskDto deskDto
-    ){
+    ) {
         return deskRepository
                 .findById(deskDto.id())
                 .orElseGet(() -> {
@@ -480,7 +487,7 @@ public class AdminService {
                             deskDto.id()
                     );
 
-                    Zone zone  = zoneRepository
+                    Zone zone = zoneRepository
                             .findById(deskDto.zoneDto().getId())
                             .orElseThrow(() -> new ExceptionResponse(
                                     HttpStatus.NOT_FOUND,
@@ -576,10 +583,10 @@ public class AdminService {
 
             Desk newDesk = deskRepository.findById(newDeskId)
                     .orElseThrow(() -> new ExceptionResponse(
-                    HttpStatus.NOT_FOUND,
-                    "DESK_NOT_FOUND",
-                    "Desk with id " + bookingUpdateCommand.deskId() + " not found"
-            ));
+                            HttpStatus.NOT_FOUND,
+                            "DESK_NOT_FOUND",
+                            "Desk with id " + bookingUpdateCommand.deskId() + " not found"
+                    ));
 
 
             if (newDesk.getType() == DeskType.ASSIGNED) {
@@ -761,17 +768,16 @@ public class AdminService {
     public List<ZoneDto> getAllZones() {
         List<Zone> zones = zoneRepository.findAll();
         List<ZoneDto> zoneDtoList = new ArrayList<>();
-        for(Zone zone : zones){
+        for (Zone zone : zones) {
             ZoneDto zoneDTO = zoneMapper.toDto(zone);
             zoneDtoList.add(zoneDTO);
         }
         return zoneDtoList;
     }
 
-    //this method should not work right now
-    public List<ImageDto> getAllImages(){
+    public List<ImageItemDto> getListOfAllImages() {
         List<Image> images = imageRepository.findAll();
-        if(images.isEmpty()){
+        if (images.isEmpty()) {
             throw new ExceptionResponse(
                     HttpStatus.NOT_FOUND,
                     "IMAGES_NOT_FOUND",
@@ -780,20 +786,20 @@ public class AdminService {
         }
         return images
                 .stream()
-                .map(imageMapper::toImageDto)
+                .map(imageMapper::toImageItem)
                 .toList();
     }
 
     @Transactional
     public void uploadImage(
             MultipartFile file
-    ){
+    ) {
         Image newImage = new Image();
         newImage.setFileName(file.getOriginalFilename());
 
         try {
             newImage.setImageData(file.getBytes());
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new ExceptionResponse(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "CANNOT_READ_IMAGE_FILE",
@@ -827,6 +833,31 @@ public class AdminService {
         log.info("Updated user role: {} -> {}", oldRole, dto.getRole());
 
         return new EmailRoleDTO(user.getEmail(), user.getRole());
+    }
+
+
+    @Transactional
+    public void setBackgroundImage(
+            Long id
+    ){
+        Image newBackground = imageRepository
+                .findById(id)
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        String.format(
+                                "Image with id %d not found",
+                                id
+                        )
+                ));
+
+        Optional<Image> backgroundImage = imageRepository.findBackground();
+
+        backgroundImage
+                .filter(img -> !img.getId().equals(id))
+                .ifPresent(img -> img.setBackground(false));
+
+        newBackground.setBackground(true);
     }
 
     private String normalizeName(String name) {

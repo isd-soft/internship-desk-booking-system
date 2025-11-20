@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+
 /**
  * REST controller exposing administrative operations for desks, bookings, zones, and users.
  * <p>
@@ -35,7 +36,7 @@ import java.util.List;
  *     <li>Retrieval of zones, statuses, and enum-based metadata</li>
  *     <li>Fetching registered users for reporting</li>
  * </ul>
- *
+ * <p>
  * All business logic is delegated to {@link AdminService}, {@link DeskService},
  * and {@link BookingService}.
  *
@@ -189,7 +190,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/desks/restoreCoordinates")
-    public ResponseEntity<Void> restoreCoordinates(){
+    public ResponseEntity<Void> restoreCoordinates() {
         adminService.restoreCoordinates();
         return ResponseEntity.ok().build();
     }
@@ -198,7 +199,7 @@ public class AdminController {
     @PatchMapping("/desks/saveAll")
     public ResponseEntity<Integer> saveAll(
             @RequestBody List<DeskDto> updates
-    ){
+    ) {
         return ResponseEntity.ok(
                 adminService.saveAllDesks(updates)
         );
@@ -216,11 +217,11 @@ public class AdminController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/images/")
-    public ResponseEntity<List<ImageDto>> getAllImages(){
-        return ResponseEntity.ok(adminService.getAllImages());
+    @GetMapping("/images")
+    public ResponseEntity<List<ImageItemDto>> getAllListOfAllImages() {
+        return ResponseEntity
+                .ok(adminService.getListOfAllImages());
     }
-
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/images/upload")
@@ -231,11 +232,25 @@ public class AdminController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .build();
+    }
+
     @PatchMapping("/users/role")
     public ResponseEntity<EmailRoleDTO> updateUserRole(
             @RequestBody @Valid EmailRoleDTO dto
     ) {
         log.info("Admin request to change user role: {}", dto);
         return ResponseEntity.ok(adminService.updateUserRole(dto));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PatchMapping("/images/setBackground/{id}")
+    public ResponseEntity<byte[]> setBackgroundImage(
+            @PathVariable("id") Long id
+    ) {
+        adminService.setBackgroundImage(id);
+
+        return ResponseEntity
+                .ok()
+                .build();
     }
 }

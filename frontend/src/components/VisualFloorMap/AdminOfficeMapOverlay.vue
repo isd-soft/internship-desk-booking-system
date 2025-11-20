@@ -10,7 +10,7 @@ import {
   HORIZONTAL_DESK_HEIGHT,
   HORIZONTAL_DESK_WIDTH,
   imageDimensions,
-  getImageFromBackend,
+  getBackgroundFromBackend,
   imageUrl,
 } from "../VisualFloorMap/floorLayout";
 import {
@@ -262,7 +262,7 @@ async function saveAllChanges(){
 
 onMounted(async () => {
   resetLayout();
-  getImageFromBackend(2);
+  getBackgroundFromBackend();
   await getAllDesksFromBackend();
 });
 </script>
@@ -288,6 +288,9 @@ onMounted(async () => {
               @dragstart="onDragStart($event, { w: HORIZONTAL_DESK_WIDTH, h: HORIZONTAL_DESK_HEIGHT, isHorizontal: true })"
           >
             <span class="label">Horizontal Desk</span>
+          </div>
+          <div>
+            <FileUploader/>
           </div>
         </div>
       </div>
