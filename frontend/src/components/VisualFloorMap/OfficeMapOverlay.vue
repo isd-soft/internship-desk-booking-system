@@ -12,6 +12,8 @@ import {
   getBackgroundFromBackend,
   imageDimensions,
 } from "../VisualFloorMap/floorLayout";
+
+import {getColor,fetchColors} from "@/utils/useEnums";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 import { useFavouritesStore } from "@/stores/favourites";
 
@@ -52,6 +54,7 @@ const scaledHeightCompensation = computed(() =>
 
 onMounted(async () => {
   resetLayout();
+  await fetchColors(); // Load color mappings from backend FIRST
   loadDesksFromBackend();
   getBackgroundFromBackend();
   console.log(imageUrl);
@@ -137,25 +140,6 @@ function handleDeskClick(item: any) {
   console.log("Clicked desk:", item.i);
   selectedDesk.value = item;
   showBookingModal.value = true;
-}
-
-function getDeskColor(color: string) {
-  switch (color) {
-    case "GREEN":
-      return "#50C878";
-    case "RED":
-      return "#EE4B2B";
-    case "AMBER":
-      return "#FFBF00";
-    case "BLUE":
-      return "#7393B3";
-    case "GRAY":
-      return "#818589	";
-    case "PURPLE":
-      return "#E1BEE7";
-    default:
-      return "";
-  }
 }
 
 function isDeskBooked(id: string) {
@@ -267,7 +251,7 @@ watch(
             }"
             @click="handleDeskClick(item)"
             :style="{
-              backgroundColor: getDeskColor(item.color),
+              backgroundColor: getColor(item.color),
               cursor: item.isNonInteractive ? 'default' : 'pointer',
             }"
           >
