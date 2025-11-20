@@ -16,6 +16,7 @@ import java.util.Objects;
 @Setter
 @Entity
 @Table(name = "desk")
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLDelete(sql = "UPDATE DESK SET is_deleted = true WHERE id = ?")

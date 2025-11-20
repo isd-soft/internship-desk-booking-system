@@ -35,7 +35,7 @@ public class AuthService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            rsaCryptoService.decrypt(request.getPassword())
+                            rsaCryptoService.tryDecrypt(request.getPassword())
                     )
             );
 
@@ -67,8 +67,8 @@ public class AuthService {
     @Transactional
     public void register(RegisterCommandRequest request) {
 
-        String rawPassword = rsaCryptoService.decrypt(request.getPassword());
-        String rawConfirmPassword = rsaCryptoService.decrypt(request.getConfirmPassword());
+        String rawPassword = rsaCryptoService.tryDecrypt(request.getPassword());
+        String rawConfirmPassword = rsaCryptoService.tryDecrypt(request.getConfirmPassword());
 
         checkIfEmailExists(request.getEmail());
         validatePasswordMatch(rawPassword, rawConfirmPassword);

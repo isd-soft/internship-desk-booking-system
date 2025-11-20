@@ -24,6 +24,7 @@ public class FavouriteDesksService {
     private final DeskRepository deskRepository;
     private final UserRepository userRepository;
     private final FavouriteDeskMapper favouriteDeskMapper;
+    private final EmailService emailService;
 
     @Transactional
     public void addFavouriteDesk(String email, Long deskId) {
@@ -58,6 +59,23 @@ public class FavouriteDesksService {
                 .stream()
                 .map(favouriteDeskMapper::toDto)
                 .toList();
+    }
+
+    public void notifyUsersAboutDeskChanges(Desk desk, List<String> changes) {
+        if (changes == null || changes.isEmpty()) {
+            return;
+        }
+
+        List<String> emails = favouriteDesksRepository.findEmailsByDeskId(desk.getId());
+
+        emails.stream()
+                .forEach(email ->
+                        emailService.sendImportantDeskRelatedEmail(
+                                email,
+                                desk.getDeskName(),
+                                changes
+                        )
+                );
     }
 
 }
