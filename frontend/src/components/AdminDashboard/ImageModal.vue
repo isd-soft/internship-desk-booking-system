@@ -1,28 +1,34 @@
 <template>
   <Teleport to="body">
     <div class="modal-overlay" @click="$emit('close')">
-      
       <div class="modal-content" @click.stop>
-        <button class="close-btn" @click="$emit('close')">×</button>
-        
-        <img 
-          :src="src" 
-          :alt="alt" 
-          class="modal-image"
-        />
-        
+        <v-btn
+          icon
+          variant="text"
+          size="large"
+          class="close-btn"
+          @click="$emit('close')"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+
+        <img :src="src" :alt="alt" class="modal-image" />
+
         <div class="modal-footer">
           <p class="modal-caption">{{ alt }}</p>
-          
-          <button 
-            class="action-btn" 
-            @click="setAsBackground" 
-            :disabled="isProcessing"
-          >
-            {{ isProcessing ? 'Saving...' : 'Make Background' }}
-          </button>
-        </div>
 
+          <v-btn
+            color="success"
+            variant="flat"
+            class="action-btn"
+            @click="setAsBackground"
+            :loading="isProcessing"
+            :disabled="isProcessing"
+            prepend-icon="mdi-check-circle-outline"
+          >
+            {{ isProcessing ? 'Saving...' : 'Set as Background' }}
+          </v-btn>
+        </div>
       </div>
     </div>
   </Teleport>
@@ -39,6 +45,7 @@ const props = defineProps<{
     content_type: string;
     image_data: string;
     file_name: string;
+    isBackground: boolean;
   }
 }>();
 
@@ -60,13 +67,17 @@ const setAsBackground = async () => {
 
   try {
     await api.patch(`/admin/images/setBackground/${props.image.id}`);
-    toast.success("Success", {
+    toast.success("Background image updated successfully!", {
       timeout: 2000
     });
     emit('updated', props.image.id);
     emit('close');
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Error setting background:", error);
+    const errorMessage = error.response?.data?.message || "Failed to set background.";
+    toast.error(errorMessage, {
+      timeout: 3000
+    });
   } finally {
     isProcessing.value = false;
   }
@@ -88,19 +99,29 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
   padding: 20px;
   cursor: zoom-out;
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
@@ -111,65 +132,70 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   cursor: default;
+  background: #171717;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  padding: 20px;
 }
 
 .modal-image {
   max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  border-radius: 12px;
 }
 
 .modal-footer {
-  margin-top: 15px;
+  margin-top: 20px;
   text-align: center;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
   align-items: center;
+  width: 100%;
+  max-width: 700px; 
+  padding: 0 10px;
+  gap: 20px;
 }
 
 .modal-caption {
-  color: white;
+  color: #f5f5f5;
   font-size: 16px;
+  font-weight: 600;
   margin: 0;
+  flex-grow: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .action-btn {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: bold;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0.3px;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s ease;
+  padding: 0 16px !important;
 }
 
-.action-btn:hover {
-  background-color: #45a049;
-}
-
-.action-btn:disabled {
-  background-color: #888;
-  cursor: not-allowed;
+.action-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px);
 }
 
 .close-btn {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 30px;
-  cursor: pointer;
-  line-height: 1;
+  position: absolute !important;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  z-index: 10;
+  transition: background-color 0.2s, transform 0.2s;
 }
 
 .close-btn:hover {
-  color: #ff5555;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: rotate(90deg);
 }
 </style>

@@ -1,3 +1,100 @@
+<template>
+  <v-dialog v-model="showDialog" max-width="500px">
+    <template #activator="{ props }">
+      <v-btn
+        v-bind="props"
+        color="#171717"
+        variant="flat"
+        class="control-button upload-activator-button"
+        prepend-icon="mdi-plus"
+        :disabled="uploading"
+      >
+        Upload Image
+      </v-btn>
+    </template>
+
+    <v-card class="upload-dialog-card">
+      <v-card-title class="dialog-header">
+        <v-icon color="#171717" class="mr-2">mdi-image-plus</v-icon>
+        Upload Background Image
+      </v-card-title>
+
+      <v-card-text class="dialog-content">
+        <div class="upload-area" :class="{ 'has-file': selectedFile }">
+          <input
+            type="file"
+            id="file-upload"
+            accept="image/png, image/jpeg"
+            @change="handleFileSelect"
+            style="display: none"
+          />
+          <label for="file-upload" class="upload-label">
+            <template v-if="!selectedFile">
+              <v-icon size="40" color="#a3a3a3">mdi-cloud-upload-outline</v-icon>
+              <p class="upload-text">Click or drag image to upload</p>
+              <p class="upload-hint">PNG, JPG up to 10MB</p>
+            </template>
+            <template v-else>
+              <div class="file-preview-wrapper">
+                <img :src="preview" alt="Preview" class="preview-image" />
+                <v-btn
+                  icon
+                  size="small"
+                  variant="flat"
+                  color="#ef4444"
+                  class="clear-button"
+                  @click.stop="clearSelection"
+                  >
+                  <v-icon size="large">mdi-close</v-icon>
+                </v-btn>
+              </div>
+            </template>
+          </label>
+        </div>
+
+        <div v-if="selectedFile" class="file-info">
+          <div class="info-row">
+            <span class="info-label">File name:</span>
+            <span class="info-value">{{ selectedFile.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Size:</span>
+            <span class="info-value"
+              >{{ (selectedFile.size / 1024).toFixed(2) }} KB</span
+            >
+          </div>
+          <div class="info-row">
+            <span class="info-label">Type:</span>
+            <span class="info-value">{{ selectedFile.type }}</span>
+          </div>
+        </div>
+      </v-card-text>
+
+      <v-card-actions class="dialog-actions">
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="closeDialog"
+          :disabled="uploading"
+          color="#525252"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          color="#171717"
+          variant="flat"
+          @click="uploadImage"
+          :loading="uploading"
+          :disabled="!selectedFile || uploading"
+          class="upload-action-button"
+        >
+          {{ uploading ? 'Uploading...' : 'Upload' }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
 <script setup lang="ts">
 import { ref, defineEmits } from 'vue';
 import api from "../plugins/axios.js";
@@ -8,15 +105,16 @@ const toast = useToast();
 const selectedFile = ref<File | null>(null);
 const preview = ref<string | null>(null);
 const uploading = ref(false);
+const showDialog = ref(false);
 const emit = defineEmits(['uploaded']);
 
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
-  
+  target.value = ''; 
+
   if (file) {
     selectedFile.value = file;
-    
     const reader = new FileReader();
     reader.onloadend = () => {
       preview.value = reader.result as string;
@@ -27,31 +125,31 @@ function handleFileSelect(event: Event) {
 
 async function uploadImage() {
   if (!selectedFile.value) return;
-  
+
   uploading.value = true;
-  
+
   const formData = new FormData();
   formData.append('file', selectedFile.value);
-  
+
   try {
     const response = await api.post('/admin/images/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
-    
-    toast.success("Success", {
+
+    toast.success("Image uploaded successfully!", {
       timeout: 2000
     });
 
     emit('uploaded');
-    
-    selectedFile.value = null;
-   preview.value = null;
-    
+    closeDialog();
+
   } catch (error: any) {
-    toast.error("Error uploading an image", {
-      timeout: 2000
+    console.error("Upload Error:", error);
+    const errorMessage = error.response?.data?.message || "Failed to upload image.";
+    toast.error(errorMessage, {
+      timeout: 3000
     });
   } finally {
     uploading.value = false;
@@ -62,183 +160,151 @@ function clearSelection() {
   selectedFile.value = null;
   preview.value = null;
 }
+
+function closeDialog() {
+    clearSelection();
+    showDialog.value = false;
+}
 </script>
 
-<template>
-  <div class="upload-container">
-    <h2>Upload background image</h2>
-    
-    <div class="upload-area">
-      <input
-        type="file"
-        id="file-upload"
-        accept="image/*"
-        @change="handleFileSelect"
-        style="display: none"
-      />
-      <label for="file-upload" class="upload-label">
-        <v-icon size="40">mdi-upload</v-icon>
-        <p>Click to upload image</p>
-        <p class="upload-hint">PNG, JPG up to 10MB</p>
-      </label>
-    </div>
-
-    <div v-if="selectedFile" class="file-info">
-      <div class="info-row">
-        <span>File name:</span>
-        <span>{{ selectedFile.name }}</span>
-      </div>
-      <div class="info-row">
-        <span>Size:</span>
-        <span>{{ (selectedFile.size / 1024).toFixed(2) }} KB</span>
-      </div>
-      <div class="info-row">
-        <span>Type:</span>
-        <span>{{ selectedFile.type }}</span>
-      </div>
-    </div>
-    
-    
-    <button
-      @click="uploadImage"
-      :disabled="!selectedFile || uploading"
-      class="upload-button"
-    >
-      {{ uploading ? 'Uploading...' : 'Upload Image' }}
-    </button>
-  </div>
-</template>
-
 <style scoped>
-.upload-container {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
+.control-button {
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.3px;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s ease;
+  height: 40px !important;
+}
+
+.control-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+.upload-dialog-card {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dialog-header {
+  font-weight: 700;
+  font-size: 20px;
+  color: #171717;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.dialog-content {
+  padding: 24px 24px 16px;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
+}
+
+.upload-action-button {
+  font-weight: 600 !important;
+  border-radius: 8px !important;
 }
 
 .upload-area {
   border: 2px dashed #d1d5db;
   border-radius: 12px;
-  padding: 3rem;
+  padding: 2.5rem;
   text-align: center;
-  margin-bottom: 1.5rem;
-  transition: border-color 0.3s;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
 }
 
-.upload-area:hover {
-  border-color: #3b82f6;
+.upload-area:hover:not(.has-file) {
+  border-color: #737373; 
+  background-color: #fcfcfc;
+}
+
+.upload-area.has-file {
+  padding: 1rem;
+  border: 1px solid #e5e5e5;
 }
 
 .upload-label {
   cursor: pointer;
   display: block;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+.upload-text {
+  font-weight: 600;
+  color: #171717;
+  font-size: 15px;
+  margin: 0;
 }
 
 .upload-hint {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.5rem;
+  font-size: 12px;
+  color: #737373;
+  margin: 0;
+}
+
+.file-preview-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 300px;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .preview-image {
-  max-width: 100%;
-  max-height: 400px;
+  width: 100%;
+  height: auto;
   display: block;
-  margin: 0 auto;
-  border-radius: 8px;
 }
 
 .clear-button {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .file-info {
-  background: #f9fafb;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+  background: #f5f5f5;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  margin-bottom: 4px;
 }
 
-.info-row span:first-child {
+.info-label {
   font-weight: 600;
-  color: #6b7280;
+  color: #737373;
+  letter-spacing: 0.3px;
 }
 
-.status {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status.success {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-}
-
-.status.error {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
-}
-
-.upload-button {
-  width: 100%;
-  padding: 1rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.upload-button:hover:not(:disabled) {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.upload-button:disabled {
-  background: #d1d5db;
-  cursor: not-allowed;
-  transform: none;
+.info-value {
+  font-weight: 700;
+  color: #171717;
 }
 </style>
