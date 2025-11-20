@@ -74,7 +74,7 @@ public class BookingServiceValidation {
     }
 
 
-    private void validateTemporaryWindow(Desk desk, LocalDateTime start, LocalDateTime end) {
+    public void validateTemporaryWindow(Desk desk, LocalDateTime start, LocalDateTime end) {
 
         LocalDateTime from = desk.getTemporaryAvailableFrom();
         LocalDateTime until = desk.getTemporaryAvailableUntil();

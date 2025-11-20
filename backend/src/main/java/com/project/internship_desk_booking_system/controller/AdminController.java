@@ -5,11 +5,6 @@ import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
 import com.project.internship_desk_booking_system.dto.*;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
-import com.project.internship_desk_booking_system.dto.DeskCoordinatesDTO;
-import com.project.internship_desk_booking_system.dto.DeskDto;
-import com.project.internship_desk_booking_system.dto.DeskUpdateDTO;
-import com.project.internship_desk_booking_system.dto.EmailRoleDTO;
-import com.project.internship_desk_booking_system.dto.ZoneDto;
 import com.project.internship_desk_booking_system.service.AdminService;
 import com.project.internship_desk_booking_system.service.BookingService;
 import com.project.internship_desk_booking_system.service.DeskService;
@@ -25,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+
 /**
  * REST controller exposing administrative operations for desks, bookings, zones, and users.
  * <p>
@@ -37,7 +33,7 @@ import java.util.List;
  *     <li>Retrieval of zones, statuses, and enum-based metadata</li>
  *     <li>Fetching registered users for reporting</li>
  * </ul>
- *
+ * <p>
  * All business logic is delegated to {@link AdminService}, {@link DeskService},
  * and {@link BookingService}.
  *
@@ -219,7 +215,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/images/")
-    public ResponseEntity<List<ImageDto>> getAllImages(){
+    public ResponseEntity<List<ImageDto>> getAllImages() {
         return ResponseEntity.ok(adminService.getAllImages());
     }
 
@@ -233,6 +229,9 @@ public class AdminController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/role")
     public ResponseEntity<EmailRoleDTO> updateUserRole(
             @RequestBody @Valid EmailRoleDTO dto, @AuthenticationPrincipal CustomUserPrincipal principal
