@@ -17,7 +17,6 @@
             hide-details
             clearable
             placeholder="Search bookings..."
-            style="max-width: 250px"
             :disabled="loading"
             class="control-input"
           />
@@ -29,7 +28,6 @@
             item-value="value"
             density="compact"
             variant="outlined"
-            style="max-width: 180px"
             :disabled="loading"
             :clearable="false"
             hide-details
@@ -44,7 +42,6 @@
             item-value="value"
             density="compact"
             variant="outlined"
-            style="max-width: 180px"
             :disabled="loading"
             :clearable="false"
             hide-details
@@ -573,6 +570,19 @@ watch(statusFilter, (val) => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.control-input {
+  min-width: 180px;
+  width: 250px;
+  max-width: 300px;
+}
+
+.control-select {
+  min-width: 150px;
+  width: 200px;
+  max-width: 220px;
 }
 
 .control-input :deep(.v-field),

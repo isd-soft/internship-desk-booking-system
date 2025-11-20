@@ -15,19 +15,17 @@
               hide-details
               clearable
               placeholder="Search desks..."
-              style="max-width: 250px;"
               :disabled="loading"
               class="search-field"
           />
 
           <v-select
               v-model="statusFilter"
-              :items="statusOptions"
+              :items="statusDeskOptions"
               item-title="title"
               item-value="value"
               density="compact"
               variant="outlined"
-              style="max-width: 180px"
               :disabled="loading"
               :clearable="false"
               hide-details
@@ -37,12 +35,11 @@
 
           <v-select
               v-model="typeFilter"
-              :items="typeOptions"
+              :items="typeDeskOptions"
               item-title="title"
               item-value="value"
               density="compact"
               variant="outlined"
-              style="max-width: 180px"
               :disabled="loading"
               :clearable="false"
               hide-details
@@ -278,7 +275,7 @@ import { useRoute } from "vue-router";
 import api from '../plugins/axios';
 import DeskEditModal from "../components/AdminDashboard/DeskEditModal.vue";
 import DeskViewModal from "../components/AdminDashboard/DeskViewModal.vue";
-import { fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors, getColor } from "@/utils/useEnums";
+import { fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors, getColor,statusDeskOptions,typeDeskOptions } from "@/utils/useEnums";
 
 // State
 const desks = ref([]);
@@ -551,6 +548,12 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.search-field {
+  min-width: 180px;
+  width: 250px;
+  max-width: 300px;
+}
+
 .search-field :deep(.v-field) {
   border-radius: 12px !important;
   border: 2px solid #e5e5e5 !important;
@@ -570,6 +573,12 @@ onMounted(() => {
 .search-field :deep(input::placeholder) {
   color: #a3a3a3;
   font-weight: 500;
+}
+
+.filter-select {
+  min-width: 150px;
+  width: 200px;
+  max-width: 220px;
 }
 
 .filter-select :deep(.v-field) {
