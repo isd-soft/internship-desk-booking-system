@@ -214,17 +214,7 @@ public class AdminService {
 
         if (updates.displayName() != null) {
             String newName = normalizeName(updates.displayName());
-
-            if (!desk.getDeskName().equals(newName)) {
-                if (deskRepository.existsByDeskName(newName)) {
-                    throw new ExceptionResponse(
-                            HttpStatus.BAD_REQUEST,
-                            "DESK_NAME_EXISTS",
-                            "Desk with name '" + newName + "' already exists"
-                    );
-                }
-            }
-
+            adminServiceValidation.validateDeskNameUniqueness(desk.getDeskName(), newName);
             desk.setDeskName(newName);
         }
         if (updates.zoneId() != null) {
@@ -232,7 +222,7 @@ public class AdminService {
             desk.setZone(zone);
         }
         if (updates.type() != null) {
-            desk.setType(updates.type());
+            adminServiceValidation.applyAutoDeactivationForType(desk, updates.type());
         }
         if (updates.deskStatus() != null) {
             desk.setStatus(updates.deskStatus());
@@ -265,6 +255,7 @@ public class AdminService {
 
         return deskMapper.toDto(desk);
     }
+
 
 // Update the deleteDesk method in AdminService.java
 
@@ -487,7 +478,7 @@ public class AdminService {
                 throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_ASSIGNED", "A assigned desk cant have active bookings");
             }
 
-            bookingValidation.validateTemporaryWindow(newDesk,bookingUpdateCommand.startTime(),bookingUpdateCommand.endTime());
+            bookingValidation.validateTemporaryWindow(newDesk, bookingUpdateCommand.startTime(), bookingUpdateCommand.endTime());
 
         }
 
@@ -671,10 +662,10 @@ public class AdminService {
     @Transactional
     public void setBackgroundImage(
             Long id
-    ){
+    ) {
         Image newBackground = imageRepository
                 .findById(id)
-                .orElseThrow(()-> new ExceptionResponse(
+                .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "IMAGE_NOT_FOUND",
                         String.format(
