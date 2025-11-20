@@ -368,7 +368,7 @@ function logout() {
 .rail-icon-btn {
   width: 48px;
   height: 48px;
-  border-radius: 12px !important;
+  border-radius: 20px !important;
   transition: all 0.2s ease;
   color: var(--text-1) !important;
 }
@@ -394,6 +394,9 @@ function logout() {
 
 .rail-icon-btn.danger:hover {
   background: rgba(185, 28, 28, 0.1) !important;
+}
+.gradient-btn{
+  background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
 }
 
 .snackbar-text {
