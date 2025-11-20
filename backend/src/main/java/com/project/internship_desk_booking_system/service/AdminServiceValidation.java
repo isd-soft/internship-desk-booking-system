@@ -23,4 +23,5 @@ public class AdminServiceValidation {
             throw new ExceptionResponse(HttpStatus.CONFLICT,"IS_ADMIN","You cannot change your role");
         }
     }
+
 }

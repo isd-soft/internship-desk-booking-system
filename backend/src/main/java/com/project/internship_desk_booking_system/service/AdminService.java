@@ -213,7 +213,19 @@ public class AdminService {
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
 
         if (updates.displayName() != null) {
-            desk.setDeskName(normalizeName(updates.displayName()));
+            String newName = normalizeName(updates.displayName());
+
+            if (!desk.getDeskName().equals(newName)) {
+                if (deskRepository.existsByDeskName(newName)) {
+                    throw new ExceptionResponse(
+                            HttpStatus.BAD_REQUEST,
+                            "DESK_NAME_EXISTS",
+                            "Desk with name '" + newName + "' already exists"
+                    );
+                }
+            }
+
+            desk.setDeskName(newName);
         }
         if (updates.zoneId() != null) {
             Zone zone = zoneRepository.findById(updates.zoneId()).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "ZONE_NOT_FOUND", "Zone not found: " + updates.zoneId()));
