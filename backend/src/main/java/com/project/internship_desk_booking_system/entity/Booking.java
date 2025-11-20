@@ -34,9 +34,6 @@ public class Booking {
     @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Desk desk;
 
-    @Column(name = "desk_id", insertable = false, updatable = false)
-    private Long deskId;
-
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 

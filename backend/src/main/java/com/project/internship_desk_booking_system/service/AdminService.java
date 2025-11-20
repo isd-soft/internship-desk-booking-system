@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,7 @@ public class AdminService {
     private final AdminServiceValidation adminServiceValidation;
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
+    private final EmailService emailService;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -269,13 +271,17 @@ public class AdminService {
     public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
+        List<Booking> bookings = new ArrayList<>();
+
         if (hasActiveBookings(desk)) {
             log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
+            bookings.addAll(bookingRepository.findActiveBookingsForDesk(id));
             bookingRepository.cancelAllActiveBookingsForDesk(id);
             log.info("All active bookings for desk {} have been cancelled", id);
         }
         if (hasScheduledBookings(desk)) {
             log.info("Desk {} has scheduled bookings. Cancelling them before deletion.", id);
+            bookings.addAll(bookingRepository.findPendingBookingsForDesk(id));
             bookingRepository.cancelAllPendingBookingsForDesk(id);
             log.info("All scheduled bookings for desk {} have been cancelled", id);
         }
@@ -285,8 +291,25 @@ public class AdminService {
         desk.setReasonOfDeletion(reason != null && !reason.trim().isEmpty() ? reason.trim() : "No reason provided");
 
         deskRepository.save(desk);
-
         log.info("Desk {} soft deleted successfully with reason: {}", id, reason);
+        for (Booking booking : bookings) {
+            try {
+                String userEmail = booking.getUser().getEmail();
+                emailService.sendCancelledBookingEmail(
+                        userEmail,
+                        booking.getId(),
+                        booking.getDesk().getDeskName(),
+                        booking.getDesk().getZone().getZoneAbv(),
+                        OffsetDateTime.now()
+                );
+                log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
+            } catch (Exception e) {
+                log.error("Failed to send cancellation email for booking {}: {}",
+                        booking.getId(), e.getMessage());
+            }
+        }
+
+        log.info("Sent {} cancellation emails for deleted desk {}", bookings.size(), id);
     }
 
     @Transactional
