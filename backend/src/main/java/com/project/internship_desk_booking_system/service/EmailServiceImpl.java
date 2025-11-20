@@ -98,6 +98,7 @@ public class EmailServiceImpl implements EmailService {
         sendHtml(toEmail, subject, wrap(html));
     }
 
+
     @Override
     @Async
     public void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime) {

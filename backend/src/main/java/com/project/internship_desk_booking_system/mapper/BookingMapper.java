@@ -21,7 +21,7 @@ public class BookingMapper {
 
         if (booking.getDesk() == null) {
             deskDto = new DeskDto(
-                    booking.getDeskId(),
+                    booking.getDesk().getId(),
                     "Deleted Desk",
                     null,
                     DeskType.UNAVAILABLE,
@@ -58,7 +58,7 @@ public class BookingMapper {
             return BookingResponseDto.builder()
                     .id(booking.getId())
                     .userId(booking.getUser().getId())
-                    .deskId(booking.getDeskId())
+                    .deskId(booking.getDesk().getId())
                     .deskName("Deleted Desk")
                     .deskType(DeskType.UNAVAILABLE)
                     .startTime(booking.getStartTime())

@@ -214,11 +214,11 @@ public class AdminController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/images/")
-    public ResponseEntity<List<ImageDto>> getAllImages() {
-        return ResponseEntity.ok(adminService.getAllImages());
+    @GetMapping("/images")
+    public ResponseEntity<List<ImageItemDto>> getAllListOfAllImages() {
+        return ResponseEntity
+                .ok(adminService.getListOfAllImages());
     }
-
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/images/upload")
@@ -238,5 +238,17 @@ public class AdminController {
     ) {
         log.info("Admin request to change user role: {}", dto);
         return ResponseEntity.ok(adminService.updateUserRole(dto, principal));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PatchMapping("/images/setBackground/{id}")
+    public ResponseEntity<byte[]> setBackgroundImage(
+            @PathVariable("id") Long id
+    ) {
+        adminService.setBackgroundImage(id);
+
+        return ResponseEntity
+                .ok()
+                .build();
     }
 }

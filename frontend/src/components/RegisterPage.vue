@@ -13,11 +13,8 @@
       <v-card
         v-if="showCard"
         class="register-card elevation-12"
-        max-width="520px"
-        width="100%"
-        rounded="xl"
       >
-        <div class="logo-section text-center pt-10 pb-6">
+        <div class="logo-section text-center">
           <div class="logo-wrapper">
             <img
               src="../assets/isd-logo.webp"
@@ -25,18 +22,18 @@
               class="logo-img"
             />
           </div>
-          <h1 class="welcome-text mt-4">Create Your Account</h1>
+          <h1 class="welcome-text">Create Your Account</h1>
           <p class="welcome-subtitle">Join the ISD Desk System today.</p>
         </div>
 
-        <v-card-text class="px-8 pb-8">
+        <v-card-text class="form-content">
           <v-form
             ref="form"
             v-model="valid"
             lazy-validation
             @submit.prevent="handleRegister"
           >
-            <div class="input-group mb-4">
+            <div class="input-group">
               <label class="input-label">First Name</label>
               <v-text-field
                 v-model="firstName"
@@ -50,10 +47,11 @@
                 color="orange-darken-2"
                 autocomplete="given-name"
                 class="modern-input"
+                @keyup.enter="handleRegister"
               />
             </div>
 
-            <div class="input-group mb-4">
+            <div class="input-group">
               <label class="input-label">Last Name</label>
               <v-text-field
                 v-model="lastName"
@@ -67,10 +65,11 @@
                 color="orange-darken-2"
                 autocomplete="family-name"
                 class="modern-input"
+                @keyup.enter="handleRegister"
               />
             </div>
 
-            <div class="input-group mb-4">
+            <div class="input-group">
               <label class="input-label">Email Address</label>
               <v-text-field
                 v-model="email"
@@ -84,10 +83,11 @@
                 color="orange-darken-2"
                 autocomplete="email"
                 class="modern-input"
+                @keyup.enter="handleRegister"
               />
             </div>
 
-            <div class="input-group mb-4">
+            <div class="input-group">
               <label class="input-label">Password</label>
               <v-text-field
                 v-model="password"
@@ -105,10 +105,11 @@
                 color="orange-darken-2"
                 autocomplete="new-password"
                 class="modern-input"
+                @keyup.enter="handleRegister"
               />
             </div>
 
-            <div class="input-group mb-6">
+            <div class="input-group">
               <label class="input-label">Confirm Password</label>
               <v-text-field
                 v-model="confirmPassword"
@@ -128,6 +129,7 @@
                 color="orange-darken-2"
                 autocomplete="new-password"
                 class="modern-input"
+                @keyup.enter="handleRegister"
               />
             </div>
 
@@ -146,14 +148,7 @@
               Create Account
             </v-btn>
 
-            <div class="text-center mt-6">
-              <p class="helper-text">
-                Already have an account?
-                <a href="/login" class="login-link">Sign in here</a>
-              </p>
-            </div>
-
-            <div class="text-center mt-4">
+            <div class="text-center helper-section">
               <p class="helper-text">
                 <v-icon size="16" class="mr-1">mdi-shield-check</v-icon>
                 Your information is secure with us
@@ -193,6 +188,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
+import JSEncrypt from "jsencrypt";
 
 const router = useRouter();
 const valid = ref(false);
@@ -212,6 +208,21 @@ const snackbar = ref({
   message: "",
   color: "error",
 });
+
+const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCH/SI4N4hq8NiCb75OCODqNj84
+tCY9cO9KnYlb1jy6wX3AwRDLDQoRAKWzKddmZZTfZhi1vlvm99PqR0ShVJCQrQIt
+m0DTAfIMtiXAIT6hN65Ky31RYTcvoLyA+GrpWTIm1jFN13I39RIeWAvM1qyRnEpQ
+GQ64Pn+sFnqrXROQ5QIDAQAB
+-----END PUBLIC KEY-----`;
+
+const encryptPassword = (rawPassword) => {
+  const encryptor = new JSEncrypt();
+  encryptor.setPublicKey(PUBLIC_KEY);
+
+  const encrypted = encryptor.encrypt(rawPassword);
+  return encrypted;
+};
 
 const firstNameRules = [
   (v) => !!v || "First name is required",
@@ -254,12 +265,15 @@ const handleRegister = async () => {
 
   isLoading.value = true;
   try {
+    const encryptedPassword = encryptPassword(password.value);
+    const encryptedConfirmPassword = encryptPassword(confirmPassword.value);
+
     const payload = {
       firstName: firstName.value,
       lastName: lastName.value,
       email: email.value,
-      password: password.value,
-      confirmPassword: confirmPassword.value,
+      password: encryptedPassword,
+      confirmPassword: encryptedConfirmPassword,
     };
 
     const response = await api.post("auth/register", payload);
@@ -301,6 +315,7 @@ const handleRegister = async () => {
   background: linear-gradient(135deg, #fff5ed 0%, #ffffff 50%, #fff8f0 100%);
   position: relative;
   overflow: hidden;
+  padding: 60px 40px;
 }
 
 .bg-decoration {
@@ -367,6 +382,8 @@ const handleRegister = async () => {
   box-shadow: 0 20px 60px rgba(255, 152, 0, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   animation: slideUp 0.6s ease;
+  max-width: 520px;
+  width: 100%;
 }
 
 .register-card:hover {
@@ -376,6 +393,7 @@ const handleRegister = async () => {
 
 .logo-section {
   position: relative;
+  padding: 48px 32px 32px;
 }
 
 .logo-wrapper {
@@ -396,30 +414,34 @@ const handleRegister = async () => {
 }
 
 .welcome-text {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1a1a1a;
   letter-spacing: -0.5px;
-  margin: 0;
+  margin: 20px 0 0 0;
 }
 
 .welcome-subtitle {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   font-weight: 500;
-  margin-top: 8px;
+  margin-top: 12px;
+}
+
+.form-content {
+  padding: 0 40px 40px !important;
 }
 
 .input-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .input-label {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #2c2c2c;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   letter-spacing: 0.2px;
 }
 
@@ -442,6 +464,7 @@ const handleRegister = async () => {
 
 .modern-input :deep(.v-field__input) {
   font-weight: 500;
+  font-size: 16px;
 }
 
 .modern-input :deep(.v-field__input::placeholder) {
@@ -453,13 +476,14 @@ const handleRegister = async () => {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   font-weight: 700;
   height: 56px !important;
-  font-size: 16px;
+  font-size: 17px;
   text-transform: none;
   letter-spacing: 0.5px;
   box-shadow: 0 6px 20px rgba(255, 152, 0, 0.35);
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 8px;
 }
 
 .register-btn::before {
@@ -491,27 +515,18 @@ const handleRegister = async () => {
   transform: translateY(0);
 }
 
+.helper-section {
+  margin-top: 24px;
+}
+
 .helper-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #888;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-}
-
-.login-link {
-  color: #ff9800;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  margin-left: 4px;
-}
-
-.login-link:hover {
-  color: #f57c00;
-  text-decoration: underline;
 }
 
 .custom-snackbar {
@@ -543,40 +558,180 @@ const handleRegister = async () => {
   }
 }
 
-@media (max-width: 768px) {
+/* Планшеты */
+@media (max-width: 1024px) {
+  .register-container {
+    padding: 40px 32px;
+  }
+
   .register-card {
-    margin: 20px;
-    max-width: calc(100% - 40px);
+    max-width: 500px;
+  }
+
+  .logo-section {
+    padding: 40px 28px 28px;
   }
 
   .logo-img {
-    width: 100px;
+    width: 110px;
+  }
+
+  .welcome-text {
+    font-size: 28px;
+  }
+
+  .welcome-subtitle {
+    font-size: 15px;
+  }
+
+  .form-content {
+    padding: 0 32px 32px !important;
+  }
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 30px 20px;
+  }
+
+  .register-card {
+    max-width: 460px;
+  }
+
+  .logo-section {
+    padding: 36px 24px 24px;
+  }
+
+  .logo-img {
+    width: 95px;
+  }
+
+  .welcome-text {
+    font-size: 26px;
+  }
+
+  .welcome-subtitle {
+    font-size: 14px;
+  }
+
+  .form-content {
+    padding: 0 28px 28px !important;
+  }
+
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-label {
+    font-size: 14px;
+  }
+
+  .modern-input :deep(.v-field__input) {
+    font-size: 15px;
+  }
+
+  .register-btn {
+    height: 52px !important;
+    font-size: 16px;
+  }
+
+  .circle-1 {
+    width: 400px;
+    height: 400px;
+  }
+
+  .circle-2 {
+    width: 280px;
+    height: 280px;
+  }
+
+  .circle-3 {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* Маленькие мобильные */
+@media (max-width: 480px) {
+  .register-container {
+    padding: 24px 16px;
+  }
+
+  .register-card {
+    max-width: 100%;
+  }
+
+  .logo-section {
+    padding: 32px 20px 20px;
+  }
+
+  .logo-img {
+    width: 85px;
   }
 
   .welcome-text {
     font-size: 24px;
   }
 
+  .welcome-subtitle {
+    font-size: 13px;
+  }
+
+  .form-content {
+    padding: 0 24px 24px !important;
+  }
+
+  .input-group {
+    margin-bottom: 18px;
+  }
+
+  .input-label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .modern-input :deep(.v-field__input) {
+    font-size: 14px;
+  }
+
+  .register-btn {
+    height: 50px !important;
+    font-size: 15px;
+  }
+
+  .helper-text {
+    font-size: 12px;
+  }
+
   .circle-1 {
-    width: 350px;
-    height: 350px;
+    width: 320px;
+    height: 320px;
   }
 
   .circle-2 {
-    width: 250px;
-    height: 250px;
+    width: 240px;
+    height: 240px;
+  }
+
+  .circle-3 {
+    width: 180px;
+    height: 180px;
   }
 }
 
-@media (max-width: 480px) {
-  .register-card {
-    margin: 16px;
-    padding: 0;
+/* Очень маленькие экраны */
+@media (max-width: 360px) {
+  .register-container {
+    padding: 20px 12px;
   }
 
   .logo-section {
-    padding-top: 32px !important;
-    padding-bottom: 24px !important;
+    padding: 28px 16px 16px;
+  }
+
+  .logo-img {
+    width: 75px;
   }
 
   .welcome-text {
@@ -584,16 +739,32 @@ const handleRegister = async () => {
   }
 
   .welcome-subtitle {
+    font-size: 12px;
+  }
+
+  .form-content {
+    padding: 0 20px 20px !important;
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-label {
+    font-size: 12px;
+  }
+
+  .modern-input :deep(.v-field__input) {
     font-size: 13px;
   }
 
-  .v-card-text {
-    padding: 24px !important;
+  .register-btn {
+    height: 48px !important;
+    font-size: 14px;
   }
 
-  .register-btn {
-    height: 52px !important;
-    font-size: 15px;
+  .helper-text {
+    font-size: 11px;
   }
 }
 </style>

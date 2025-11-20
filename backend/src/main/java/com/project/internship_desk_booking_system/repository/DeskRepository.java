@@ -26,6 +26,9 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
 
     List<Desk> findByIsTemporarilyAvailable(Boolean isTemporarilyAvailable);
 
+    boolean existsByDeskName(String deskName);
+
+
     @Query("SELECT d FROM Desk d WHERE d.isTemporarilyAvailable = true " +
             "AND d.temporaryAvailableFrom <= :dateTime " +
             "AND d.temporaryAvailableUntil >= :dateTime " +
@@ -91,5 +94,7 @@ public interface DeskRepository extends JpaRepository<Desk, Long> {
             WHERE isDeleted = false
             """)
     void restoreCoordinates();
+
+
 
 }

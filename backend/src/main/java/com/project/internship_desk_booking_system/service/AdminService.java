@@ -25,9 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service used by administrators to manage desks, zones, users and bookings.
@@ -59,6 +61,7 @@ public class AdminService {
     private final AdminServiceValidation adminServiceValidation;
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
+    private final EmailService emailService;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -210,7 +213,19 @@ public class AdminService {
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
 
         if (updates.displayName() != null) {
-            desk.setDeskName(normalizeName(updates.displayName()));
+            String newName = normalizeName(updates.displayName());
+
+            if (!desk.getDeskName().equals(newName)) {
+                if (deskRepository.existsByDeskName(newName)) {
+                    throw new ExceptionResponse(
+                            HttpStatus.BAD_REQUEST,
+                            "DESK_NAME_EXISTS",
+                            "Desk with name '" + newName + "' already exists"
+                    );
+                }
+            }
+
+            desk.setDeskName(newName);
         }
         if (updates.zoneId() != null) {
             Zone zone = zoneRepository.findById(updates.zoneId()).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "ZONE_NOT_FOUND", "Zone not found: " + updates.zoneId()));
@@ -268,13 +283,17 @@ public class AdminService {
     public void deleteDesk(Long id, String reason) {
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
+        List<Booking> bookings = new ArrayList<>();
+
         if (hasActiveBookings(desk)) {
             log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
+            bookings.addAll(bookingRepository.findActiveBookingsForDesk(id));
             bookingRepository.cancelAllActiveBookingsForDesk(id);
             log.info("All active bookings for desk {} have been cancelled", id);
         }
         if (hasScheduledBookings(desk)) {
             log.info("Desk {} has scheduled bookings. Cancelling them before deletion.", id);
+            bookings.addAll(bookingRepository.findPendingBookingsForDesk(id));
             bookingRepository.cancelAllPendingBookingsForDesk(id);
             log.info("All scheduled bookings for desk {} have been cancelled", id);
         }
@@ -284,8 +303,25 @@ public class AdminService {
         desk.setReasonOfDeletion(reason != null && !reason.trim().isEmpty() ? reason.trim() : "No reason provided");
 
         deskRepository.save(desk);
-
         log.info("Desk {} soft deleted successfully with reason: {}", id, reason);
+        for (Booking booking : bookings) {
+            try {
+                String userEmail = booking.getUser().getEmail();
+                emailService.sendCancelledBookingEmail(
+                        userEmail,
+                        booking.getId(),
+                        booking.getDesk().getDeskName(),
+                        booking.getDesk().getZone().getZoneAbv(),
+                        OffsetDateTime.now()
+                );
+                log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
+            } catch (Exception e) {
+                log.error("Failed to send cancellation email for booking {}: {}",
+                        booking.getId(), e.getMessage());
+            }
+        }
+
+        log.info("Sent {} cancellation emails for deleted desk {}", bookings.size(), id);
     }
 
     @Transactional
@@ -539,8 +575,7 @@ public class AdminService {
         return zoneDtoList;
     }
 
-    //this method should not work right now
-    public List<ImageDto> getAllImages() {
+    public List<ImageItemDto> getListOfAllImages() {
         List<Image> images = imageRepository.findAll();
         if (images.isEmpty()) {
             throw new ExceptionResponse(
@@ -551,7 +586,7 @@ public class AdminService {
         }
         return images
                 .stream()
-                .map(imageMapper::toImageDto)
+                .map(imageMapper::toImageItem)
                 .toList();
     }
 
@@ -598,7 +633,6 @@ public class AdminService {
             log.warn("User with email {} not found", dto.getEmail());
             return new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found");
         });
-        adminServiceValidation.validateAssignedRoleIsAllowed(dto.getRole());
 
         Role oldRole = targetUser.getRole();
         targetUser.setRole(dto.getRole());
@@ -606,6 +640,31 @@ public class AdminService {
 
         log.info("Updated user role: {} -> {}", oldRole, dto.getRole());
         return new EmailRoleDTO(targetUser.getEmail(), targetUser.getRole());
+    }
+
+
+    @Transactional
+    public void setBackgroundImage(
+            Long id
+    ){
+        Image newBackground = imageRepository
+                .findById(id)
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        String.format(
+                                "Image with id %d not found",
+                                id
+                        )
+                ));
+
+        Optional<Image> backgroundImage = imageRepository.findBackground();
+
+        backgroundImage
+                .filter(img -> !img.getId().equals(id))
+                .ifPresent(img -> img.setBackground(false));
+
+        newBackground.setBackground(true);
     }
 
     private String normalizeName(String name) {

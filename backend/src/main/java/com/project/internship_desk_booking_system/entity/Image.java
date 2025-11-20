@@ -30,4 +30,7 @@ public class Image {
 
     @Column(name="image_data")
     private byte[] imageData;
+
+    @Column(name="is_background")
+    private boolean isBackground;
 }

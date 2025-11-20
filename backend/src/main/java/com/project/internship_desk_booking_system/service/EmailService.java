@@ -8,6 +8,7 @@ public interface EmailService {
 
     void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
+
     void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
     void sendCancelBookingAdminEmail(String message, String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime

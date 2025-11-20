@@ -238,4 +238,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             """)
     void cancelAllPendingBookingsForDesk(@Param("deskId") Long deskId);
 
+
+    @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId AND b.status = 'ACTIVE'")
+    List<Booking> findActiveBookingsForDesk(@Param("deskId") Long deskId);
+
+    @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId AND b.status = 'PENDING'")
+    List<Booking> findPendingBookingsForDesk(@Param("deskId") Long deskId);
+
 }

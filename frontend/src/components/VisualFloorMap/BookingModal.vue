@@ -825,7 +825,6 @@ function contactSupport() {
 
 .favourite-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .favourite-button.active {

@@ -26,4 +26,15 @@ public class ImageService {
                         )
                 ));
     }
+
+    public Image getBackgroundImage(){
+        return imageRepository
+                .findBackground()
+                .orElseThrow(()-> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        "Background image not found"
+                ));
+    }
+
 }

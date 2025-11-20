@@ -24,10 +24,4 @@ public class AdminServiceValidation {
         }
     }
 
-    public void validateAssignedRoleIsAllowed(Role newRole) {
-        if (newRole != Role.USER) {
-            throw new ExceptionResponse(HttpStatus.NOT_FOUND,"ROLE_NOT_FOUND","You can only assign USER/ADMIN role");
-        }
-    }
-
 }

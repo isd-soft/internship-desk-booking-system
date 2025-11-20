@@ -28,9 +28,9 @@ export const HORIZONTAL_DESK_HEIGHT = 26;
 
 export const imageUrl = ref('');
 
-export async function getImageFromBackend(imageId:number) {
+export async function getBackgroundFromBackend() {
   try {
-    const response = await api.get(`/admin/images/${imageId}`,{
+    const response = await api.get("/images/background",{
       responseType:'blob'
     });
   

@@ -27,6 +27,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtill jwtUtill;
+    private final RsaCryptoService rsaCryptoService;
 
 
     public LoginResponseDto login(LoginRequestCommand request) {
@@ -34,7 +35,7 @@ public class AuthService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            request.getPassword()
+                            rsaCryptoService.decrypt(request.getPassword())
                     )
             );
 
@@ -65,13 +66,17 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterCommandRequest request) {
+
+        String rawPassword = rsaCryptoService.decrypt(request.getPassword());
+        String rawConfirmPassword = rsaCryptoService.decrypt(request.getConfirmPassword());
+
         checkIfEmailExists(request.getEmail());
-        validatePasswordMatch(request.getPassword(), request.getConfirmPassword());
+        validatePasswordMatch(rawPassword, rawConfirmPassword);
         User newUser = new User(
                 request.getFirstName(),
                 request.getLastName(),
                 request.getEmail(),
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(rawPassword)
         );
         userRepository.save(newUser);
     }
