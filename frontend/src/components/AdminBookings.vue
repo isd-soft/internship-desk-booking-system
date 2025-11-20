@@ -224,26 +224,38 @@
               Cancel Booking
             </v-card-title>
             <v-card-text class="dialog-text">
-              Are you sure you want to deactivate booking
-              <strong>{{ selectedBooking?.name }}</strong
-              >? This action cannot be undone.
+              <p class="mb-4">
+                Are you sure you want to cancel booking <strong>#{{ selectedBooking?.id }}</strong> for
+                <strong>{{ selectedBooking?.deskName }}</strong>?
+              </p>
+              <v-textarea
+                  v-model="cancelReason"
+                  label="Reason for cancellation"
+                  placeholder="Please provide a reason for canceling this booking..."
+                  variant="outlined"
+                  rows="3"
+                  :error-messages="cancelReasonError"
+                  hide-details="auto"
+                  class="cancel-reason-input"
+              />
             </v-card-text>
             <v-card-actions class="dialog-actions">
               <v-spacer></v-spacer>
               <v-btn
-                variant="text"
-                @click="showCancelDialog = false"
-                :disabled="cancellingId !== null"
+                  variant="text"
+                  @click="closeCancelDialog"
+                  :disabled="cancellingId !== null"
               >
-                NO
+                Cancel
               </v-btn>
               <v-btn
-                color="error"
-                variant="flat"
-                @click="confirmCancelBooking"
-                :loading="cancellingId !== null"
+                  color="error"
+                  variant="flat"
+                  @click="confirmCancelBooking"
+                  :loading="cancellingId !== null"
+                  :disabled="!cancelReason || cancelReason.trim().length === 0"
               >
-                YES
+                Yes, Cancel Booking
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -276,6 +288,8 @@ const showEditModal = ref(false);
 const showViewModal = ref(false);
 const showCancelDialog = ref(false);
 const successMessage = ref(null);
+const cancelReason = ref('');
+const cancelReasonError = ref('');
 const statusColorMap = ref<Record<string, string>>({});
 const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
 const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
@@ -454,29 +468,42 @@ async function handleSaveBooking(updatedData: any) {
 }
 function CancelBooking(item) {
   selectedBooking.value = item;
+  cancelReason.value = '';
+  cancelReasonError.value = '';
   showCancelDialog.value = true;
+}
+
+function closeCancelDialog() {
+  showCancelDialog.value = false;
+  cancelReason.value = '';
+  cancelReasonError.value = '';
 }
 
 async function confirmCancelBooking() {
   if (!selectedBooking.value?.id) return;
+
+  if (!cancelReason.value || cancelReason.value.trim().length === 0) {
+    cancelReasonError.value = 'Please provide a reason for cancellation';
+    return;
+  }
 
   try {
     cancellingId.value = selectedBooking.value.id;
     error.value = null;
     successMessage.value = null;
 
-    await api.patch(`/admin/cancel/booking/${selectedBooking.value.id}`);
+    await api.patch(`/admin/cancel/booking/${selectedBooking.value.id}`, {
+      reason: cancelReason.value.trim()
+    });
 
-    successMessage.value = `Booking  "${selectedBooking.value.name}" cancelled successfully`;
-    showCancelDialog.value = false;
+    successMessage.value = `Booking #${selectedBooking.value.id} cancelled successfully`;
+    closeCancelDialog();
     selectedBooking.value = null;
 
-    // Refresh desk list
     await fetchBookings();
   } catch (err) {
-    console.error("Error cancelling booking:", err);
-    error.value =
-      err.response?.data?.message || err.message || "Failed to delete desk";
+    console.error('Error cancelling booking:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to cancel booking';
     showCancelDialog.value = false;
   } finally {
     cancellingId.value = null;

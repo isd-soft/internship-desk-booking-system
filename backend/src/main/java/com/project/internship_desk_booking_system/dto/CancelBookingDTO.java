@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.dto;
 
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
