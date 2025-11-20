@@ -22,7 +22,6 @@ public class RegisterCommandRequest {
     private String email;
 
     @NotBlank(message = "Password cannot be empty")
-    @Size(min = 6, max = 64, message = "Password must be between 6 and 64 characters")
     private String password;
 
     @NotBlank(message = "Confirm password cannot be empty")

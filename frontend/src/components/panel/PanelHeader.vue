@@ -1,5 +1,5 @@
 <template>
-  <div class="panel-header pa-6 pb-4">
+  <div class="panel-header pa-4 pb-3">
     <div class="header-inner">
       <div class="head-left">
         <p class="welcome-text animate-fade" v-if="userEmail">
@@ -11,12 +11,23 @@
           Manage your workspace · ISD desk bookings
         </p>
       </div>
-      <div class="brand-wrap">
-        <img
-          src="../../assets/isd-logo.webp"
-          alt="ISD"
-          class="brand-img pulse"
-        />
+      <div class="head-right">
+        <div class="brand-wrap">
+          <img
+            src="../../assets/isd-logo.webp"
+            alt="ISD"
+            class="brand-img pulse"
+          />
+        </div>
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          @click="$emit('toggle')"
+          class="toggle-btn"
+        >
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
       </div>
     </div>
   </div>
@@ -24,6 +35,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+
+defineEmits(['toggle']);
 
 const userEmail = ref('');
 
@@ -86,6 +99,12 @@ onMounted(() => {
   opacity: 0.85;
 }
 
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .brand-wrap {
   display: flex;
   align-items: center;
@@ -95,6 +114,18 @@ onMounted(() => {
 
 .brand-wrap:hover {
   transform: scale(1.05);
+}
+
+.toggle-btn {
+  color: var(--accent) !important;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 138, 0, 0.1) !important;
+  transform: scale(1.1);
+  opacity: 1;
 }
 
 .brand-img {

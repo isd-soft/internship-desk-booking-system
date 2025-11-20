@@ -131,6 +131,8 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
+import JSEncrypt from "jsencrypt"; // 🔹 Вот этого не хватало
+
 
 const router = useRouter();
 const valid = ref(false);
@@ -146,6 +148,24 @@ const snackbar = ref({
   message: "",
   color: "error",
 });
+
+const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCH/SI4N4hq8NiCb75OCODqNj84
+tCY9cO9KnYlb1jy6wX3AwRDLDQoRAKWzKddmZZTfZhi1vlvm99PqR0ShVJCQrQIt
+m0DTAfIMtiXAIT6hN65Ky31RYTcvoLyA+GrpWTIm1jFN13I39RIeWAvM1qyRnEpQ
+GQ64Pn+sFnqrXROQ5QIDAQAB
+-----END PUBLIC KEY-----`;
+
+
+
+const encryptPassword = (rawPassword) => {
+  const encryptor = new JSEncrypt();
+  encryptor.setPublicKey(PUBLIC_KEY);
+
+  const encrypted = encryptor.encrypt(rawPassword);
+  return encrypted;
+};
+
 
 const usernameRules = [
   (v) => !!v || "Email is required",
@@ -165,8 +185,15 @@ const handleLogin = async () => {
   }
 
   isLoading.value = true;
+
   try {
-    const payload = { email: username.value, password: password.value };
+    const encryptedPassword = encryptPassword(password.value);
+
+    const payload = {
+      email: username.value,
+      password: encryptedPassword,
+    };
+
     const response = await api.post("/auth/login", payload);
 
     if (response.data?.token) {
