@@ -33,6 +33,7 @@ const contentMargin = computed(() => {
 
     <div 
       class="content-area" 
+      :class="`route-${$route.name}`"
       :style="{ marginLeft: `${contentMargin}px` }"
     >
       <router-view />
@@ -55,6 +56,20 @@ const contentMargin = computed(() => {
   align-items: center;
   justify-content: flex-start;
   padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #fff;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+  flex: 1;
+}
+
+.content-area.route-Map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
   overflow-y: auto;
   overflow-x: hidden;
   background: #fff;
