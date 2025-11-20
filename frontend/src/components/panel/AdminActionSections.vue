@@ -1,13 +1,13 @@
 <template>
   <div class="actions-section px-4 pb-3 pt-2">
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="flat"
-        class="neo-btn mb-3 admin-gradient-btn"
-        elevation="3"
-        size="large"
-        @click="$router.push('/dashboard')"
+      v-if="isAdmin"
+      block
+      variant="flat"
+      class="neo-btn mb-3 admin-gradient-btn"
+      elevation="3"
+      size="large"
+      @click="$router.push('/dashboard')"
     >
       <v-icon class="mr-2" size="20">mdi-account-convert</v-icon>
       <span class="btn-text">Switch to User View</span>
@@ -62,6 +62,19 @@
     >
       <v-icon class="mr-2" size="20">mdi-account-group</v-icon>
       <span class="btn-text">All Users</span>
+    </v-btn>
+
+    <v-btn
+      v-if="isAdmin"
+      block
+      variant="text"
+      class="neo-btn mb-3 add-user-btn"
+      elevation="0"
+      size="large"
+      @click="$emit('openAddUser')"
+    >
+      <v-icon class="mr-2" size="20">mdi-account-plus</v-icon>
+      <span class="btn-text">Add User</span>
     </v-btn>
 
     <v-btn
@@ -153,7 +166,9 @@ const emit = defineEmits<{
       | "statistics"
       | "map"
       | "deleted-desks"
+      | "background-gallery"
   ): void;
+  (e: "openAddUser"): void;
   (e: "logout"): void;
 }>();
 
@@ -205,6 +220,17 @@ onMounted(() => {
 .admin-gradient-btn {
   background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
   color: white !important;
+}
 
+.add-user-btn {
+  background: #fff !important;
+  color: #1f2937 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.add-user-btn:hover {
+  background: #fff7eb !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 6px 12px rgba(255, 138, 0, 0.1) !important;
 }
 </style>

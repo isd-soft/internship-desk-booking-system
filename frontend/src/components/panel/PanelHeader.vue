@@ -2,9 +2,16 @@
   <div class="panel-header pa-4 pb-3">
     <div class="header-inner">
       <div class="head-left">
-        <p class="welcome-text animate-fade" v-if="userEmail">
-          Welcome, <span class="user-email">{{ userEmail }}</span>
-        </p>
+        <div class="user-identity-pill animate-fade" v-if="userEmail">
+          <div class="id-icon">
+            <img src="../../assets/isd-logo.webp" alt="User" />
+          </div>
+          <span class="id-text">{{ userEmail }}</span>
+          <div class="id-status">
+            <span class="pulse-dot"></span>
+            <span class="status-text">Online</span>
+          </div>
+        </div>
         <h2 class="header-title animate-fade">Quick Actions</h2>
         <div class="title-accent"></div>
         <p class="header-subtitle animate-fade-delay">
@@ -20,7 +27,7 @@
           />
         </div>
         <v-btn
-            v-if="isAdmin"
+          v-if="isAdmin"
           icon
           variant="text"
           size="small"
@@ -35,16 +42,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 
-defineEmits(['toggle']);
+defineEmits(["toggle"]);
 
-const userEmail = ref('');
+const userEmail = ref("");
 const isAdmin = ref(false);
 onMounted(() => {
   const role = localStorage.getItem("role");
   isAdmin.value = String(role).toUpperCase() === "ADMIN";
-  userEmail.value = localStorage.getItem('email') || '';
+  userEmail.value = localStorage.getItem("email") || "";
 });
 </script>
 
@@ -52,6 +59,7 @@ onMounted(() => {
 .panel-header {
   background: var(--surface);
   border-bottom: 1px solid var(--panel-sep);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .header-inner {
@@ -64,17 +72,82 @@ onMounted(() => {
   min-width: 0;
 }
 
-.welcome-text {
-  font-size: clamp(0.8rem, 0.75rem + 0.2vw, 0.9rem);
-  color: var(--text-2);
-  font-weight: 500;
-  margin: 0 0 6px 0;
-  opacity: 0.75;
+/* --- EMAIL CHIP DESIGN --- */
+.user-identity-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px 0 4px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  max-width: 100%;
+  transition: all 0.2s ease;
+  cursor: default;
+  margin-bottom: 6px;
 }
 
-.user-email {
-  color: var(--accent);
+.user-identity-pill:hover {
+  background: #ffffff;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.id-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.id-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.id-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b5563;
+  font-family: "Menlo", "Monaco", monospace;
+  margin-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.id-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 10px;
+  border-left: 1px solid #e5e7eb;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 0.65rem;
+  text-transform: uppercase;
   font-weight: 700;
+  color: #10b981;
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+  flex-shrink: 0;
 }
 
 .header-title {
@@ -147,6 +220,18 @@ onMounted(() => {
   }
 }
 
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
 .animate-fade {
   opacity: 0;
   animation: fadeIn 0.9s ease forwards;
@@ -166,6 +251,16 @@ onMounted(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .id-text {
+    max-width: 180px;
+  }
+
+  .status-text {
+    display: none;
   }
 }
 </style>

@@ -73,8 +73,6 @@ public class AuthService {
         checkIfEmailExists(request.getEmail());
         validatePasswordMatch(rawPassword, rawConfirmPassword);
         User newUser = new User(
-                request.getFirstName(),
-                request.getLastName(),
                 request.getEmail(),
                 passwordEncoder.encode(rawPassword)
         );

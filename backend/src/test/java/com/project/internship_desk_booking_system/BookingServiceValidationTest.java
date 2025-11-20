@@ -148,7 +148,7 @@ class BookingServiceValidationTest {
 
         lenient().when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
 
-        User user = new User("A", "B", "u@test.com", "pass");
+        User user = new User( "u@test.com", "pass");
 
         LocalDateTime monday = LocalDateTime.now().with(DayOfWeek.MONDAY).withHour(9);
 

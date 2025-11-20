@@ -62,7 +62,7 @@ class BookingServiceTest {
 
     @BeforeEach
     void setup() {
-        user = new User("test", "tesst", "test@example.com", "pass");
+        user = new User("test@example.com", "pass");
         user.setId(1L);
 
         desk = new Desk();
@@ -241,7 +241,7 @@ class BookingServiceTest {
 
     @Test
     void testGetBookingById_wrongUser() {
-        User another = new User("A", "B", "not@user.com", "pass");
+        User another = new User("not@user.com", "pass");
 
         Booking b = new Booking();
         b.setUser(another);
