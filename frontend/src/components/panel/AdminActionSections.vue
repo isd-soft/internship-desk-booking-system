@@ -12,7 +12,6 @@
       <v-icon class="mr-2" size="20">mdi-account-convert</v-icon>
       <span class="btn-text">Switch to User View</span>
     </v-btn>
-
     <v-btn
       v-if="isAdmin"
       block
@@ -193,5 +192,6 @@ onMounted(() => {
 .admin-gradient-btn {
   background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
   color: white !important;
+
 }
 </style>

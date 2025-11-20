@@ -309,11 +309,11 @@ const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 // Table headers
 const headers = [
   { title: 'ID', key: 'id', width: 80, align: 'start' },
-  { title: 'Desk', key: 'name', minWidth: 150 },
-  { title: 'Zone ID', key: 'zoneId', width: 100 },
-  { title: 'Zone Name', key: 'zoneName', width: 140 },
-  { title: 'Type', key: 'type', width: 120 },
-  { title: 'Status', key: 'status', width: 120 },
+  { title: 'Desk', key: 'name', width: 150 },
+  { title: 'Zone ID', key: 'zoneId', width: 100,align: 'center' },
+  { title: 'Zone Name', key: 'zoneName', width: 140,align: 'center' },
+  { title: 'Type', key: 'type', width: 120, align: 'center' },
+  { title: 'Status', key: 'status', width: 120,align: 'center' },
   { title: 'Temp Available', key: 'isTemporarilyAvailable', width: 130, align: 'center' },
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false }
 ] as const;
@@ -666,7 +666,7 @@ onMounted(() => {
 .elevated-table :deep(tbody td) {
   font-size: 14px;
   border-bottom: 1px solid #f5f5f5 !important;
-  padding: 14px 12px !important;
+  padding: 0px 12px !important;
 }
 
 .elevated-table :deep(tbody tr:last-child td) {

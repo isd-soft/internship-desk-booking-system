@@ -232,10 +232,10 @@ const typeFilter = ref('ALL');
 // Table headers
 const headers = [
   { title: 'ID', key: 'id', width: 80, align: 'start' },
-  { title: 'Desk', key: 'name', minWidth: 220 },
-  { title: 'Zone Id', key: 'zoneId', width: 140 },
-  { title: 'Zone Name', key: 'zoneName', width: 140 },
-  { title: 'Type', key: 'type', width: 120 },
+  { title: 'Desk', key: 'name', width: 150 },
+  { title: 'Zone ID', key: 'zoneId', width: 100,align: 'center' },
+  { title: 'Zone Name', key: 'zoneName', width: 140,align: 'center' },
+  { title: 'Type', key: 'type', width: 120, align: 'center' },
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false }
 ] as const;
 

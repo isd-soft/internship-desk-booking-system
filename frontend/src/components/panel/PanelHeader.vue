@@ -20,6 +20,7 @@
           />
         </div>
         <v-btn
+            v-if="isAdmin"
           icon
           variant="text"
           size="small"
@@ -39,8 +40,10 @@ import { ref, onMounted } from 'vue';
 defineEmits(['toggle']);
 
 const userEmail = ref('');
-
+const isAdmin = ref(false);
 onMounted(() => {
+  const role = localStorage.getItem("role");
+  isAdmin.value = String(role).toUpperCase() === "ADMIN";
   userEmail.value = localStorage.getItem('email') || '';
 });
 </script>
