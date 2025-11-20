@@ -55,4 +55,14 @@ public class RsaCryptoService {
             throw new RuntimeException("RSA decrypt failed", e);
         }
     }
+    public String tryDecrypt(String value) {
+        try {
+            Base64.getDecoder().decode(value);
+
+            return decrypt(value);
+        } catch (Exception e) {
+            return value;
+        }
+    }
+
 }
