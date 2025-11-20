@@ -519,7 +519,6 @@ function updateRouteQuery(status: string) {
 }
 
 onMounted(async () => {
-  // Run all fetches in parallel
   await Promise.all([
     fetchDeskTypeEnum(),
     fetchColors(),
