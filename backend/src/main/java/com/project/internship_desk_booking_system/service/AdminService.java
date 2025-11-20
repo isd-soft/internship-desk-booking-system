@@ -539,7 +539,6 @@ public class AdminService {
         return zoneDtoList;
     }
 
-    //this method should not work right now
     public List<ImageDto> getAllImages() {
         List<Image> images = imageRepository.findAll();
         if (images.isEmpty()) {
@@ -598,6 +597,7 @@ public class AdminService {
             log.warn("User with email {} not found", dto.getEmail());
             return new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found");
         });
+
         Role oldRole = targetUser.getRole();
         targetUser.setRole(dto.getRole());
         userRepository.save(targetUser);

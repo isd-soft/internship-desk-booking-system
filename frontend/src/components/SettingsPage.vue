@@ -1,304 +1,301 @@
 <template>
   <div class="settings-container">
-    <!-- Header -->
-    <div class="settings-header">
-      <h2>Admin Settings</h2>
-      <p class="settings-description">Configure system-wide booking policies and desk colors</p>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading settings...</p>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="globalError" class="error-alert">
-      <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div>
-        <p class="error-title">Error Loading Settings</p>
-        <p class="error-message">{{ globalError }}</p>
-        <button @click="fetchAllData" class="retry-button">Retry</button>
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div v-else class="settings-content">
-      
-      <!-- SECTION 1: BOOKING TIME LIMITS -->
-      <div class="settings-card">
-        <div class="card-header">
-          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-          </svg>
-          <h3>Booking Time Limits</h3>
+    <div class="settings-card">
+      <!-- Header -->
+      <div class="settings-header">
+        <div class="header-title-section">
+          <div class="header-label">ADMIN PANEL</div>
+          <h2 class="header-title">Settings</h2>
+          <span class="header-subtitle">Configure system-wide booking policies and desk colors</span>
         </div>
-
-        <!-- Info Badge -->
-        <div class="info-badge">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Fixed: 1-8 hours per booking</span>
-        </div>
-
-        <form @submit.prevent="saveBookingLimits">
-          <div class="form-grid">
-            <div class="form-field">
-              <label>
-                Maximum Days in Advance
-                <span class="current-value">Current: {{ originalLimits?.maxDaysInAdvance || 30 }}</span>
-              </label>
-              <input 
-                type="number" 
-                min="1" 
-                max="365" 
-                v-model.number="limitsForm.maxDaysInAdvance"
-                @input="validateLimitsField('maxDaysInAdvance')"
-                :class="{ 'error': limitsErrors.maxDaysInAdvance }"
-                placeholder="1-365"
-              />
-              <transition name="fade">
-                <span v-if="limitsErrors.maxDaysInAdvance" class="field-error">
-                  {{ limitsErrors.maxDaysInAdvance }}
-                </span>
-              </transition>
-            </div>
-
-            <div class="form-field">
-              <label>
-                Maximum Weekly Hours
-                <span class="current-value">Current: {{ originalLimits?.maxHoursPerWeek || 20 }}</span>
-              </label>
-              <input 
-                type="number" 
-                min="1" 
-                max="168" 
-                v-model.number="limitsForm.maxHoursPerWeek"
-                @input="validateLimitsField('maxHoursPerWeek')"
-                :class="{ 'error': limitsErrors.maxHoursPerWeek }"
-                placeholder="1-168"
-              />
-              <transition name="fade">
-                <span v-if="limitsErrors.maxHoursPerWeek" class="field-error">
-                  {{ limitsErrors.maxHoursPerWeek }}
-                </span>
-              </transition>
-            </div>
-          </div>
-
-          <!-- Inline notification for Booking Limits -->
-          <transition name="slide-down">
-            <div v-if="limitsNotification" :class="['inline-notification', `notification-${limitsNotification.type}`]">
-              <svg v-if="limitsNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>{{ limitsNotification.message }}</span>
-            </div>
-          </transition>
-
-          <div class="button-group">
-            <button type="button" class="btn btn-secondary" @click="resetLimitsForm" :disabled="!hasLimitsChanges">
-              Reset
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="!isLimitsFormValid || limitsSaving || !hasLimitsChanges">
-              {{ limitsSaving ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
-        </form>
       </div>
 
-      <!-- SECTION 2: EDIT DESK COLORS -->
-      <div class="settings-card">
-        <div class="card-header">
-          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-          <h3>Edit Desk Colors</h3>
-        </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-container">
+        <v-progress-circular indeterminate size="48" width="4" color="#171717" />
+        <p class="loading-message mt-3">Loading settings...</p>
+      </div>
 
-        <form @submit.prevent="updateColor">
-          <div class="form-field full-width">
-            <label>Select Color to Edit</label>
-            <select v-model="selectedColorId" @change="loadSelectedColor">
-              <option :value="null" disabled>-- Choose a color --</option>
-              <option v-for="color in deskColors" :key="color.id" :value="color.id">
-                {{ color.colorName }} ({{ color.colorCode }})
-              </option>
-            </select>
+      <!-- Error State -->
+      <v-alert v-else-if="globalError" type="error" variant="tonal" class="mb-4" density="compact" closable>
+        {{ globalError }}
+        <template #append>
+          <v-btn variant="text" size="small" @click="fetchAllData">Retry</v-btn>
+        </template>
+      </v-alert>
+
+      <!-- Main Content -->
+      <div v-else class="settings-content">
+
+        <!-- SECTION 1: BOOKING TIME LIMITS -->
+        <div class="settings-section">
+          <div class="section-header">
+            <v-icon color="#171717" size="20">mdi-clock-outline</v-icon>
+            <h3 class="section-title">Booking Time Limits</h3>
+            <v-chip color="#f5f5f5" size="x-small" class="info-chip ml-auto">
+              <v-icon start size="x-small">mdi-information-outline</v-icon>
+              Fixed: 1-8 hours per booking
+            </v-chip>
           </div>
 
-          <div v-if="selectedColorId" class="form-grid">
-            <div class="form-field">
-              <label>Color Name</label>
-              <input 
-                v-model="editForm.colorName" 
-                type="text" 
-                maxlength="50"
-                placeholder="e.g., GREEN"
-                required
-              />
+          <form @submit.prevent="saveBookingLimits">
+            <div class="form-row">
+              <v-text-field
+                  v-model.number="limitsForm.maxDaysInAdvance"
+                  label="Maximum Days in Advance"
+                  type="number"
+                  min="1"
+                  max="365"
+                  variant="outlined"
+                  density="compact"
+                  :error-messages="limitsErrors.maxDaysInAdvance"
+                  @input="validateLimitsField('maxDaysInAdvance')"
+                  hide-details="auto"
+              >
+                <template #append-inner>
+                  <v-chip size="x-small" color="#171717" class="current-chip">
+                    Current: {{ originalLimits?.maxDaysInAdvance || 30 }}
+                  </v-chip>
+                </template>
+              </v-text-field>
+
+              <v-text-field
+                  v-model.number="limitsForm.maxHoursPerWeek"
+                  label="Maximum Weekly Hours"
+                  type="number"
+                  min="1"
+                  max="168"
+                  variant="outlined"
+                  density="compact"
+                  :error-messages="limitsErrors.maxHoursPerWeek"
+                  @input="validateLimitsField('maxHoursPerWeek')"
+                  hide-details="auto"
+              >
+                <template #append-inner>
+                  <v-chip size="x-small" color="#171717" class="current-chip">
+                    Current: {{ originalLimits?.maxHoursPerWeek || 20 }}
+                  </v-chip>
+                </template>
+              </v-text-field>
             </div>
 
-            <div class="form-field">
-              <label>Color Code</label>
-              <div class="color-input">
-                <input 
-                  v-model="editForm.colorCode" 
-                  type="text" 
-                  pattern="^#[0-9A-Fa-f]{6}$"
+            <!-- Inline notification -->
+            <transition name="slide-down">
+              <v-alert
+                  v-if="limitsNotification"
+                  :type="limitsNotification.type === 'success' ? 'success' : 'error'"
+                  variant="tonal"
+                  density="compact"
+                  class="mt-2"
+              >
+                {{ limitsNotification.message }}
+              </v-alert>
+            </transition>
+
+            <div class="button-group">
+              <v-btn variant="outlined" color="#171717" size="small" @click="resetLimitsForm" :disabled="!hasLimitsChanges">
+                Reset
+              </v-btn>
+              <v-btn
+                  type="submit"
+                  color="#171717"
+                  variant="flat"
+                  size="small"
+                  :disabled="!isLimitsFormValid || limitsSaving || !hasLimitsChanges"
+                  :loading="limitsSaving"
+              >
+                Save Changes
+              </v-btn>
+            </div>
+          </form>
+        </div>
+
+        <!-- SECTION 2: EDIT DESK COLORS -->
+        <div class="settings-section">
+          <div class="section-header">
+            <v-icon color="#171717" size="20">mdi-pencil-outline</v-icon>
+            <h3 class="section-title">Edit Desk Colors</h3>
+          </div>
+
+          <form @submit.prevent="updateColor">
+            <v-select
+                v-model="selectedColorId"
+                :items="deskColors"
+                item-title="colorName"
+                item-value="id"
+                label="Select Color to Edit"
+                variant="outlined"
+                density="compact"
+                @update:model-value="loadSelectedColor"
+                class="mb-2"
+            >
+              <template #item="{ props, item }">
+                <v-list-item v-bind="props">
+                  <template #prepend>
+                    <div
+                        class="color-preview"
+                        :style="{ backgroundColor: item.raw.colorCode }"
+                    ></div>
+                  </template>
+                  <template #subtitle>
+                    {{ item.raw.colorCode }}
+                  </template>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <div v-if="selectedColorId" class="form-row">
+              <v-text-field
+                  v-model="editForm.colorName"
+                  label="Color Name"
+                  variant="outlined"
+                  density="compact"
+                  maxlength="50"
+                  required
+              />
+
+              <v-text-field
+                  v-model="editForm.colorCode"
+                  label="Color Code"
+                  variant="outlined"
+                  density="compact"
                   maxlength="7"
                   placeholder="#00FF00"
                   required
-                />
-                <input v-model="editForm.colorCode" type="color" class="color-picker" />
-              </div>
+              >
+                <template #append-inner>
+                  <input v-model="editForm.colorCode" type="color" class="color-picker" />
+                </template>
+              </v-text-field>
             </div>
 
-            <div class="form-field full-width">
-              <label>Color Meaning</label>
-              <input 
-                v-model="editForm.colorMeaning" 
-                type="text" 
+            <v-text-field
+                v-if="selectedColorId"
+                v-model="editForm.colorMeaning"
+                label="Color Meaning"
+                variant="outlined"
+                density="compact"
                 maxlength="255"
-                placeholder="Description..."
+                class="mt-2"
                 required
-              />
+            />
+
+            <!-- Inline notification -->
+            <transition name="slide-down">
+              <v-alert
+                  v-if="editNotification && selectedColorId"
+                  :type="editNotification.type === 'success' ? 'success' : 'error'"
+                  variant="tonal"
+                  density="compact"
+                  class="mt-2"
+              >
+                {{ editNotification.message }}
+              </v-alert>
+            </transition>
+
+            <div v-if="selectedColorId" class="button-group">
+              <v-btn variant="outlined" color="#171717" size="small" @click="resetEditForm">
+                Reset
+              </v-btn>
+              <v-btn type="submit" color="#171717" variant="flat" size="small" :disabled="editSaving" :loading="editSaving">
+                Update Color
+              </v-btn>
+              <v-btn color="error" variant="flat" size="small" @click="confirmDeleteColor" :disabled="editSaving">
+                Delete
+              </v-btn>
             </div>
-          </div>
-
-          <!-- Inline notification for Edit Color -->
-          <transition name="slide-down">
-            <div v-if="editNotification && selectedColorId" :class="['inline-notification', `notification-${editNotification.type}`]">
-              <svg v-if="editNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>{{ editNotification.message }}</span>
-            </div>
-          </transition>
-
-          <div v-if="selectedColorId" class="button-group">
-            <button type="button" class="btn btn-secondary" @click="resetEditForm">
-              Reset
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="editSaving">
-              {{ editSaving ? 'Updating...' : 'Update Color' }}
-            </button>
-            <button type="button" class="btn btn-danger" @click="confirmDeleteColor" :disabled="editSaving">
-              Delete
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- SECTION 3: ADD NEW DESK COLOR -->
-      <div class="settings-card">
-        <div class="card-header">
-          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <h3>Add New Desk Color</h3>
+          </form>
         </div>
 
-        <form @submit.prevent="createColor">
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Color Name</label>
-              <input 
-                v-model="newForm.colorName" 
-                type="text" 
-                maxlength="50"
-                placeholder="e.g., PURPLE"
-                required
-              />
-            </div>
+        <!-- SECTION 3: ADD NEW DESK COLOR -->
+        <div class="settings-section">
+          <div class="section-header">
+            <v-icon color="#171717" size="20">mdi-plus-circle-outline</v-icon>
+            <h3 class="section-title">Add New Desk Color</h3>
+          </div>
 
-            <div class="form-field">
-              <label>Color Code</label>
-              <div class="color-input">
-                <input 
-                  v-model="newForm.colorCode" 
-                  type="text" 
-                  pattern="^#[0-9A-Fa-f]{6}$"
+          <form @submit.prevent="createColor">
+            <div class="form-row">
+              <v-text-field
+                  v-model="newForm.colorName"
+                  label="Color Name"
+                  variant="outlined"
+                  density="compact"
+                  maxlength="50"
+                  placeholder="e.g., PURPLE"
+                  required
+              />
+
+              <v-text-field
+                  v-model="newForm.colorCode"
+                  label="Color Code"
+                  variant="outlined"
+                  density="compact"
                   maxlength="7"
                   placeholder="#800080"
                   required
-                />
-                <input v-model="newForm.colorCode" type="color" class="color-picker" />
-              </div>
+              >
+                <template #append-inner>
+                  <input v-model="newForm.colorCode" type="color" class="color-picker" />
+                </template>
+              </v-text-field>
             </div>
 
-            <div class="form-field full-width">
-              <label>Color Meaning</label>
-              <input 
-                v-model="newForm.colorMeaning" 
-                type="text" 
+            <v-text-field
+                v-model="newForm.colorMeaning"
+                label="Color Meaning"
+                variant="outlined"
+                density="compact"
                 maxlength="255"
                 placeholder="What does this color represent?"
+                class="mt-2"
                 required
-              />
-            </div>
-          </div>
+            />
 
-          <!-- Inline notification for Add New Color -->
-          <transition name="slide-down">
-            <div v-if="newNotification" :class="['inline-notification', `notification-${newNotification.type}`]">
-              <svg v-if="newNotification.type === 'success'" class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <svg v-else class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>{{ newNotification.message }}</span>
-            </div>
-          </transition>
+            <!-- Inline notification -->
+            <transition name="slide-down">
+              <v-alert
+                  v-if="newNotification"
+                  :type="newNotification.type === 'success' ? 'success' : 'error'"
+                  variant="tonal"
+                  density="compact"
+                  class="mt-2"
+              >
+                {{ newNotification.message }}
+              </v-alert>
+            </transition>
 
-          <div class="button-group">
-            <button type="button" class="btn btn-secondary" @click="resetNewForm">
-              Reset
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="newSaving">
-              {{ newSaving ? 'Adding...' : 'Add Color' }}
-            </button>
-          </div>
-        </form>
+            <div class="button-group">
+              <v-btn variant="outlined" color="#171717" size="small" @click="resetNewForm">
+                Reset
+              </v-btn>
+              <v-btn type="submit" color="#171717" variant="flat" size="small" :disabled="newSaving" :loading="newSaving">
+                Add Color
+              </v-btn>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
     <!-- Custom Confirm Dialog -->
-    <transition name="modal-fade">
-      <div v-if="showConfirmDialog" class="modal-overlay" @click.self="cancelDelete">
-        <div class="confirm-dialog" @click.stop>
-          <div class="confirm-header">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <h3>Confirm Deletion</h3>
-          </div>
-          <p class="confirm-message">
-            Are you sure you want to delete "<strong>{{ colorToDelete?.colorName }}</strong>"? 
-            This action cannot be undone.
-          </p>
-          <div class="confirm-actions">
-            <button class="btn btn-secondary" @click="cancelDelete">Cancel</button>
-            <button class="btn btn-danger" @click="proceedDelete">Delete</button>
-          </div>
-        </div>
-      </div>
-    </transition>
+    <v-dialog v-model="showConfirmDialog" max-width="500">
+      <v-card class="delete-dialog">
+        <v-card-title class="dialog-title">
+          <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+          Confirm Deletion
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          Are you sure you want to delete "<strong>{{ colorToDelete?.colorName }}</strong>"?
+          This action cannot be undone.
+        </v-card-text>
+        <v-card-actions class="dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="cancelDelete">Cancel</v-btn>
+          <v-btn color="error" variant="flat" @click="proceedDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -358,19 +355,19 @@ export default {
   computed: {
     isLimitsFormValid() {
       return (
-        this.limitsForm.maxDaysInAdvance > 0 &&
-        this.limitsForm.maxDaysInAdvance <= 365 &&
-        this.limitsForm.maxHoursPerWeek > 0 &&
-        this.limitsForm.maxHoursPerWeek <= 168 &&
-        Object.keys(this.limitsErrors).length === 0
+          this.limitsForm.maxDaysInAdvance > 0 &&
+          this.limitsForm.maxDaysInAdvance <= 365 &&
+          this.limitsForm.maxHoursPerWeek > 0 &&
+          this.limitsForm.maxHoursPerWeek <= 168 &&
+          Object.keys(this.limitsErrors).length === 0
       );
     },
 
     hasLimitsChanges() {
       if (!this.originalLimits) return false;
       return (
-        this.limitsForm.maxDaysInAdvance !== this.originalLimits.maxDaysInAdvance ||
-        this.limitsForm.maxHoursPerWeek !== this.originalLimits.maxHoursPerWeek
+          this.limitsForm.maxDaysInAdvance !== this.originalLimits.maxDaysInAdvance ||
+          this.limitsForm.maxHoursPerWeek !== this.originalLimits.maxHoursPerWeek
       );
     }
   },
@@ -393,9 +390,9 @@ export default {
       if (this.limitsNotificationTimeout) {
         clearTimeout(this.limitsNotificationTimeout);
       }
-      
+
       this.limitsNotification = { message, type };
-      
+
       if (type === 'success') {
         this.limitsNotificationTimeout = setTimeout(() => {
           this.limitsNotification = null;
@@ -407,9 +404,9 @@ export default {
       if (this.editNotificationTimeout) {
         clearTimeout(this.editNotificationTimeout);
       }
-      
+
       this.editNotification = { message, type };
-      
+
       if (type === 'success') {
         this.editNotificationTimeout = setTimeout(() => {
           this.editNotification = null;
@@ -421,9 +418,9 @@ export default {
       if (this.newNotificationTimeout) {
         clearTimeout(this.newNotificationTimeout);
       }
-      
+
       this.newNotification = { message, type };
-      
+
       if (type === 'success') {
         this.newNotificationTimeout = setTimeout(() => {
           this.newNotification = null;
@@ -591,7 +588,7 @@ export default {
         await api.delete(`/admin/desk-colors/${this.selectedColorId}`);
         this.deskColors = this.deskColors.filter(c => c.id !== this.selectedColorId);
         this.showEditNotification('Color deleted successfully!', 'success');
-        
+
         setTimeout(() => {
           this.selectedColorId = null;
           this.resetEditForm();
@@ -622,7 +619,7 @@ export default {
         const response = await api.post('/admin/desk-colors', this.newForm);
         this.deskColors.push(response.data);
         this.showNewNotification('New color added successfully!', 'success');
-        
+
         setTimeout(() => {
           this.resetNewForm();
         }, 2000);
@@ -644,279 +641,238 @@ export default {
 </script>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .settings-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: #fffaf4;
+  padding: 28px;
+  background: #fafafa;
   min-height: 100vh;
-  font-family: "Inter", -apple-system, sans-serif;
+}
+
+.settings-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* Header */
 .settings-header {
-  margin-bottom: 2rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f5f5f5;
 }
 
-.settings-header h2 {
-  font-size: 1.875rem;
+.header-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header-label {
+  font-size: 11px;
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 0.5rem;
+  color: #737373;
+  letter-spacing: 1.5px;
 }
 
-.settings-description {
-  color: #6b7280;
-  font-size: 0.875rem;
+.header-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #171717;
+  margin: 0;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #737373;
+  letter-spacing: 0.3px;
 }
 
 /* Loading */
-.loading-state {
-  text-align: center;
-  padding: 3rem;
-}
-
-.spinner {
-  border: 4px solid #fff7f0;
-  border-top: 4px solid #ff8a00;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Error Alert */
-.error-alert {
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
+.loading-container {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
 }
 
-.error-icon {
-  width: 24px;
-  height: 24px;
-  color: #c33;
-  flex-shrink: 0;
-}
-
-.error-title {
+.loading-message {
+  font-size: 15px;
   font-weight: 600;
-  color: #c33;
-  margin-bottom: 0.25rem;
+  color: #737373;
+  letter-spacing: 0.3px;
 }
 
-.error-message {
-  color: #a22;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.retry-button {
-  background: #c33;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* Settings Content */
+/* Settings Content - Grid Layout */
 .settings-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Settings Card */
-.settings-card {
-  background: #fff;
-  border: 1px solid rgba(255, 170, 64, 0.22);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  transition: box-shadow 0.2s;
-  position: relative;
-}
-
-.settings-card:hover {
-  box-shadow: 0 4px 12px rgba(255, 138, 0, 0.08);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 170, 64, 0.15);
-}
-
-.card-icon {
-  width: 24px;
-  height: 24px;
-  color: #ff8a00;
-  flex-shrink: 0;
-}
-
-.card-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-/* Info Badge */
-.info-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #fff7f0;
-  border: 1px solid rgba(255, 170, 64, 0.3);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 1.5rem;
-}
-
-.info-badge svg {
-  width: 16px;
-  height: 16px;
-  color: #ff8a00;
-}
-
-/* Form Grid */
-.form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(900px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 16px;
 }
 
-.form-field {
+/* Settings Section */
+.settings-section {
+  background: #fafafa;
+  border: 1px solid #f5f5f5;
+  border-radius: 16px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.settings-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
   display: flex;
-  flex-direction: column;
-}
-
-.form-field.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-field label {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f5f5f5;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+/* Info Chip */
+.info-chip {
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.3px;
+}
+
+/* Form Row - Horizontal Layout */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* Vuetify Field Customization */
+:deep(.v-field) {
+  border-radius: 12px !important;
   font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
 }
 
-.current-value {
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #ff8a00;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+:deep(.v-field--focused) {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
 }
 
-.form-field input[type="text"],
-.form-field input[type="number"],
-.form-field select {
-  width: fit-content;
-  padding: 0.625rem 0.75rem;
-  border: 2px solid rgba(255, 170, 64, 0.22);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  background: #fff;
+:deep(.v-label) {
+  font-weight: 600;
+  font-size: 13px;
 }
 
-.form-field input:focus,
-.form-field select:focus {
-  outline: none;
-  border-color: #ff8a00;
-  box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.1);
+:deep(.v-input--density-compact .v-field) {
+  --v-input-control-height: 40px;
 }
 
-.form-field input.error {
-  border-color: #e14a4a;
-  background: #fff5f5;
+/* Current Chip */
+.current-chip {
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.3px;
+  color: white !important;
 }
 
-.field-error {
-  display: block;
-  margin-top: 0.375rem;
-  font-size: 0.75rem;
-  color: #e14a4a;
-}
-
-/* Color Input */
-.color-input {
-  display: flex;
-  width: fit-content;
-  gap: 0.5rem;
-}
-
-.color-input input[type="text"] {
-  width: fit-content;
-  flex: 1;
-}
-
+/* Color Picker */
 .color-picker {
-  width: 60px;
-  height: 38px;
-  padding: 2px;
-  border: 2px solid rgba(255, 170, 64, 0.22);
-  border-radius: 0.5rem;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .color-picker:hover {
-  border-color: #ff8a00;
+  border-color: #171717;
+  transform: scale(1.05);
 }
 
-/* Inline Notifications */
-.inline-notification {
+/* Color Preview */
+.color-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid #e5e5e5;
+}
+
+/* Buttons */
+.button-group {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  background: #fff7f0;
-  border: 1px solid rgba(255, 170, 64, 0.3);
-  color: #111827;
-  font-size: 0.875rem;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
-.notification-icon {
-  width: 20px;
-  height: 20px;
-  color: #ff8a00;
-  flex-shrink: 0;
+:deep(.v-btn) {
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.3px;
+  border-radius: 12px !important;
+  transition: all 0.2s ease;
 }
 
-.notification-success {
-  background: #fff7f0;
-  border-color: rgba(255, 170, 64, 0.3);
+:deep(.v-btn:not(:disabled):hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
 }
 
-.notification-error {
-  background: #fff7f0;
-  border-color: rgba(255, 170, 64, 0.3);
+:deep(.v-btn--variant-outlined) {
+  border-width: 2px !important;
 }
 
-.slide-down-enter-active, .slide-down-leave-active {
+/* Delete Dialog */
+.delete-dialog {
+  border-radius: 16px !important;
+}
+
+.dialog-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: #171717;
+  padding: 24px 24px 16px;
+}
+
+.dialog-text {
+  font-size: 15px;
+  color: #525252;
+  padding: 0 24px 16px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
+}
+
+/* Animations */
+.slide-down-enter-active,
+.slide-down-leave-active {
   transition: all 0.3s ease;
 }
 
@@ -930,172 +886,27 @@ export default {
   transform: translateY(-5px);
 }
 
-/* Buttons */
-.button-group {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.btn {
-  padding: 0.625rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #ff8a00;
-  color: white;
-}
-
-.btn-primary:not(:disabled):hover {
-  background: #e67a00;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 138, 0, 0.3);
-}
-
-.btn-secondary {
-  background: #fff;
-  color: #374151;
-  border: 2px solid rgba(255, 170, 64, 0.22);
-}
-
-.btn-secondary:not(:disabled):hover {
-  border-color: #ff8a00;
-  background: #fffaf4;
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.btn-danger:not(:disabled):hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-/* Confirm Dialog */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(2px);
-}
-
-.confirm-dialog {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.modal-fade-enter-active {
-  animation: modalFadeIn 0.3s ease-out;
-}
-
-.modal-fade-leave-active {
-  animation: modalFadeOut 0.2s ease-in;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes modalFadeOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-
-.confirm-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.confirm-header svg {
-  width: 32px;
-  height: 32px;
-  color: #f59e0b;
-}
-
-.confirm-header h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.confirm-message {
-  color: #6b7280;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-}
-
-.confirm-message strong {
-  color: #111827;
-  font-weight: 600;
-}
-
-.confirm-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-/* Animations */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
 /* Responsive */
+@media (max-width: 1200px) {
+  .settings-content {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .settings-container {
-    padding: 1rem;
+    padding: 16px;
   }
 
-  .form-grid {
+  .settings-card {
+    padding: 20px;
+  }
+
+  .header-title {
+    font-size: 24px;
+  }
+
+  .form-row {
     grid-template-columns: 1fr;
   }
 
@@ -1103,12 +914,8 @@ export default {
     flex-direction: column;
   }
 
-  .btn {
+  :deep(.v-btn) {
     width: 100%;
-  }
-
-  .confirm-dialog {
-    padding: 1.5rem;
   }
 }
 </style>
