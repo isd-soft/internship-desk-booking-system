@@ -42,57 +42,59 @@ Administrators can do all the user functionalities and additionally:
 ---
 
 ## 🗂 Project Structure
+```
 internship-desk-booking-system/
 │
-├── backend/
-│ ├── .mvn/wrapper
-│ ├── src/main/java/com/project/internship_desk_booking_system/
-│ │ ├── command/
-│ │ ├── config/
-│ │ ├── controller/
-│ │ ├── dto/
-│ │ ├── entity/
-│ │ ├── enums/
-│ │ ├── errors/
-│ │ ├── handlers/
-│ │ ├── jwt/
-│ │ ├── mapper/
-│ │ ├── repository/
-│ │ ├── service/
-│ │ └── InternshipDeskBookingSystemApplication.java
-│ ├── src/main/resources/
-│ │ ├── db.migration/ # migration.sql files
-│ │ ├── application.properties
-│ │ └── static/ # dist (Vue frontend build)
-│ ├── src/test/java/com/project/internship_desk_booking_system/
-│ ├── docker-compose.yml
-│ └── pom.xml
+├── 📁 backend/                                 # Spring Boot Backend
+│   ├── .mvn/wrapper/                          # Maven wrapper files
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/project/internship_desk_booking_system/
+│   │   │   │   ├── command/                   # Command pattern implementations
+│   │   │   │   ├── config/                    # Configuration classes
+│   │   │   │   ├── controller/                # REST API controllers
+│   │   │   │   ├── dto/                       # Data Transfer Objects
+│   │   │   │   ├── entity/                    # JPA entities
+│   │   │   │   ├── enums/                     # Enumeration types
+│   │   │   │   ├── errors/                    # Custom error classes
+│   │   │   │   ├── handlers/                  # Exception handlers
+│   │   │   │   ├── jwt/                       # JWT authentication
+│   │   │   │   ├── mapper/                    # Entity-DTO mappers
+│   │   │   │   ├── repository/                # JPA repositories
+│   │   │   │   ├── service/                   # Business logic
+│   │   │   │   └── InternshipDeskBookingSystemApplication.java
+│   │   │   └── resources/
+│   │   │       ├── db.migration/              # Flyway SQL migrations
+│   │   │       ├── static/                    # Vue frontend build (dist)
+│   │   │       └── application.properties     # App configuration
+│   │   └── test/                              # Unit & integration tests
+│   │       └── java/com/project/internship_desk_booking_system/
+│   ├── docker-compose.yml                     # Docker PostgreSQL setup
+│   └── pom.xml                                # Maven dependencies
 │
-├── frontend/
-│ ├── src/
-│ │ ├── assets/
-│ │ ├── components/
-│ │ ├── plugins/
-│ │ ├── router/
-│ │ ├── stores/
-│ │ ├── utils/
-│ │ ├── App.vue
-│ │ └── main.js
-│ ├── public/
-│ ├── index.html
-│ ├── jsconfig.json
-│ ├── package-lock.json
-│ ├── package.json
-│ ├── pnpm-lock.yaml
-│ ├── tsconfig.json
-│ └── vite.config.js
+├── 📁 frontend/                                # Vue.js Frontend
+│   ├── src/
+│   │   ├── assets/                            # Images, styles, fonts
+│   │   ├── components/                        # Vue components
+│   │   ├── plugins/                           # Axios, etc.
+│   │   ├── router/                            # Vue Router
+│   │   ├── stores/                            # Pinia state management
+│   │   ├── utils/                             # Helper functions
+│   │   ├── App.vue                            # Root component
+│   │   └── main.js                            # App entry point
+│   ├── public/                                # Static assets
+│   ├── index.html                             # HTML template
+│   ├── jsconfig.json                          # JavaScript config
+│   ├── package.json                           # NPM dependencies
+│   ├── pnpm-lock.yaml                         # PNPM lock file
+│   ├── tsconfig.json                          # TypeScript config
+│   └── vite.config.js                         # Vite bundler config
 │
-├── .gitattributes
-├── .gitignore
-├── LICENSE
-└── README.md
-
----
+├── .gitattributes                             # Git attributes
+├── .gitignore                                 # Git ignore rules
+├── LICENSE                                    # Project license
+└── README.md                                  # Project documentation
+```
 
 ## 3️⃣ Features
 
