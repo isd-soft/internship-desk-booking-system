@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.entity;
 
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,11 +26,12 @@ public class Booking {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "desk_id")
+    @JoinColumn(name = "desk_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private Desk desk;
 
     @Column(name = "start_time", nullable = false)
@@ -39,7 +41,7 @@ public class Booking {
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status",nullable = false)
+    @Column(name = "status", nullable = false)
     private BookingStatus status = BookingStatus.CONFIRMED;
 
     @Override
@@ -52,5 +54,16 @@ public class Booking {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+
+    @PostLoad
+    private void ensureDeskNotNull() {
+        if (this.desk == null) {
+            Desk placeholder = new Desk();
+            placeholder.setId(-1L);
+            placeholder.setDeskName("Deleted DESK");
+            placeholder.setType(null);
+            this.desk = placeholder;
+        }
     }
 }

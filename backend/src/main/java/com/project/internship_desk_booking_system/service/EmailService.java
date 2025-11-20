@@ -1,14 +1,22 @@
-    package com.project.internship_desk_booking_system.service;
+package com.project.internship_desk_booking_system.service;
 
-    import java.time.OffsetDateTime;
+import org.springframework.stereotype.Service;
 
-    public interface EmailService {
+import java.time.OffsetDateTime;
+import java.util.List;
 
-        void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+public interface EmailService {
 
-        void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+    void sendBookingConfirmationEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
-        void sendImportantDeskRelatedEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
+    void sendCancelledBookingEmail(String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime);
 
 
-    }
+    void sendImportantDeskRelatedEmail(String toEmail, String deskName, List<String> changes);
+
+    void sendCancelBookingAdminEmail(String message, String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime
+    );
+    void sendBookingConfirmationAdminEmail(String message, String toEmail, Long bookingId, String deskName, String zone, OffsetDateTime dateTime
+    );
+
+}

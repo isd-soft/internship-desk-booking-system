@@ -3,24 +3,6 @@
     fluid
     class="login-container d-flex align-center justify-center pa-0"
   >
-    <!-- Logout Button (visible only when authenticated) -->
-    <transition name="slide-down">
-      <v-btn
-        v-if="isUserAuthenticated"
-        icon
-        variant="flat"
-        class="logout-fab"
-        color="rgba(255, 255, 255, 0.95)"
-        size="large"
-        elevation="4"
-        @click="handleLogout"
-      >
-        <v-icon color="orange-darken-2">mdi-logout</v-icon>
-        <v-tooltip activator="parent" location="left">Logout</v-tooltip>
-      </v-btn>
-    </transition>
-
-    <!-- Animated Background Elements -->
     <div class="bg-decoration">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
@@ -35,17 +17,15 @@
         width="100%"
         rounded="xl"
       >
-              <div class="logo-section text-center pt-10 pb-6">
+        <div class="logo-section text-center pt-10 pb-6">
           <div class="logo-wrapper">
-            <div class="logo-glow"></div>
             <img
               src="../assets/isd-logo.webp"
               alt="ISD Logo"
               class="logo-img"
             />
           </div>
-          <h1 class="welcome-text mt-4">Welcome to ISD Desk System
-</h1>
+          <h1 class="welcome-text mt-4">Welcome to ISD Desk System</h1>
           <p class="welcome-subtitle">Please sign in to continue.</p>
         </div>
 
@@ -56,7 +36,6 @@
             lazy-validation
             @submit.prevent="handleLogin"
           >
-            <!-- Email Field -->
             <div class="input-group mb-4">
               <label class="input-label">Email Address</label>
               <v-text-field
@@ -75,7 +54,6 @@
               />
             </div>
 
-            <!-- Password Field -->
             <div class="input-group mb-6">
               <label class="input-label">Password</label>
               <v-text-field
@@ -98,7 +76,6 @@
               />
             </div>
 
-            <!-- Login Button -->
             <v-btn
               block
               type="button"
@@ -114,8 +91,7 @@
               Sign In
             </v-btn>
 
-            <!-- Additional Info -->
-            <div class="text-center mt-6">
+            <div class="text-center mt-4">
               <p class="helper-text">
                 <v-icon size="16" class="mr-1">mdi-shield-check</v-icon>
                 Secure authentication via ISD system
@@ -126,7 +102,6 @@
       </v-card>
     </transition>
 
-    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -153,10 +128,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
-import { logout, isAuthenticated } from "../utils/auth";
+import JSEncrypt from "jsencrypt"; // 🔹 Вот этого не хватало
+
 
 const router = useRouter();
 const valid = ref(false);
@@ -166,7 +142,6 @@ const showPassword = ref(false);
 const form = ref(null);
 const showCard = ref(true);
 const isLoading = ref(false);
-const isUserAuthenticated = ref(false);
 
 const snackbar = ref({
   show: false,
@@ -174,30 +149,29 @@ const snackbar = ref({
   color: "error",
 });
 
+const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCH/SI4N4hq8NiCb75OCODqNj84
+tCY9cO9KnYlb1jy6wX3AwRDLDQoRAKWzKddmZZTfZhi1vlvm99PqR0ShVJCQrQIt
+m0DTAfIMtiXAIT6hN65Ky31RYTcvoLyA+GrpWTIm1jFN13I39RIeWAvM1qyRnEpQ
+GQ64Pn+sFnqrXROQ5QIDAQAB
+-----END PUBLIC KEY-----`;
+
+
+
+const encryptPassword = (rawPassword) => {
+  const encryptor = new JSEncrypt();
+  encryptor.setPublicKey(PUBLIC_KEY);
+
+  const encrypted = encryptor.encrypt(rawPassword);
+  return encrypted;
+};
+
+
 const usernameRules = [
   (v) => !!v || "Email is required",
   (v) => /.+@.+\..+/.test(v) || "Email format is invalid",
 ];
 const passwordRules = [(v) => !!v || "Password is required"];
-
-onMounted(() => {
-  isUserAuthenticated.value = isAuthenticated();
-});
-
-const handleLogout = async () => {
-  snackbar.value = {
-    show: true,
-    message: "Logging out...",
-    color: "info",
-  };
-  
-  setTimeout(async () => {
-    await logout(router);
-    isUserAuthenticated.value = false;
-    username.value = "";
-    password.value = "";
-  }, 500);
-};
 
 const handleLogin = async () => {
   const { valid: isValid } = await form.value.validate();
@@ -211,8 +185,15 @@ const handleLogin = async () => {
   }
 
   isLoading.value = true;
+
   try {
-    const payload = { email: username.value, password: password.value };
+    const encryptedPassword = encryptPassword(password.value);
+
+    const payload = {
+      email: username.value,
+      password: encryptedPassword,
+    };
+
     const response = await api.post("/auth/login", payload);
 
     if (response.data?.token) {
@@ -266,7 +247,6 @@ const handleLogin = async () => {
   overflow: hidden;
 }
 
-/* Animated Background */
 .bg-decoration {
   position: absolute;
   width: 100%;
@@ -310,7 +290,8 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   33% {
@@ -321,24 +302,6 @@ const handleLogin = async () => {
   }
 }
 
-/* Logout Button */
-.logout-fab {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 152, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.logout-fab:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
-  border-color: rgba(255, 152, 0, 0.4);
-}
-
-/* Login Card */
 .login-card {
   position: relative;
   z-index: 1;
@@ -355,7 +318,6 @@ const handleLogin = async () => {
   transform: translateY(-4px);
 }
 
-/* Logo Section */
 .logo-section {
   position: relative;
 }
@@ -365,40 +327,16 @@ const handleLogin = async () => {
   display: inline-block;
 }
 
-.logo-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 160px;
-  height: 160px;
-  background: radial-gradient(circle, rgba(255, 152, 0, 0.2), transparent 70%);
-  border-radius: 50%;
-  animation: pulse 3s infinite;
-}
-
 .logo-img {
   width: 120px;
   height: auto;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 4px 12px rgba(255, 152, 0, 0.2));
   transition: all 0.4s ease;
 }
 
 .logo-img:hover {
   transform: scale(1.05) rotate(2deg);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0.3;
-  }
 }
 
 .welcome-text {
@@ -416,7 +354,6 @@ const handleLogin = async () => {
   margin-top: 8px;
 }
 
-/* Input Styling */
 .input-group {
   margin-bottom: 20px;
 }
@@ -456,7 +393,6 @@ const handleLogin = async () => {
   opacity: 1;
 }
 
-/* Login Button */
 .login-btn {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   font-weight: 700;
@@ -499,7 +435,6 @@ const handleLogin = async () => {
   transform: translateY(0);
 }
 
-/* Helper Text */
 .helper-text {
   font-size: 12px;
   color: #888;
@@ -510,7 +445,6 @@ const handleLogin = async () => {
   gap: 4px;
 }
 
-/* Snackbar */
 .custom-snackbar {
   font-weight: 600;
 }
@@ -519,7 +453,6 @@ const handleLogin = async () => {
   font-size: 15px;
 }
 
-/* Animations */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.4s ease;
@@ -552,7 +485,6 @@ const handleLogin = async () => {
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .login-card {
     margin: 20px;
@@ -565,11 +497,6 @@ const handleLogin = async () => {
 
   .welcome-text {
     font-size: 24px;
-  }
-
-  .logout-fab {
-    top: 16px;
-    right: 16px;
   }
 
   .circle-1 {

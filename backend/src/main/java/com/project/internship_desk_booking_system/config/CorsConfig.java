@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,10 +12,13 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        cors.setAllowedOriginPatterns(List.of(allowedOrigins));
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "X-User-Id"));
         cors.setExposedHeaders(List.of("Authorization"));

@@ -51,7 +51,6 @@ public class FavouriteDesks {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FavouriteDesks that = (FavouriteDesks) o;
         return Objects.equals(id, that.id);

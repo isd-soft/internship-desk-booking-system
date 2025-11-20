@@ -3,8 +3,8 @@ package com.project.internship_desk_booking_system.service;
 import com.project.internship_desk_booking_system.command.LoginRequestCommand;
 import com.project.internship_desk_booking_system.command.LoginResponseDto;
 import com.project.internship_desk_booking_system.command.RegisterCommandRequest;
-import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.entity.User;
+import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.jwt.JwtUtill;
 import com.project.internship_desk_booking_system.repository.UserRepository;
@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -26,16 +27,31 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtill jwtUtill;
+    private final RsaCryptoService rsaCryptoService;
+
 
     public LoginResponseDto login(LoginRequestCommand request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            rsaCryptoService.tryDecrypt(request.getPassword())
+                    )
             );
-            CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
 
-            String token = jwtUtill.generateToken(principal.getUsername(), principal.getRole());
-            return new LoginResponseDto(principal.getEmail(), principal.getRole(), token);
+            String email = authentication.getName();
+
+            User user = userRepository.findByEmailIgnoreCase(email)
+                    .orElseGet(() -> {
+                        User ldapUser = User.ldapUser(email);
+                        return userRepository.save(ldapUser);
+                    });
+
+            Role role = user.getRole();
+
+            String token = jwtUtill.generateToken(email, role);
+
+            return new LoginResponseDto(email, role, token);
 
         } catch (org.springframework.security.authentication.DisabledException e) {
             throw new ExceptionResponse(HttpStatus.UNAUTHORIZED, "AUTH_USER_DISABLED", "User account is disabled", e);
@@ -48,16 +64,30 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public void register(RegisterCommandRequest request) {
+
+        String rawPassword = rsaCryptoService.tryDecrypt(request.getPassword());
+        String rawConfirmPassword = rsaCryptoService.tryDecrypt(request.getConfirmPassword());
+
         checkIfEmailExists(request.getEmail());
+        validatePasswordMatch(rawPassword, rawConfirmPassword);
         User newUser = new User(
                 request.getFirstName(),
                 request.getLastName(),
                 request.getEmail(),
-                request.getRole(),
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(rawPassword)
         );
         userRepository.save(newUser);
+    }
+
+
+    private void validatePasswordMatch(String password, String confirmPassword) {
+        if (!password.equals(confirmPassword)) {
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST,
+                    "PASSWORD_MISMATCH",
+                    "Password and confirm password do not match");
+        }
     }
 
     private void checkIfEmailExists(String email) {
