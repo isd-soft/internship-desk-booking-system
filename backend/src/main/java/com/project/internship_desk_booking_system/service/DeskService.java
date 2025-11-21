@@ -41,17 +41,25 @@ public class DeskService {
         return coordinates;
     }
 
-    public List<DeskColorDTO> getGrayDesks(
-            LocalDate localDate
-    ){
-        List<Desk> desks = getDesksByType(DeskType.UNAVAILABLE);
+    public List<DeskColorDTO> getGrayDesks(LocalDate localDate) {
+
+        List<Desk> deactivatedDesks = getDesksByStatus(DeskStatus.DEACTIVATED);
+
+        List<Desk> unavailableDesks = getDesksByType(DeskType.UNAVAILABLE).stream()
+                .filter(d -> d.getStatus() != DeskStatus.DEACTIVATED)
+                .toList();
+
+        List<Desk> allGrayDesks = new ArrayList<>();
+        allGrayDesks.addAll(deactivatedDesks);
+        allGrayDesks.addAll(unavailableDesks);
 
         return toDeskColorDTOCheckAvailability(
-                desks,
+                allGrayDesks,
                 DeskColor.GRAY,
                 localDate
         );
     }
+
 
     public List<DeskColorDTO> getBlueDesks(
             LocalDate localDate
@@ -87,6 +95,28 @@ public class DeskService {
         return desks;
     }
 
+    private List<Desk> getDesksByStatus(DeskStatus status){
+        log.info(
+                "Looking for desks with DeskStatus {}",
+                status
+        );
+        List<Desk> desks = deskRepository
+                .findByStatus(status);
+
+        if(desks == null || desks.isEmpty()){
+            log.warn(
+                    "Desks with DeskStatus {} not found",
+                    status
+            );
+            throw new ExceptionResponse(
+                    HttpStatus.NOT_FOUND,
+                    String.format("%s_DESKS_NOT_FOUND", status),
+                    String.format("%s desks are not found", status)
+            );
+        }
+        return desks;
+    }
+
     private List<DeskColorDTO> toDeskColorDTOCheckAvailability(
             List<Desk> desks,
             DeskColor defaultDeskColor,
@@ -99,7 +129,7 @@ public class DeskService {
             DeskColorDTO deskColorDTO = new DeskColorDTO();
             deskColorDTO.setDeskId(desk.getId());
 
-            if(desk.getIsTemporarilyAvailable()){
+            if(desk.getIsTemporarilyAvailable() && desk.getTemporaryAvailableUntil() != null){
                 if(localDate.isBefore(desk.getTemporaryAvailableUntil().toLocalDate())){
                     deskColorDTO.setDeskColor(DeskColor.GREEN);
                 }
