@@ -614,6 +614,12 @@ public class AdminService {
         return users;
     }
 
+    public EmailRoleDTO getUserById(Long id) {
+        log.info("Fetching user by id: {}", id);
+        User user = userRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", String.format("User with id: {%d} not found", id)));
+        return new EmailRoleDTO(user.getEmail(), user.getRole());
+    }
+
     public List<ZoneDto> getAllZones() {
         List<Zone> zones = zoneRepository.findAll();
         List<ZoneDto> zoneDtoList = new ArrayList<>();
