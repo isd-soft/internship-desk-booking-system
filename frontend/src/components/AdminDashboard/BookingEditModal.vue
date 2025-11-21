@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {reactive, ref, watch} from "vue";
 import {fetchBookingStatus,statusBookingOptions} from "@/utils/useEnums"
+import api from "../../plugins/axios";
 
 interface Props {
   show: boolean;
@@ -33,6 +34,12 @@ const bookingForm = reactive({
   status: "ACTIVE",
 });
 
+const deskName = ref<string>("");
+const deskZone = ref<string>("");
+const deskType = ref<string>("");
+const loadingDesk = ref(false);
+const deskError = ref<string>("");
+
 // Sync with existing booking
 watch(
     () => props.booking,
@@ -51,6 +58,41 @@ watch(
     },
     { immediate: true }
 );
+
+// Watch desk ID changes to fetch desk details
+watch(
+    () => bookingForm.deskId,
+    async (newDeskId) => {
+      if (newDeskId && newDeskId > 0) {
+        await fetchDeskDetails(newDeskId);
+      } else {
+        deskName.value = "";
+        deskZone.value = "";
+        deskType.value = "";
+        deskError.value = "";
+      }
+    }
+);
+
+async function fetchDeskDetails(deskId: number) {
+  try {
+    loadingDesk.value = true;
+    deskError.value = "";
+    const response = await api.get(`/admin/desk/${deskId}`);
+    const desk = response.data;
+    deskName.value = desk.displayName || "Unknown Desk";
+    deskZone.value = desk.zoneDto?.zoneName || "Unknown Zone";
+    deskType.value = desk.type || "Unknown";
+  } catch (err: any) {
+    console.error("Error fetching desk details:", err);
+    deskError.value = "Desk not found";
+    deskName.value = "";
+    deskZone.value = "";
+    deskType.value = "";
+  } finally {
+    loadingDesk.value = false;
+  }
+}
 
 function handleSave() {
   emit("save", {
@@ -112,6 +154,26 @@ function closeModal() {
               class="custom-input"
               placeholder="Enter desk ID"
           />
+          <div v-if="loadingDesk" class="desk-info loading">
+            <v-progress-circular
+                indeterminate
+                size="16"
+                width="2"
+                color="#171717"
+            />
+            <span>Loading desk details...</span>
+          </div>
+          <div v-else-if="deskError" class="desk-info error">
+            <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
+            <span>{{ deskError }}</span>
+          </div>
+          <div v-else-if="deskName" class="desk-info success">
+            <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
+            <div class="desk-details">
+              <span class="desk-name">{{ deskName }}</span>
+              <span class="desk-meta">{{ deskZone }} • {{ deskType }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="section">
@@ -158,7 +220,7 @@ function closeModal() {
             <div class="summary-details">
               <div class="summary-row">
                 <span class="summary-key">Desk:</span>
-                <span class="summary-value">{{ bookingForm.deskId || "—" }}</span>
+                <span class="summary-value">{{ deskName || bookingForm.deskId || "—" }}</span>
               </div>
               <div class="summary-row">
                 <span class="summary-key">Status:</span>
@@ -315,6 +377,56 @@ function closeModal() {
   border-color: #171717;
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.desk-info {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.desk-info.loading {
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  color: #737373;
+}
+
+.desk-info.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.desk-info.success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+}
+
+.desk-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.desk-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #171717;
+  letter-spacing: -0.2px;
+}
+
+.desk-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: #737373;
 }
 
 .summary-box {
