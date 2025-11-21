@@ -55,7 +55,7 @@ public class DeskServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        user = new User("John", "Doe", "john@example.com", "hash");
+        user = new User("john@example.com", "hash");
         user.setId(1L);
 
         zone = new Zone();
