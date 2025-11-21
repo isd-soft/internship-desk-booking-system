@@ -23,13 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.time.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -155,90 +150,104 @@ public class BookingService {
                 .toList();
     }
 
-    public List<BookingDTO> getBookingsByDate(
-            LocalDate localDate
-    ) {
+    public List<BookingDTO> getBookingsByDate(LocalDate localDate) {
+        log.info("looking for bookings at time {}", localDate);
 
-        log.info(
-                "looking for bookings at time {}",
-                localDate
-        );
-        List<Booking> bookings = bookingRepository
-                .findBookingsByDate(localDate);
+        List<Booking> bookings = bookingRepository.findBookingsByDate(localDate);
 
         if (bookings == null || bookings.isEmpty()) {
-            log.warn(
-                    "Bookings at time {} was not found ",
-                    localDate
-            );
+            log.warn("Bookings at time {} was not found ", localDate);
             throw new ExceptionResponse(
                     HttpStatus.NOT_FOUND,
                     "BOOKINGS_NOT_FOUND",
-                    String.format(
-                            "Bookings for %s date not found",
-                            localDate.toString()
-                    )
+                    String.format("Bookings for %s date not found", localDate.toString())
             );
         }
-        Map<Long, List<Booking>> bookingsByDesk = bookings
-                .stream()
-                .collect(Collectors.groupingBy(
-                        booking -> booking.getDesk().getId())
-                );
+
+        Map<Long, List<Booking>> bookingsByDesk = bookings.stream()
+                .collect(Collectors.groupingBy(booking -> booking.getDesk().getId()));
+
         List<BookingDTO> resultList = new ArrayList<>();
+
+        LocalTime workStart = LocalTime.of(9, 0);
+        LocalTime workEnd = LocalTime.of(18, 0);
+        LocalTime lunchStart = LocalTime.of(13, 0);
+        LocalTime lunchEnd = LocalTime.of(14, 0);
+        LocalTime now = LocalTime.now();
+        boolean isToday = localDate.equals(LocalDate.now());
+
+        LocalTime interestStart = workStart;
+        if (isToday) {
+            if (now.isAfter(interestStart)) interestStart = now;
+            if (!interestStart.isBefore(lunchStart) && interestStart.isBefore(lunchEnd)) {
+                interestStart = lunchEnd;
+            }
+        }
+
+        long secondsUntilEnd = Duration.between(interestStart, workEnd).getSeconds();
+
+        if (interestStart.isBefore(lunchStart)) {
+            secondsUntilEnd -= 3600;
+        }
+        double hoursRequiredToBlock = Math.max(0, secondsUntilEnd / 3600.0);
 
         for (Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()) {
             Long deskId = entry.getKey();
             List<Booking> deskBookings = entry.getValue();
 
-            long totalDuration = 0;
+            double totalHours = 0;
+            double blockedHours = 0;
+
+            boolean isDeactivated = false;
+            LocalDateTime minStart = null;
+            LocalDateTime maxEnd = null;
 
             for (Booking booking : deskBookings) {
-                BookingDTO bookingDTO = new BookingDTO();
-                DeskColorDTO deskColorDTO = new DeskColorDTO();
-                deskColorDTO.setDeskId(deskId);
-                bookingDTO.setStartDate(booking.getStartTime());
-                bookingDTO.setEndDate(booking.getEndTime());
-
                 if (booking.getDesk().getStatus() == DeskStatus.DEACTIVATED) {
-                    log.info(
-                            "The desk {} is {}",
-                            booking.getDesk().getId(),
-                            booking.getDesk().getStatus()
-                    );
-
-                    deskColorDTO.setDeskColor(DeskColor.GRAY);
-                    continue;
+                    isDeactivated = true; break;
                 }
+                if (booking.getStatus() == BookingStatus.CANCELLED) continue;
 
-                if (booking.getStatus().equals(BookingStatus.CANCELLED)) {
-                    log.info(
-                            "The booking with id {} is {}",
-                            booking.getId(),
-                            booking.getStatus()
-                    );
 
-                    deskColorDTO.setDeskColor(DeskColor.GREEN);
-                    continue;
+                if (minStart == null || booking.getStartTime().isBefore(minStart)) minStart = booking.getStartTime();
+                if (maxEnd == null || booking.getEndTime().isAfter(maxEnd)) maxEnd = booking.getEndTime();
+
+                LocalTime bStart = booking.getStartTime().toLocalTime();
+                LocalTime bEnd = booking.getEndTime().toLocalTime();
+
+                totalHours += Duration.between(bStart, bEnd).toHours();
+
+                LocalTime effectiveStart = bStart.isAfter(interestStart) ? bStart : interestStart;
+                LocalTime effectiveEnd = bEnd.isBefore(workEnd) ? bEnd : workEnd;
+
+                if (effectiveStart.isBefore(effectiveEnd)) {
+                    blockedHours += Duration
+                            .between(
+                                    effectiveStart,
+                                    effectiveEnd
+                            ).getSeconds() / 3600.0;
                 }
+            }
 
-                totalDuration += Duration
-                        .between(
-                                booking.getStartTime(),
-                                booking.getEndTime()
-                        ).toHours();
+            DeskColorDTO deskColorDTO = new DeskColorDTO();
+            deskColorDTO.setDeskId(deskId);
 
-                if (totalDuration > 0 && totalDuration < 9) {
-                    deskColorDTO.setDeskColor(DeskColor.AMBER);
-                } else if (totalDuration >= 9) {
-                    deskColorDTO.setDeskColor(DeskColor.RED);
-                }
-                log.info(
-                        "total duration is {} for desk with id {} and color {}",
-                        totalDuration,
-                        deskId,
-                        deskColorDTO.getDeskColor()
-                );
+            boolean isFullyBlocked = Math.abs(blockedHours - hoursRequiredToBlock) < 0.01;
+
+            if (isDeactivated) {
+                deskColorDTO.setDeskColor(DeskColor.GRAY);
+            }
+            else if (totalHours >= 9 || (hoursRequiredToBlock > 0 && isFullyBlocked)) {
+                deskColorDTO.setDeskColor(DeskColor.RED);
+            }
+            else if (totalHours > 0) {
+                deskColorDTO.setDeskColor(DeskColor.AMBER);
+            }
+
+            if (minStart != null || isDeactivated) {
+                BookingDTO bookingDTO = new BookingDTO();
+                bookingDTO.setStartDate(minStart);
+                bookingDTO.setEndDate(maxEnd);
                 bookingDTO.setDeskColorDTO(deskColorDTO);
                 resultList.add(bookingDTO);
             }
@@ -297,7 +306,7 @@ public class BookingService {
                 .toList();
     }
 
-    public List<String> getBookingStatusEnum(){
+    public List<String> getBookingStatusEnum() {
         return Arrays.stream(BookingStatus.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
