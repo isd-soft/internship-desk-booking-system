@@ -416,10 +416,12 @@ function applySearchFilter(bookingsList: any[], query: string) {
 }
 
 function transformBookingData(booking: any) {
+  const userId = booking.userId ?? null;
   return {
     id: booking.bookingId ?? "—",
     deskId: booking.desk?.id ?? null,
-    userId: booking.userId ?? null,
+    userId: userId,
+    email: userId ? (usersMap.value.get(userId) || "—") : "—",
     deskName: booking.desk ? booking.desk.displayName : "[Deleted Desk]",
     zoneId: booking.desk?.zoneDto?.id ?? "0",
     zoneName: booking.desk?.zoneDto?.zoneName ?? "N/A",
