@@ -7,6 +7,7 @@ interface Props {
   booking?: {
     id: number;
     userId: number;
+    email?: string;
     deskId: number;
     deskName: string;
     deskType: string;
@@ -23,6 +24,7 @@ const props = defineProps<Props>();
 const bookingForm = reactive({
   id: 0,
   userId: 0,
+  email: "",
   deskId: 0,
   deskName: "",
   deskType: "SHARED",
@@ -39,6 +41,7 @@ watch(
       if (booking) {
         bookingForm.id = booking.id;
         bookingForm.userId = booking.userId;
+        bookingForm.email = booking.email || "—";
         bookingForm.deskId = booking.deskId;
         bookingForm.deskName = booking.deskName;
         bookingForm.deskType = booking.deskType;
@@ -50,6 +53,7 @@ watch(
       } else {
         bookingForm.id = 0;
         bookingForm.userId = 0;
+        bookingForm.email = "";
         bookingForm.deskId = 0;
         bookingForm.deskName = "";
         bookingForm.deskType = "SHARED";
@@ -156,6 +160,16 @@ function getDeskTypeIcon(type: string): string {
             <div class="info-content">
               <div class="info-label">User ID</div>
               <div class="info-value">{{ booking?.userId || '—' }}</div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <v-icon size="20" color="#171717">mdi-email</v-icon>
+            </div>
+            <div class="info-content">
+              <div class="info-label">User Email</div>
+              <div class="info-value">{{ booking?.email || '—' }}</div>
             </div>
           </div>
 

@@ -96,6 +96,10 @@
             <span class="table-text-bold">{{ item.userId ?? "—" }}</span>
           </template>
 
+          <template #item.userEmail="{ item }">
+            <span class="table-text-bold">{{ item.email ?? "—" }}</span>
+          </template>
+
           <template #item.deskName="{ item }">
             <div class="table-cell-stacked">
               <div class="table-text-bold">{{ item.deskName }}</div>
@@ -276,6 +280,9 @@ const router = useRouter();
 const route = useRoute();
 
 const bookings = ref([]);
+//dont delete please!!!!!!!!
+const users = ref([]);
+const usersMap = ref(new Map());
 const loading = ref(false);
 const error = ref(null);
 const cancellingId = ref(null);
@@ -293,6 +300,13 @@ const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
 
 const headers = [
   { title: "ID", key: "id", width: 80, align: "start", sortable: true },
+  {
+    title: "User Email",
+    key: "userEmail",
+    width: 200,
+    align: "start",
+    sortable: true,
+  },
   {
     title: "Desk Name",
     key: "deskName",
@@ -352,7 +366,23 @@ const headers = [
 ] as const;
 
 const filteredBookings = computed(() => {
-  return applyFilters(bookings.value).map(transformBookingData);
+  const transformed = bookings.value.map(transformBookingData);
+
+  let filtered = transformed;
+
+  if (statusFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.status === statusFilter.value);
+  }
+
+  if (typeFilter.value !== "ALL") {
+    filtered = filtered.filter((b) => b.deskType === typeFilter.value);
+  }
+
+  if (searchQuery.value) {
+    filtered = applySearchFilter(filtered, searchQuery.value);
+  }
+
+  return filtered;
 });
 
 function applyFilters(bookingsList: any[]) {
@@ -377,8 +407,11 @@ function applySearchFilter(bookingsList: any[], query: string) {
   const search = query.toLowerCase();
   return bookingsList.filter(
     (b) =>
-      b.desk?.displayName?.toLowerCase().includes(search) ||
-      b.user_id?.toString().includes(search)
+      b.deskName?.toLowerCase().includes(search) ||
+      b.email?.toLowerCase().includes(search) ||
+      b.userId?.toString().includes(search) ||
+      b.id?.toString().includes(search) ||
+      b.zoneName?.toLowerCase().includes(search)
   );
 }
 
@@ -407,12 +440,38 @@ async function fetchBookings() {
       statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
     const response = await api.get("/booking/all", { params });
     bookings.value = response.data;
+    await fetchUserEmails();
   } catch (err: any) {
     console.error("Error fetching bookings:", err);
     error.value =
       err.response?.data?.message || err.message || "Failed to fetch bookings";
   } finally {
     loading.value = false;
+  }
+}
+
+async function fetchUserEmails() {
+  try {
+    const userIds = [...new Set(bookings.value.map(b => b.userId).filter(id => id != null))];
+    
+    const userPromises = userIds.map(async (userId) => {
+      try {
+
+        const response = await api.get(`/admin/users/${userId}`);
+        return { id: userId, email: response.data.email };
+      } catch (err) {
+        console.warn(`Could not fetch user ${userId}:`, err);
+        return { id: userId, email: 'Unknown' };
+      }
+    });
+    
+    const usersData = await Promise.all(userPromises);
+    
+    usersData.forEach(user => {
+      usersMap.value.set(user.id, user.email);
+    });
+  } catch (err: any) {
+    console.error("Error fetching user emails:", err);
   }
 }
 
