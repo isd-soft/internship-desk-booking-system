@@ -17,18 +17,66 @@
         <div class="modal-footer">
           <p class="modal-caption">{{ alt }}</p>
 
-          <v-btn
-            color="success"
-            variant="flat"
-            class="action-btn"
-            @click="setAsBackground"
-            :loading="isProcessing"
-            :disabled="isProcessing"
-            prepend-icon="mdi-check-circle-outline"
-          >
-            {{ isProcessing ? 'Saving...' : 'Set as Background' }}
-          </v-btn>
+          <div class="action-buttons-group">
+            <v-btn
+              color="error"
+              variant="tonal"
+              class="action-btn delete-btn"
+              prepend-icon="mdi-delete-outline"
+              @click="showConfirmDialog = true"
+            >
+              Delete
+            </v-btn>
+
+            <v-btn
+              color="success"
+              variant="flat"
+              class="action-btn set-background-btn"
+              @click="setAsBackground"
+              :loading="isProcessing"
+              :disabled="isProcessing"
+              prepend-icon="mdi-check-circle-outline"
+            >
+              {{ isProcessing ? 'Saving...' : 'Set as Background' }}
+            </v-btn>
+          </div>
         </div>
+
+        <v-dialog
+          v-model="showConfirmDialog"
+          max-width="400"
+          @click:outside="showConfirmDialog = false"
+        >
+          <v-card class="confirm-card">
+            <v-card-title class="text-h5 error--text">
+              <v-icon color="error" class="mr-2">mdi-alert-circle-outline</v-icon>
+              Confirm Deletion
+            </v-card-title>
+            <v-card-text>
+              Are you sure you want to permanently delete this image? This action cannot be undone.
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                variant="text"
+                @click="showConfirmDialog = false"
+                :disabled="isDeleting"
+              >
+                Cancel
+              </v-btn>
+              <v-btn
+                color="error"
+                variant="flat"
+                @click="deleteImage"
+                :loading="isDeleting"
+                :disabled="isDeleting"
+              >
+                Delete
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        
       </div>
     </div>
   </Teleport>
@@ -51,9 +99,11 @@ const props = defineProps<{
 
 const toast = useToast();
 
-const emit = defineEmits(['close', 'updated']);
+const emit = defineEmits(['close', 'updated', 'deleted']);
 
 const isProcessing = ref(false);
+const showConfirmDialog = ref(false); 
+const isDeleting = ref(false);
 
 const src = computed(() => {
   if (!props.image.image_data) return '';
@@ -83,8 +133,36 @@ const setAsBackground = async () => {
   }
 };
 
+const deleteImage = async () => {
+  if (isDeleting.value) return;
+  isDeleting.value = true;
+
+  try {
+    await api.delete(`/admin/images/delete/${props.image.id}`);
+    
+    toast.success("Image successfully deleted!", {
+      timeout: 2000
+    });
+    
+    emit('deleted', props.image.id); 
+    showConfirmDialog.value = false; 
+    emit('close');
+    
+  } catch (error: any) {
+    console.error("Error deleting image:", error);
+    const errorMessage = error.response?.data?.message || "Failed to delete image.";
+    toast.error(errorMessage, {
+      timeout: 3000
+    });
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') emit('close');
+  if (e.key === 'Escape' && !showConfirmDialog.value) emit('close');
+  if (e.key === 'Escape' && showConfirmDialog.value) showConfirmDialog.value = false;
 };
 
 onMounted(() => {
@@ -118,7 +196,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 2000;
   padding: 20px;
   cursor: zoom-out;
   backdrop-filter: blur(4px);
@@ -152,9 +230,14 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  max-width: 700px; 
+  max-width: 800px; 
   padding: 0 10px;
   gap: 20px;
+}
+
+.action-buttons-group {
+    display: flex;
+    gap: 10px; 
 }
 
 .modal-caption {
@@ -170,7 +253,7 @@ onUnmounted(() => {
 }
 
 .action-btn {
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   text-transform: none !important;
   letter-spacing: 0.3px;
   border-radius: 12px !important;
@@ -182,6 +265,10 @@ onUnmounted(() => {
 .action-btn:hover:not(:disabled) {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
   transform: translateY(-1px);
+}
+
+.delete-btn {
+    border: 1px solid rgba(244, 67, 54, 0.5) !important;
 }
 
 .close-btn {

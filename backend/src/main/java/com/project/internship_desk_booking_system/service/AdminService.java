@@ -632,6 +632,29 @@ public class AdminService {
         newBackground.setBackground(true);
     }
 
+    public void deleteImage(
+            Long id
+    ){
+        Image image = imageRepository
+                .findById(id)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        String.format(
+                                "Image with id %d not found",
+                                id
+                        )
+                ));
+        if(image.isBackground()){
+            throw new ExceptionResponse(
+                    HttpStatus.CONFLICT,
+                    "IMAGE_IS_BACKGROUND",
+                    "You cant delete image that is background"
+            );
+        }
+        imageRepository.delete(image);
+    }
+
     private String normalizeName(String name) {
         if (name == null) return null;
 

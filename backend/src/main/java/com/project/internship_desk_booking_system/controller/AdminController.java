@@ -240,13 +240,24 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updateUserRole(dto, principal));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/images/setBackground/{id}")
     public ResponseEntity<byte[]> setBackgroundImage(
             @PathVariable("id") Long id
     ) {
         adminService.setBackgroundImage(id);
 
+        return ResponseEntity
+                .ok()
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/images/delete/{id}")
+    public ResponseEntity<byte[]> deleteImage (
+            @PathVariable("id") Long id
+    ) {
+        adminService.deleteImage(id);
         return ResponseEntity
                 .ok()
                 .build();
