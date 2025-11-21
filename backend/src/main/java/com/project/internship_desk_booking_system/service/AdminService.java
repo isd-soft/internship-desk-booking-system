@@ -715,6 +715,16 @@ public class AdminService {
 
         return name.trim().replaceAll("\\s+", " ");
     }
+    // for testing purposes only
+    public void applyTemporaryAvailabilityForTest(
+            Desk desk,
+            Boolean isTemporarilyAvailable,
+            LocalDateTime from,
+            LocalDateTime until
 
+
+    ) {
+        applyTemporaryAvailability(desk, isTemporarilyAvailable, from, until);
+    }
 
 }
