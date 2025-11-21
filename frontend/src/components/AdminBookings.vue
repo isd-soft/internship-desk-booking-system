@@ -385,24 +385,6 @@ const filteredBookings = computed(() => {
   return filtered;
 });
 
-function applyFilters(bookingsList: any[]) {
-  let filtered = bookingsList;
-
-  if (statusFilter.value !== "ALL") {
-    filtered = filtered.filter((b) => b.status === statusFilter.value);
-  }
-
-  if (typeFilter.value !== "ALL") {
-    filtered = filtered.filter((b) => b.desk?.type === typeFilter.value);
-  }
-
-  if (searchQuery.value) {
-    filtered = applySearchFilter(filtered, searchQuery.value);
-  }
-
-  return filtered;
-}
-
 function applySearchFilter(bookingsList: any[], query: string) {
   const search = query.toLowerCase();
   return bookingsList.filter(
