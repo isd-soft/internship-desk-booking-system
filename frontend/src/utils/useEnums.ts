@@ -64,7 +64,6 @@ export async function fetchColors() {
 
         response.data.forEach((item: any) => {
             // Map both colorMeaning and colorName to colorCode
-            // e.g., "AVAILABLE" -> "#00FF00" and "GREEN" -> "#00FF00"
             colorMap[item.colorMeaning] = item.colorCode;
             if (item.colorName) {
                 colorMap[item.colorName] = item.colorCode;

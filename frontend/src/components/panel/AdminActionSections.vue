@@ -22,7 +22,7 @@
       @click="$emit('openAdmin', 'map')"
     >
       <v-icon class="mr-2" size="20">mdi-map-clock-outline</v-icon>
-      <span class="btn-text">Map Settings</span>
+      <span class="btn-text">Map Configuration</span>
     </v-btn>
 
     <v-btn
@@ -35,7 +35,7 @@
       @click="$emit('openAdmin', 'bookings')"
     >
       <v-icon class="mr-2" size="20">mdi-clipboard-text-clock</v-icon>
-      <span class="btn-text">All Bookings</span>
+      <span class="btn-text">Manage Bookings</span>
     </v-btn>
 
     <v-btn
@@ -48,7 +48,7 @@
       @click="$emit('openAdmin', 'desks')"
     >
       <v-icon class="mr-2" size="20">mdi-desk</v-icon>
-      <span class="btn-text">All Desks</span>
+      <span class="btn-text">Manage Desks</span>
     </v-btn>
 
     <v-btn
@@ -61,7 +61,7 @@
       @click="$emit('openAdmin', 'users')"
     >
       <v-icon class="mr-2" size="20">mdi-account-group</v-icon>
-      <span class="btn-text">All Users</span>
+      <span class="btn-text">Users</span>
     </v-btn>
 
     <v-btn
@@ -74,7 +74,7 @@
       @click="$emit('openAddUser')"
     >
       <v-icon class="mr-2" size="20">mdi-account-plus</v-icon>
-      <span class="btn-text">Add User</span>
+      <span class="btn-text">Create User</span>
     </v-btn>
 
     <v-btn
@@ -100,7 +100,7 @@
       @click="$emit('openAdmin', 'settings')"
     >
       <v-icon class="mr-2" size="20">mdi-cog</v-icon>
-      <span class="btn-text">Settings</span>
+      <span class="btn-text">Admin Settings</span>
     </v-btn>
 
     <v-btn
@@ -126,7 +126,7 @@
       @click="$emit('openAdmin', 'background-gallery')"
     >
       <v-icon class="mr-2" size="20">mdi-camera-burst</v-icon>
-      <span class="btn-text">Background gallery</span>
+      <span class="btn-text">Background Gallery</span>
     </v-btn>
 
     <v-divider class="my-2"></v-divider>
