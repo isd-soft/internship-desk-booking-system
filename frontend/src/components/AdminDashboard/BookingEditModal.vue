@@ -161,8 +161,9 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from "vue";
-import { fetchBookingStatus, statusBookingOptions } from "@/utils/useEnums";
+import {reactive, ref, watch} from "vue";
+import {fetchBookingStatus,statusBookingOptions} from "@/utils/useEnums"
+import api from "../../plugins/axios";
 
 interface Props {
   show: boolean;
@@ -198,6 +199,12 @@ const bookingForm = reactive({
   status: "ACTIVE",
 });
 
+const deskName = ref<string>("");
+const deskZone = ref<string>("");
+const deskType = ref<string>("");
+const loadingDesk = ref(false);
+const deskError = ref<string>("");
+
 // Sync with existing booking
 watch(
     () => props.booking,
@@ -217,6 +224,41 @@ watch(
     { immediate: true }
 );
 
+// Watch desk ID changes to fetch desk details
+watch(
+    () => bookingForm.deskId,
+    async (newDeskId) => {
+      if (newDeskId && newDeskId > 0) {
+        await fetchDeskDetails(newDeskId);
+      } else {
+        deskName.value = "";
+        deskZone.value = "";
+        deskType.value = "";
+        deskError.value = "";
+      }
+    }
+);
+
+async function fetchDeskDetails(deskId: number) {
+  try {
+    loadingDesk.value = true;
+    deskError.value = "";
+    const response = await api.get(`/admin/desk/${deskId}`);
+    const desk = response.data;
+    deskName.value = desk.displayName || "Unknown Desk";
+    deskZone.value = desk.zoneDto?.zoneName || "Unknown Zone";
+    deskType.value = desk.type || "Unknown";
+  } catch (err: any) {
+    console.error("Error fetching desk details:", err);
+    deskError.value = "Desk not found";
+    deskName.value = "";
+    deskZone.value = "";
+    deskType.value = "";
+  } finally {
+    loadingDesk.value = false;
+  }
+}
+
 function handleSave() {
   emit("save", {
     deskId: bookingForm.deskId,
@@ -230,6 +272,138 @@ function closeModal() {
   emit("close");
 }
 </script>
+
+<template>
+  <v-dialog
+      :model-value="show"
+      @update:model-value="$event ? null : closeModal()"
+      max-width="480"
+      transition="dialog-bottom-transition"
+      persistent
+  >
+    <v-card class="booking-card" elevation="0">
+      <v-card-title class="card-header">
+        <div class="header-content">
+          <div class="header-info">
+            <div class="workspace-label">BOOKING</div>
+            <div class="desk-title">Edit Booking</div>
+          </div>
+          <v-btn
+              icon
+              variant="text"
+              size="small"
+              @click="closeModal"
+              class="close-button"
+          >
+            <v-icon size="20">mdi-close</v-icon>
+          </v-btn>
+        </div>
+      </v-card-title>
+
+      <v-card-text class="card-body">
+        <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+            density="compact"
+            closable
+        >
+          {{error}}
+        </v-alert>
+        <div class="section">
+          <div class="section-title">Desk ID</div>
+          <input
+              v-model.number="bookingForm.deskId"
+              type="number"
+              class="custom-input"
+              placeholder="Enter desk ID"
+          />
+          <div v-if="loadingDesk" class="desk-info loading">
+            <v-progress-circular
+                indeterminate
+                size="16"
+                width="2"
+                color="#171717"
+            />
+            <span>Loading desk details...</span>
+          </div>
+          <div v-else-if="deskError" class="desk-info error">
+            <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
+            <span>{{ deskError }}</span>
+          </div>
+          <div v-else-if="deskName" class="desk-info success">
+            <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
+            <div class="desk-details">
+              <span class="desk-name">{{ deskName }}</span>
+              <span class="desk-meta">{{ deskZone }} • {{ deskType }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Start Date & Time</div>
+          <input
+              v-model="bookingForm.startTime"
+              type="datetime-local"
+              class="custom-input"
+          />
+        </div>
+
+        <div class="section">
+          <div class="section-title">End Date & Time</div>
+          <input
+              v-model="bookingForm.endTime"
+              type="datetime-local"
+              class="custom-input"
+          />
+        </div>
+
+        <div class="section">
+          <div class="section-title">Status</div>
+          <div class="status-grid">
+            <button
+                v-for="option in statusBookingOptions"
+                :key="option.value"
+                @click.stop="bookingForm.status = option.value"
+                :class="[
+                'status-btn',
+                { active: bookingForm.status === option.value },
+              ]"
+            >
+              {{ option.value }}
+            </button>
+          </div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-icon">
+            <v-icon size="24" color="white">mdi-calendar-check</v-icon>
+          </div>
+          <div class="summary-info">
+            <div class="summary-label">Booking Summary</div>
+            <div class="summary-details">
+              <div class="summary-row">
+                <span class="summary-key">Desk:</span>
+                <span class="summary-value">{{ deskName || bookingForm.deskId || "—" }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-key">Status:</span>
+                <span class="summary-value">{{ bookingForm.status }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </v-card-text>
+
+      <v-card-actions class="card-actions">
+        <v-btn class="confirm-button" size="x-large" @click.stop="handleSave">
+          Save Changes
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
@@ -331,6 +505,56 @@ function closeModal() {
   background: #171717 !important;
   border-color: #171717 !important;
   color: #ffffff !important;
+}
+
+.desk-info {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.desk-info.loading {
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  color: #737373;
+}
+
+.desk-info.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.desk-info.success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+}
+
+.desk-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.desk-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #171717;
+  letter-spacing: -0.2px;
+}
+
+.desk-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: #737373;
 }
 
 .summary-box {
