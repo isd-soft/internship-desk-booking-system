@@ -5,6 +5,7 @@
       max-width="550"
       transition="dialog-bottom-transition"
       persistent
+      scrollable
   >
     <v-card class="booking-card">
       <v-card-title class="card-header">
@@ -25,7 +26,6 @@
       </v-card-title>
 
       <v-card-text class="card-body">
-        <!-- Error Alert -->
         <v-expand-transition>
           <v-alert
               v-if="error"
@@ -41,7 +41,6 @@
         </v-expand-transition>
 
         <v-container class="pa-0">
-          <!-- Section: Target Desk -->
           <div class="section mb-6">
             <div class="input-label">Target Desk</div>
             <v-text-field
@@ -55,10 +54,30 @@
                 prepend-inner-icon="mdi-desk"
             />
           </div>
-
+          <div class="section mb-6">
+            <div v-if="loadingDesk" class="desk-info loading">
+              <v-progress-circular
+                  indeterminate
+                  size="16"
+                  width="2"
+                  color="#171717"
+              />
+              <span>Loading desk details...</span>
+            </div>
+            <div v-else-if="deskError" class="desk-info error">
+              <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
+              <span>{{ deskError }}</span>
+            </div>
+            <div v-else-if="deskName" class="desk-info success">
+              <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
+              <div class="desk-details">
+                <span class="desk-name">{{ deskName }}</span>
+                <span class="desk-meta">{{ deskZone }} • {{ deskType }}</span>
+              </div>
+            </div>
+          </div>
           <v-divider class="mb-6 border-opacity-50"></v-divider>
 
-          <!-- Section: Timeline -->
           <div class="input-label mb-2">Booking Timeline</div>
           <v-sheet border rounded="lg" class="pa-4 bg-grey-lighten-5 mb-6">
             <v-row dense>
@@ -89,7 +108,6 @@
             </v-row>
           </v-sheet>
 
-          <!-- Section: Status -->
           <div class="section mb-6">
             <div class="input-label">Booking Status</div>
             <div class="button-grid">
@@ -112,7 +130,6 @@
             </div>
           </div>
 
-          <!-- Summary Card (Dark) -->
           <v-sheet class="summary-box" elevation="0">
             <div class="d-flex align-center gap-3">
               <div class="summary-icon">
@@ -137,7 +154,6 @@
         </v-container>
       </v-card-text>
 
-      <!-- Footer -->
       <v-card-actions class="card-actions">
         <v-btn
             variant="text"
@@ -176,7 +192,6 @@ interface Props {
   error: String;
 }
 
-// Maintain original API call
 fetchBookingStatus(false);
 
 interface Emits {
@@ -273,138 +288,6 @@ function closeModal() {
 }
 </script>
 
-<template>
-  <v-dialog
-      :model-value="show"
-      @update:model-value="$event ? null : closeModal()"
-      max-width="480"
-      transition="dialog-bottom-transition"
-      persistent
-  >
-    <v-card class="booking-card" elevation="0">
-      <v-card-title class="card-header">
-        <div class="header-content">
-          <div class="header-info">
-            <div class="workspace-label">BOOKING</div>
-            <div class="desk-title">Edit Booking</div>
-          </div>
-          <v-btn
-              icon
-              variant="text"
-              size="small"
-              @click="closeModal"
-              class="close-button"
-          >
-            <v-icon size="20">mdi-close</v-icon>
-          </v-btn>
-        </div>
-      </v-card-title>
-
-      <v-card-text class="card-body">
-        <v-alert
-            v-if="error"
-            type="error"
-            variant="tonal"
-            class="mb-4"
-            density="compact"
-            closable
-        >
-          {{error}}
-        </v-alert>
-        <div class="section">
-          <div class="section-title">Desk ID</div>
-          <input
-              v-model.number="bookingForm.deskId"
-              type="number"
-              class="custom-input"
-              placeholder="Enter desk ID"
-          />
-          <div v-if="loadingDesk" class="desk-info loading">
-            <v-progress-circular
-                indeterminate
-                size="16"
-                width="2"
-                color="#171717"
-            />
-            <span>Loading desk details...</span>
-          </div>
-          <div v-else-if="deskError" class="desk-info error">
-            <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
-            <span>{{ deskError }}</span>
-          </div>
-          <div v-else-if="deskName" class="desk-info success">
-            <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
-            <div class="desk-details">
-              <span class="desk-name">{{ deskName }}</span>
-              <span class="desk-meta">{{ deskZone }} • {{ deskType }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Start Date & Time</div>
-          <input
-              v-model="bookingForm.startTime"
-              type="datetime-local"
-              class="custom-input"
-          />
-        </div>
-
-        <div class="section">
-          <div class="section-title">End Date & Time</div>
-          <input
-              v-model="bookingForm.endTime"
-              type="datetime-local"
-              class="custom-input"
-          />
-        </div>
-
-        <div class="section">
-          <div class="section-title">Status</div>
-          <div class="status-grid">
-            <button
-                v-for="option in statusBookingOptions"
-                :key="option.value"
-                @click.stop="bookingForm.status = option.value"
-                :class="[
-                'status-btn',
-                { active: bookingForm.status === option.value },
-              ]"
-            >
-              {{ option.value }}
-            </button>
-          </div>
-        </div>
-
-        <div class="summary-box">
-          <div class="summary-icon">
-            <v-icon size="24" color="white">mdi-calendar-check</v-icon>
-          </div>
-          <div class="summary-info">
-            <div class="summary-label">Booking Summary</div>
-            <div class="summary-details">
-              <div class="summary-row">
-                <span class="summary-key">Desk:</span>
-                <span class="summary-value">{{ deskName || bookingForm.deskId || "—" }}</span>
-              </div>
-              <div class="summary-row">
-                <span class="summary-key">Status:</span>
-                <span class="summary-value">{{ bookingForm.status }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </v-card-text>
-
-      <v-card-actions class="card-actions">
-        <v-btn class="confirm-button" size="x-large" @click.stop="handleSave">
-          Save Changes
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
-
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
@@ -412,11 +295,19 @@ function closeModal() {
   border-radius: 20px;
   background: #ffffff;
   font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 .card-header {
   padding: 24px 28px;
   border-bottom: 1px solid #f3f4f6;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .header-content {
@@ -443,8 +334,28 @@ function closeModal() {
 
 .card-body {
   padding: 28px;
-  max-height: 70vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.card-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 .input-label {
@@ -466,7 +377,10 @@ function closeModal() {
   text-transform: uppercase;
 }
 
-/* Modern Input Styling */
+.section {
+  position: relative;
+}
+
 .modern-input :deep(.v-field) {
   border-radius: 12px;
   background-color: #ffffff;
@@ -508,7 +422,6 @@ function closeModal() {
 }
 
 .desk-info {
-  margin-top: 12px;
   padding: 12px 16px;
   border-radius: 10px;
   display: flex;
@@ -561,7 +474,6 @@ function closeModal() {
   background: #171717;
   border-radius: 16px;
   padding: 20px;
-  margin-top: 8px;
 }
 
 .summary-icon {
@@ -592,11 +504,16 @@ function closeModal() {
 }
 
 .card-actions {
-  padding: 0 28px 28px;
+  padding: 20px 28px;
   background: #ffffff;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  border-top: 1px solid #f3f4f6;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .cancel-button {
@@ -623,6 +540,7 @@ function closeModal() {
 .confirm-button:hover {
   background: #262626 !important;
   transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .border-error {
@@ -631,5 +549,24 @@ function closeModal() {
 
 .gap-3 {
   gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .card-header {
+    padding: 20px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .card-actions {
+    padding: 16px 20px;
+    flex-direction: column;
+  }
+
+  .confirm-button {
+    max-width: 100%;
+  }
 }
 </style>
