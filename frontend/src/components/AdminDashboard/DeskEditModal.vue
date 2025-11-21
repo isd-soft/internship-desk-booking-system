@@ -1,3 +1,240 @@
+<template>
+  <v-dialog
+      :model-value="modelValue"
+      @update:model-value="$event ? null : closeModal()"
+      max-width="600"
+      transition="dialog-bottom-transition"
+      persistent
+  >
+    <v-card class="booking-card">
+      <v-card-title class="card-header">
+        <div class="header-content">
+          <div class="d-flex align-center">
+            <v-avatar color="grey-lighten-4" class="mr-4" rounded="lg">
+              <v-icon color="#171717">mdi-desk</v-icon>
+            </v-avatar>
+            <div class="header-info">
+              <div class="workspace-label">DESK MANAGER</div>
+              <div class="desk-title">Edit Desk</div>
+            </div>
+          </div>
+          <v-btn icon variant="text" density="comfortable" @click="closeModal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </div>
+      </v-card-title>
+
+      <v-card-text class="card-body">
+        <v-expand-transition>
+          <v-alert
+              v-if="error"
+              type="error"
+              variant="tonal"
+              class="mb-4 border-error"
+              density="compact"
+              closable
+              icon="mdi-alert-circle-outline"
+          >
+            {{ error }}
+          </v-alert>
+        </v-expand-transition>
+
+        <v-container class="pa-0">
+          <v-row dense class="mb-4">
+            <v-col cols="12" sm="6">
+              <div class="input-label">
+                Desk Name <span class="text-caption text-grey">(ID: {{ desk?.id }})</span>
+              </div>
+              <v-text-field
+                  v-model="deskForm.displayName"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="modern-input"
+                  placeholder="Enter desk name"
+                  prepend-inner-icon="mdi-rename-box"
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <div class="input-label">
+                Zone <span class="text-caption text-grey">(ID: {{ desk?.zoneId }})</span>
+              </div>
+              <v-text-field
+                  v-model="deskForm.zoneName"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-map-marker-radius"
+                  disabled
+                  bg-color="grey-lighten-5"
+              />
+              <div class="text-caption text-grey mt-1 ml-1">Zone cannot be changed</div>
+            </v-col>
+          </v-row>
+
+          <v-divider class="mb-6 border-opacity-50"></v-divider>
+
+          <v-row dense class="mb-6">
+            <v-col cols="12" class="mb-4">
+              <div class="input-label">Desk Type</div>
+              <div class="button-grid">
+                <v-btn
+                    v-for="option in typeDeskOptions"
+                    :key="option.value"
+                    @click="deskForm.type = option.value"
+                    variant="outlined"
+                    height="46"
+                    class="option-btn"
+                    :class="{ 'active-dark': deskForm.type === option.value }"
+                >
+                  {{ option.value }}
+                </v-btn>
+              </div>
+            </v-col>
+
+            <v-col cols="12">
+              <div class="input-label">Desk Status</div>
+              <div class="button-grid">
+                <v-btn
+                    v-for="option in statusDeskOptions"
+                    :key="option.value"
+                    @click="handleStatusClick(option)"
+                    variant="outlined"
+                    height="46"
+                    class="option-btn"
+                    :class="{
+                    'active-dark': deskForm.status === option.value && option.value === 'ACTIVE',
+                    'active-error': deskForm.status === option.value && option.value === 'DEACTIVATED'
+                  }"
+                >
+                  <v-icon
+                      start
+                      size="small"
+                      :icon="option.value === 'ACTIVE' ? 'mdi-check-circle-outline' : 'mdi-cancel'"
+                  />
+                  {{ option.value }}
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+
+          <div class="input-label mb-2">Coordinates</div>
+          <v-sheet border rounded="lg" class="pa-4 bg-grey-lighten-5 mb-6">
+            <v-row dense>
+              <v-col cols="6">
+                <span class="sub-label">Current X <span class="text-grey">(Saved: {{ desk?.baseX }})</span></span>
+                <v-text-field
+                    v-model.number="deskForm.currentX"
+                    type="number"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="bg-white"
+                    prepend-inner-icon="mdi-axis-x-arrow"
+                />
+              </v-col>
+              <v-col cols="6">
+                <span class="sub-label">Current Y <span class="text-grey">(Saved: {{ desk?.baseY }})</span></span>
+                <v-text-field
+                    v-model.number="deskForm.currentY"
+                    type="number"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="bg-white"
+                    prepend-inner-icon="mdi-axis-y-arrow"
+                />
+              </v-col>
+            </v-row>
+          </v-sheet>
+
+          <div class="section">
+            <div class="d-flex justify-space-between align-center mb-2">
+              <div class="input-label mb-0">Temporary Availability</div>
+              <v-switch
+                  v-model="deskForm.isTemporarilyAvailable"
+                  :disabled="!canEnableTemporaryAvailability"
+                  color="#171717"
+                  hide-details
+                  inset
+                  density="compact"
+                  class="modern-switch"
+              />
+            </div>
+
+            <div
+                class="text-caption mb-3 d-flex align-center"
+                :class="!canEnableTemporaryAvailability ? 'text-warning' : 'text-grey'"
+            >
+              <v-icon size="small" class="mr-1" :color="!canEnableTemporaryAvailability ? 'warning' : 'grey'">
+                mdi-information-outline
+              </v-icon>
+              {{ tempAvailabilityHint }}
+            </div>
+
+            <v-expand-transition>
+              <v-sheet
+                  v-if="deskForm.isTemporarilyAvailable"
+                  border
+                  rounded="lg"
+                  class="pa-4 bg-grey-lighten-5"
+              >
+                <v-row dense>
+                  <v-col cols="12" sm="6">
+                    <span class="sub-label">Available From</span>
+                    <v-text-field
+                        v-model="deskForm.temporaryAvailableFrom"
+                        type="datetime-local"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="bg-white"
+                        prepend-inner-icon="mdi-calendar-start"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <span class="sub-label">Available Until</span>
+                    <v-text-field
+                        v-model="deskForm.temporaryAvailableUntil"
+                        type="datetime-local"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="bg-white"
+                        prepend-inner-icon="mdi-calendar-end"
+                    />
+                  </v-col>
+                </v-row>
+              </v-sheet>
+            </v-expand-transition>
+          </div>
+
+        </v-container>
+      </v-card-text>
+
+      <v-card-actions class="card-actions">
+        <v-btn
+            variant="text"
+            class="cancel-button"
+            size="large"
+            @click="closeModal"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+            class="confirm-button"
+            size="large"
+            @click="handleSave"
+        >
+          <v-icon start>mdi-content-save</v-icon>
+          Save Changes
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
 <script setup lang="ts">
 import { reactive, watch, computed, onMounted, ref } from "vue";
 import api from '@/plugins/axios';
@@ -91,7 +328,6 @@ const canEnableTemporaryAvailability = computed(() => {
   return deskForm.type === "ASSIGNED" && deskForm.status === "ACTIVE";
 });
 
-// Computed: Validation message
 const tempAvailabilityHint = computed(() => {
   if (!deskForm.type) {
     return "Select a desk type first";
@@ -104,6 +340,7 @@ const tempAvailabilityHint = computed(() => {
   }
   return "Make this desk temporarily available for booking";
 });
+
 watch(() => deskForm.type, (newType) => {
   if (newType !== "ASSIGNED" && deskForm.isTemporarilyAvailable) {
     deskForm.isTemporarilyAvailable = false;
@@ -214,404 +451,149 @@ function closeModal() {
 }
 </script>
 
-<template>
-  <v-dialog
-      :model-value="modelValue"
-      @update:model-value="$event ? null : closeModal()"
-      max-width="480"
-      transition="dialog-bottom-transition"
-      persistent
-  >
-    <v-card class="booking-card" elevation="0">
-      <v-card-title class="card-header">
-        <div class="header-content">
-          <div class="header-info">
-            <div class="workspace-label">DESK</div>
-            <div class="desk-title">Edit Desk</div>
-          </div>
-          <v-btn
-              icon
-              variant="text"
-              size="small"
-              @click="closeModal"
-              class="close-button"
-          >
-            <v-icon size="20">mdi-close</v-icon>
-          </v-btn>
-        </div>
-      </v-card-title>
-
-      <v-card-text class="card-body">
-        <v-alert
-            v-if="error"
-            type="error"
-            variant="tonal"
-            class="mb-4"
-            density="compact"
-            closable
-        >
-          {{ error }}
-        </v-alert>
-
-        <div class="section">
-          <div class="section-title">Desk Name</div>
-          <div class="id-label">Desk_ID: {{ desk?.id }}</div>
-          <input
-              v-model="deskForm.displayName"
-              type="text"
-              class="custom-input"
-              placeholder="Enter desk name"
-          />
-        </div>
-
-        <div class="section">
-          <div class="section-title">Zone</div>
-          <div class="id-label">Zone_ID: {{ desk?.zoneId }}</div>
-
-          <input
-              v-model="deskForm.zoneName"
-              type="text"
-              class="custom-input"
-              placeholder="Enter zone name"
-              disabled
-              style="opacity: 0.6; cursor: not-allowed;"
-          />
-          <div class="input-hint">Zone cannot be changed</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Desk Type</div>
-          <div class="status-grid">
-            <button
-                v-for="option in typeDeskOptions"
-                :key="option.value"
-                @click.stop="deskForm.type = option.value"
-                :class="['status-btn', { active: deskForm.type === option.value }]"
-            >
-              {{ option.value }}
-            </button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Desk Status</div>
-          <div class="status-grid">
-            <button
-                v-for="option in statusDeskOptions"
-                :key="option.value"
-                @click.stop="handleStatusClick(option)"
-                :class="['status-btn', { active: deskForm.status === option.value }]"
-            >
-              {{ option.value }}
-            </button>
-          </div>
-        </div>
-        <div class="section">
-        </div>
-        <div class="section">
-          <div class="id-label">Saved X: {{ desk?.baseX }}</div>
-          <input
-              v-model="deskForm.currentX"
-              type="number"
-              class="custom-input"
-              placeholder="Enter desk coordinates"
-          />
-          <div class="id-label">Saved Y: {{ desk?.baseY }}</div>
-          <input
-              v-model="deskForm.currentY"
-              type="number"
-              class="custom-input"
-              placeholder="Enter desk coordinates"
-          />
-        </div>
-        <div class="section">
-          <div class="section-title">Temporary Availability</div>
-          <label
-              :class="['checkbox-container', { disabled: !canEnableTemporaryAvailability }]"
-              @click.prevent="canEnableTemporaryAvailability && (deskForm.isTemporarilyAvailable = !deskForm.isTemporarilyAvailable)"
-          >
-            <input
-                type="checkbox"
-                v-model="deskForm.isTemporarilyAvailable"
-                class="custom-checkbox"
-                :disabled="!canEnableTemporaryAvailability"
-            />
-            <span class="checkbox-label">Enable temporary availability</span>
-          </label>
-          <div class="input-hint" :class="{ 'hint-warning': !canEnableTemporaryAvailability }">
-            {{ tempAvailabilityHint }}
-          </div>
-
-          <transition name="slide-fade">
-            <div v-if="deskForm.isTemporarilyAvailable" class="date-range-section">
-              <div class="date-input-group">
-                <label class="date-label">Available From</label>
-                <input
-                    v-model="deskForm.temporaryAvailableFrom"
-                    type="datetime-local"
-                    class="custom-input date-input"
-                    placeholder="Select start date & time"
-                />
-              </div>
-
-              <div class="date-input-group">
-                <label class="date-label">Available Until</label>
-                <input
-                    v-model="deskForm.temporaryAvailableUntil"
-                    type="datetime-local"
-                    class="custom-input date-input"
-                    placeholder="Select end date & time"
-                />
-              </div>
-            </div>
-          </transition>
-        </div>
-      </v-card-text>
-
-      <v-card-actions class="card-actions">
-        <v-btn
-            variant="text"
-            @click="closeModal"
-            class="cancel-button"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-            class="confirm-button"
-            size="x-large"
-            @click.stop="handleSave"
-        >
-          Save Changes
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
-
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
-* {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 .booking-card {
-  border-radius: 20px !important;
+  border-radius: 20px;
   background: #ffffff;
-  border: 1px solid #e5e5e5;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12) !important;
-  overflow: hidden;
+  font-family: "Inter", sans-serif;
 }
 
 .card-header {
-  padding: 28px 28px 24px 28px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .header-content {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
 }
 
-.header-info {
-  flex: 1;
-}
-
 .workspace-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  color: #737373;
+  color: #9ca3af;
   letter-spacing: 1.5px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.id-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #737373;
-  letter-spacing: 1.5px;
-  margin-bottom: 8px;
   text-transform: uppercase;
 }
 
 .desk-title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #171717;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.close-button {
-  opacity: 0.6;
-  transition: all 0.2s ease;
-  margin-top: -4px;
-}
-
-.close-button:hover {
-  opacity: 1;
-  background-color: #f5f5f5 !important;
-  transform: rotate(90deg);
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
 }
 
 .card-body {
-  padding: 0 28px 28px 28px;
+  padding: 28px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-.section {
-  margin-bottom: 24px;
-}
-
-.section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
+.input-label {
+  font-weight: 600;
   font-size: 13px;
-  font-weight: 700;
-  color: #171717;
-  margin-bottom: 12px;
-  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.custom-input {
-  width: 100%;
-  padding: 16px;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  font-size: 15px;
+.sub-label {
+  display: block;
+  font-size: 11px;
   font-weight: 600;
-  color: #171717;
-  background: #ffffff;
-  transition: all 0.3s ease;
-  outline: none;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
 }
 
-.custom-input:hover:not(:disabled) {
-  border-color: #a3a3a3;
-  background: #fafafa;
+/* Modern Input Styling */
+.modern-input :deep(.v-field) {
+  border-radius: 12px;
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  transition: all 0.2s ease;
 }
 
-.custom-input:focus {
+.modern-input :deep(.v-field.v-field--focused) {
   border-color: #171717;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 0 1px #171717;
 }
 
-.custom-input::placeholder {
-  color: #a3a3a3;
-  font-weight: 500;
+.modern-input :deep(.v-field.v-field--disabled) {
+  background-color: #f9fafb;
+  opacity: 1;
+  color: #6b7280;
 }
 
-.input-hint {
-  font-size: 12px;
-  color: #737373;
-  margin-top: 8px;
-  font-weight: 500;
-}
-
-.hint-warning {
-  color: #d97706;
-}
-
-.status-grid {
+/* Button Grid for Type/Status */
+.button-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 12px;
 }
 
-.status-btn {
-  background: #ffffff;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 14px;
-  font-weight: 600;
-  color: #171717;
-  outline: none;
+.option-btn {
+  border-radius: 12px !important;
+  border-color: #e5e7eb !important;
+  color: #6b7280 !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+  background: white;
+  transition: all 0.2s ease;
 }
 
-.status-btn:hover {
-  border-color: #a3a3a3;
-  background: #fafafa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.option-btn:hover {
+  border-color: #d1d5db !important;
+  background: #f9fafb;
 }
 
-.status-btn.active {
-  background: #171717;
-  border-color: #171717;
-  color: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+/* Active State: Default (Dark) */
+.option-btn.active-dark {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #ffffff !important;
 }
 
-.checkbox-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  padding: 16px;
-  border: 2px solid #e5e5e5;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+/* Active State: Error (Deactivated) */
+.option-btn.active-error {
+  background: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #b91c1c !important;
 }
 
-.checkbox-container:hover:not(.disabled) {
-  border-color: #a3a3a3;
-  background: #fafafa;
+/* Switch Styling */
+.modern-switch :deep(.v-switch__track) {
+  background: #e5e7eb;
+  opacity: 1;
 }
 
-.checkbox-container.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f5f5f5;
+.modern-switch :deep(.v-switch__thumb) {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.custom-checkbox {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #171717;
-}
-
-.custom-checkbox:disabled {
-  cursor: not-allowed;
-}
-
-.checkbox-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #171717;
-  cursor: pointer;
-}
-
-.disabled .checkbox-label {
-  cursor: not-allowed;
-}
-
+/* Footer Actions */
 .card-actions {
-  padding: 20px 28px 28px 28px;
+  padding: 0 28px 28px;
+  background: #ffffff;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .cancel-button {
   font-weight: 600 !important;
   text-transform: none !important;
   letter-spacing: 0.3px;
-  color: #737373 !important;
-}
-
-.cancel-button:hover {
-  background-color: #f5f5f5 !important;
+  color: #6b7280 !important;
+  border-radius: 12px !important;
 }
 
 .confirm-button {
@@ -620,82 +602,19 @@ function closeModal() {
   font-weight: 700 !important;
   text-transform: none !important;
   letter-spacing: 0.3px;
-  padding: 0 40px !important;
   height: 52px !important;
   border-radius: 12px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  flex: 1;
+  max-width: 200px;
 }
 
-.confirm-button:hover:not(:disabled) {
+.confirm-button:hover {
   background: #262626 !important;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24) !important;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-.confirm-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.date-range-section {
-  margin-top: 16px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 12px;
-  border: 2px solid #e5e5e5;
-}
-
-.date-input-group {
-  margin-bottom: 16px;
-}
-
-.date-input-group:last-child {
-  margin-bottom: 0;
-}
-
-.date-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #171717;
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-}
-
-.date-input {
-  cursor: pointer;
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  filter: invert(0);
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.date-input::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-
-:deep(.v-overlay__scrim) {
-  backdrop-filter: blur(8px);
-  background: rgba(0, 0, 0, 0.4);
-}
-
-:deep(.dialog-bottom-transition-enter-active),
-:deep(.dialog-bottom-transition-leave-active) {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-:deep(.dialog-bottom-transition-enter-from) {
-  opacity: 0;
-  transform: translateY(30px) scale(0.96);
-}
-
-:deep(.dialog-bottom-transition-leave-to) {
-  opacity: 0;
-  transform: translateY(30px) scale(0.96);
+.border-error {
+  border: 1px solid #ef4444 !important;
 }
 </style>
