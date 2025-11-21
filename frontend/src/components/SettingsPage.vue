@@ -164,7 +164,33 @@
                   required
               >
                 <template #append-inner>
-                  <input v-model="editForm.colorCode" type="color" class="color-picker" />
+  <div
+  class="color-picker-swatch"
+  :style="{ backgroundColor: editForm.colorCode }"
+  @click.stop="showColorPickerEdit = true"
+></div>
+
+  <v-dialog v-model="showColorPickerEdit" width="320">
+    <v-card>
+      <v-card-title>Select Color</v-card-title>
+
+      <v-color-picker
+  :model-value="editForm.colorCode"
+  @update:model-value="updateEditColor"
+  mode="hex"
+  show-swatches
+/>
+
+      <v-card-actions>
+        <v-btn variant="text" @click="showColorPickerEdit = false">
+          Cancel
+        </v-btn>
+        <v-btn color="#171717" variant="flat" @click="showColorPickerEdit = false">
+          OK
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
                 </template>
               </v-text-field>
             </div>
@@ -236,8 +262,34 @@
                   required
               >
                 <template #append-inner>
-                  <input v-model="newForm.colorCode" type="color" class="color-picker" />
-                </template>
+  <div
+  class="color-picker-swatch"
+  :style="{ backgroundColor: newForm.colorCode }"
+  @click.stop="showColorPickerNew = true"
+></div>
+
+  <v-dialog v-model="showColorPickerNew" width="320">
+    <v-card>
+      <v-card-title>Select Color</v-card-title>
+
+      <v-color-picker
+        v-model="newForm.colorCode"
+        mode="hexa"
+        hide-inputs="false"
+        show-swatches
+      />
+
+      <v-card-actions>
+        <v-btn variant="text" @click="showColorPickerNew = false">
+          Cancel
+        </v-btn>
+        <v-btn color="#171717" variant="flat" @click="showColorPickerNew = false">
+          OK
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
               </v-text-field>
             </div>
 
@@ -349,6 +401,9 @@ export default {
       // Confirm dialog
       showConfirmDialog: false,
       colorToDelete: null,
+      //ColorPicker
+      showColorPickerEdit: false,
+showColorPickerNew: false,
     };
   },
 
@@ -635,7 +690,24 @@ export default {
       if (event.key === 'Escape' && this.showConfirmDialog) {
         this.cancelDelete();
       }
-    }
+    },
+    updateEditColor(color) {
+  // Convert color object to hex string
+  if (typeof color === 'string') {
+    this.editForm.colorCode = color.toUpperCase();
+  } else if (color && color.hex) {
+    this.editForm.colorCode = color.hex.toUpperCase();
+  }
+},
+
+updateNewColor(color) {
+  // Convert color object to hex string
+  if (typeof color === 'string') {
+    this.newForm.colorCode = color.toUpperCase();
+  } else if (color && color.hex) {
+    this.newForm.colorCode = color.hex.toUpperCase();
+  }
+}
   }
 };
 </script>
@@ -800,16 +872,16 @@ export default {
 }
 
 /* Color Picker */
-.color-picker {
+.color-picker-swatch {
   width: 36px;
   height: 36px;
-  border: 2px solid #e5e5e5;
   border-radius: 8px;
+  border: 2px solid #e5e5e5;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.color-picker:hover {
+.color-picker-swatch:hover {
   border-color: #171717;
   transform: scale(1.05);
 }
