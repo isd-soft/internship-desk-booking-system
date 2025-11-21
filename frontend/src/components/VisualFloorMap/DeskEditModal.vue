@@ -1,153 +1,207 @@
 <template>
   <v-dialog
-    :model-value="visible"
-    @update:model-value="$emit('cancel')"
-    max-width="520"
-    transition="dialog-bottom-transition"
-    persistent
+      :model-value="visible"
+      @update:model-value="$emit('cancel')"
+      max-width="560"
+      transition="dialog-bottom-transition"
+      persistent
   >
     <v-card class="booking-card">
       <v-card-title class="card-header">
         <div class="header-content">
           <div class="header-info">
-            <div class="workspace-label">EDIT DESK</div>
+            <div class="workspace-label">
+              <v-icon icon="mdi-pencil-box-outline" size="14" class="mr-1" />
+              EDIT DESK
+            </div>
             <div class="desk-title">
               {{ desk?.deskName || `Desk ${desk?.i}` }}
             </div>
           </div>
-          <v-btn icon variant="text" size="small" @click="close">
-            <v-icon size="20">mdi-close</v-icon>
+          <v-btn icon variant="text" density="comfortable" @click="close">
+            <v-icon>mdi-close</v-icon>
           </v-btn>
         </div>
       </v-card-title>
 
       <v-card-text class="card-body">
-        <div class="section">
-          <div class="section-title">Desk Name</div>
-          <v-text-field
-            v-model="localDesk.deskName"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="modern-input"
-            placeholder="Enter desk name"
-          />
-        </div>
-        <div class="section">
-          <div class="section-title">X</div>
-          <v-text-field
-            v-model.number="localDesk.x"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="modern-input"
-            placeholder="Enter x coordinate"
-          />
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Y</div>
-          <v-text-field
-            v-model.number="localDesk.y"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="modern-input"
-            placeholder="Enter y coordinate"
-          />
-        </div>
 
         <div class="section">
-          <div class="section-title">Height</div>
-          <v-text-field
-            v-model.number="localDesk.h"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="modern-input"
-            placeholder="Enter desk height"
-          />
+          <div class="section-label">Desk Status</div>
+          <div class="status-toggle-group">
+            <button
+                class="status-btn"
+                :class="{ 'active-state': !localDesk.isNonInteractive }"
+                @click="localDesk.isNonInteractive = false"
+            >
+              <v-icon icon="mdi-check-circle-outline" size="18" class="mr-2" />
+              Activate
+            </button>
+            <button
+                class="status-btn"
+                :class="{ 'inactive-state': localDesk.isNonInteractive }"
+                @click="localDesk.isNonInteractive = true"
+            >
+              <v-icon icon="mdi-block-helper" size="18" class="mr-2" />
+              Deactivate
+            </button>
+          </div>
+          <div class="status-hint">
+            {{ !localDesk.isNonInteractive ? 'This desk is visible and bookable.' : 'This desk is disabled and cannot be booked.' }}
+          </div>
         </div>
+
+        <v-divider class="my-5"></v-divider>
 
         <div class="section">
-          <div class="section-title">Width</div>
-          <v-text-field
-            v-model.number="localDesk.w"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="modern-input"
-            placeholder="Enter desk width"
-          />
+          <div class="section-header">
+            <v-icon icon="mdi-card-account-details-outline" size="18" class="mr-2 text-grey-darken-1"/>
+            General Information
+          </div>
+
+          <v-row dense>
+            <v-col cols="12">
+              <div class="field-label">Desk Name</div>
+              <v-text-field
+                  v-model="localDesk.deskName"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-tag-text-outline"
+                  placeholder="e.g. D-104"
+              />
+            </v-col>
+
+            <v-col cols="12" class="mt-3">
+              <div class="field-label">Zone</div>
+              <v-select
+                  v-model="zoneDisplay"
+                  :items="zones.map(z => ({
+                  title: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`,
+                  value: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`
+                }))"
+                  item-title="title"
+                  item-value="value"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="modern-select"
+                  prepend-inner-icon="mdi-map-marker-radius-outline"
+                  placeholder="Select a zone"
+              />
+            </v-col>
+          </v-row>
         </div>
 
-        <v-select
-          label="Select"
-          v-model="zoneDisplay"
-          :items="zones.map(z => ({
-            title: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`,
-            value: `${z.zoneId} - ${z.zoneAbv} - ${z.zoneName}`
-          }))"
-          item-title="title"
-          item-value="value"
-        />
+        <div class="section mt-6">
+          <div class="section-header">
+            <v-icon icon="mdi-axis-arrow" size="18" class="mr-2 text-grey-darken-1"/>
+            Position & Layout
+          </div>
 
-        <div class="section">
-          <div class="section-title">Disable desk</div>
-          <v-switch
-            v-model="localDesk.isNonInteractive"
-            :label="localDesk.isNonInteractive ? 'Disabled (non-bookable)' : 'Enabled (bookable)'"
-            color="#171717"
-            hide-details
-            inset
-            class="modern-switch"
-          />
+          <v-row dense>
+            <v-col cols="6">
+              <div class="field-label">X Coordinate</div>
+              <v-text-field
+                  v-model.number="localDesk.x"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-arrow-expand-horizontal"
+              />
+            </v-col>
+            <v-col cols="6">
+              <div class="field-label">Y Coordinate</div>
+              <v-text-field
+                  v-model.number="localDesk.y"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-arrow-expand-vertical"
+              />
+            </v-col>
+
+            <v-col cols="6" class="mt-3">
+              <div class="field-label">Width</div>
+              <v-text-field
+                  v-model.number="localDesk.w"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-ruler"
+              />
+            </v-col>
+            <v-col cols="6" class="mt-3">
+              <div class="field-label">Height</div>
+              <v-text-field
+                  v-model.number="localDesk.h"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="modern-input"
+                  prepend-inner-icon="mdi-ruler-square"
+              />
+            </v-col>
+          </v-row>
         </div>
+
       </v-card-text>
 
+      <v-divider></v-divider>
+
       <v-card-actions class="card-actions">
-        <div style="width: 100%; display: flex; gap: 12px">
-          <v-btn
+        <v-btn
+            variant="text"
+            color="error"
+            class="delete-button"
+            prepend-icon="mdi-trash-can-outline"
+            @click="$emit('delete', desk.i)"
+        >
+          Delete
+        </v-btn>
+
+        <v-spacer></v-spacer>
+
+        <v-btn
             variant="outlined"
             class="restore-button"
-            size="x-large"
             @click="$emit('restore', desk.i)"
-          >
-            Restore Default coordinates
-          </v-btn>
+        >
+          Reset Defaults
+        </v-btn>
 
-          <v-btn
-            variant="outlined"
-            class="delete-button"
-            size="x-large"
-            @click="$emit('delete', desk.i)"
-          >
-            delete desk
-          </v-btn>
-
-          <v-btn v-if=" localDesk.newDesk"
+        <v-btn
+            v-if="localDesk.newDesk"
             class="confirm-button"
-            size="x-large"
+            flat
             @click="create"
-          >
-            Create desk
-          </v-btn>
+        >
+          Create Desk
+        </v-btn>
 
-          <v-btn v-else
+        <v-btn
+            v-else
             class="confirm-button"
-            size="x-large"
+            flat
             @click="confirm"
-          >
-            Save Changes
-          </v-btn>
-        </div>
+        >
+          Save Changes
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch } from "vue";
 import { zones } from "./adminFloorLayout";
 
 const props = defineProps<{
@@ -165,20 +219,24 @@ const emit = defineEmits<{
 }>();
 
 const zoneDisplay = ref('');
-
 const localDesk = ref({ ...props.desk });
 
 watch(
-  () => props.desk,
-  (newDesk) => {
-    if (newDesk) {
-      localDesk.value = { ...newDesk };
-      if(newDesk.zone){
-        zoneDisplay.value = `${newDesk.zone.zoneId} - ${newDesk.zone.zoneAbv} - ${newDesk.zone.zoneName}`;
+    () => props.desk,
+    (newDesk) => {
+      if (newDesk) {
+        localDesk.value = { ...newDesk };
+        // Ensure boolean is set correctly if undefined
+        if (localDesk.value.isNonInteractive === undefined) {
+          localDesk.value.isNonInteractive = false;
+        }
+
+        if(newDesk.zone){
+          zoneDisplay.value = `${newDesk.zone.zoneId} - ${newDesk.zone.zoneAbv} - ${newDesk.zone.zoneName}`;
+        }
       }
-    }
-  },
-  { immediate: true }
+    },
+    { immediate: true }
 );
 
 watch(zoneDisplay, (newZoneDisplay) => {
@@ -187,7 +245,7 @@ watch(zoneDisplay, (newZoneDisplay) => {
     const matchingZone = zones.value.find((z: any) => z.zoneId === zoneId);
 
     if (matchingZone) {
-      localDesk.value.zone = matchingZone; 
+      localDesk.value.zone = matchingZone;
     }
   }
 });
@@ -197,12 +255,10 @@ function close(){
 }
 
 function create(){
-  console.log(localDesk);
   emit("create", localDesk.value);
 }
 
 function confirm() {
-  console.log(localDesk);
   emit("confirm", localDesk.value);
 }
 </script>
@@ -213,14 +269,11 @@ function confirm() {
 .booking-card {
   border-radius: 20px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
   font-family: "Inter", sans-serif;
 }
 
 .card-header {
-  padding: 26px 28px 16px;
+  padding: 24px 28px 20px;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -228,126 +281,155 @@ function confirm() {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  width: 100%;
 }
 
 .workspace-label {
+  display: flex;
+  align-items: center;
   font-size: 11px;
   font-weight: 700;
   color: #737373;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
 .desk-title {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: #171717;
-  margin-bottom: 12px;
+  line-height: 1.2;
 }
 
 .card-body {
-  padding: 20px 28px 28px;
+  padding: 24px 28px 10px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-.section {
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-weight: 600;
-  font-size: 15px;
-  margin-bottom: 12px;
-  letter-spacing: 0.5px;
+/* Section Styling */
+.section-header {
+  font-weight: 700;
+  font-size: 14px;
   color: #171717;
-}
-
-.modern-input :deep(.v-field) {
-  border-radius: 12px;
-}
-
-.modern-select :deep(.v-field) {
-  border-radius: 12px;
-}
-
-.status-preview {
   display: flex;
   align-items: center;
-  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #525252;
+  margin-bottom: 6px;
+  margin-left: 2px;
 }
 
-.orientation-toggle {
-  width: 100%;
-  background: #f1f5f9;
-  border-radius: 12px;
-  overflow: hidden;
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #171717;
+  margin-bottom: 8px;
 }
 
-.orientation-toggle :deep(.v-btn) {
-  flex: 1;
-  height: 56px !important;
-  border-radius: 0 !important;
-  opacity: 0.7;
-}
-
-.orientation-toggle :deep(.v-btn.v-btn--selected) {
-  background: #171717 !important;
-  color: white;
-  opacity: 1;
-}
-
-.modern-switch :deep(.v-switch__track) {
-  background: #e5e7eb;
-}
-
-.modern-switch :deep(.v-switch__thumb) {
-  background: white;
-}
-
-.card-actions {
-  padding: 0 28px 28px;
+/* Custom Status Buttons */
+.status-toggle-group {
   display: flex;
   gap: 12px;
+  margin-bottom: 8px;
+}
+
+.status-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #737373;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.status-btn:hover {
+  background: #f3f4f6;
+}
+
+.status-btn.active-state {
+  background: #dcfce7; /* light green */
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.status-btn.inactive-state {
+  background: #fee2e2; /* light red */
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.status-hint {
+  font-size: 12px;
+  color: #a3a3a3;
+  margin-left: 2px;
+}
+
+/* Inputs */
+.modern-input :deep(.v-field),
+.modern-select :deep(.v-field) {
+  border-radius: 10px;
+  border-color: #e5e7eb;
+  font-size: 14px;
+}
+
+.modern-input :deep(.v-field--focused),
+.modern-select :deep(.v-field--focused) {
+  border-color: #171717;
+}
+
+/* Actions */
+.card-actions {
+  padding: 20px 28px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.delete-button {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  border-radius: 8px;
 }
 
 .restore-button {
-  flex: 1;
-  background: transparent !important;
+  border-color: #d4d4d8 !important;
   color: #525252 !important;
-  border: 2px solid #d4d4d8 !important;
-  font-weight: 700 !important;
-  text-transform: none !important;
+  font-weight: 600;
+  text-transform: none;
   letter-spacing: 0.3px;
-  height: 52px !important;
-  border-radius: 12px !important;
-}
-
-.restore-button:hover {
-  background: #f4f4f5 !important;
-  border-color: #a1a1aa !important;
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 20px;
 }
 
 .confirm-button {
-  flex: 2;
   background: #171717 !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  text-transform: none !important;
+  color: white !important;
+  font-weight: 600;
+  text-transform: none;
   letter-spacing: 0.3px;
-  height: 52px !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
-  transition: all 0.3s ease;
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .confirm-button:hover {
   background: #262626 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-1px);
 }
 </style>
