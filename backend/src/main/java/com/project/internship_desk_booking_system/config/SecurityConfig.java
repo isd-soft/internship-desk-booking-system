@@ -56,18 +56,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(DaoAuthenticationProvider daoProvider, @Autowired(required = false) LdapContextSource ldapContext, SafeLdapAuthenticationProvider ldapProvider) {
-        List<AuthenticationProvider> providers = new ArrayList<>();
-
-        if (ldapProps.isLdapEnabled() && ldapContext != null) {
-            providers.add(ldapProvider);
-        }
-
-        providers.add(daoProvider);
-        return new ProviderManager(providers);
-    }
-
-    @Bean
     public SafeLdapAuthenticationProvider safeLdapProvider(
             @Autowired(required = false) LdapContextSource ldapContext,
             LdapProperties ldapProperties,
@@ -77,7 +65,26 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(
+            DaoAuthenticationProvider daoProvider,
+            @Autowired(required = false) LdapContextSource ldapContext,
+            SafeLdapAuthenticationProvider ldapProvider
+    ) {
+
+        List<AuthenticationProvider> providers = new ArrayList<>();
+
+        if (ldapProps.isLdapEnabled() && ldapContext != null) {
+            providers.add(ldapProvider);
+        }
+
+        providers.add(daoProvider);
+
+        return new ProviderManager(providers);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(c -> c.configurationSource(corsConfigurationSource))
@@ -86,18 +93,16 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authEntryPoint)
                         .accessDeniedHandler(deniedHandler)
                 )
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/v1/**").authenticated()
+
+                        .anyRequest().permitAll()
                 )
+
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

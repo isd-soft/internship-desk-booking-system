@@ -96,6 +96,7 @@ public class BookingServiceValidation {
         }
     }
 
+    //public void validateEditByDeskType(Long )
 
     public void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
         int officeStart = bookingProperties.getOfficeStartHour();

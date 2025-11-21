@@ -508,10 +508,10 @@ public class AdminService {
 
 
             if (newDesk.getType() == DeskType.ASSIGNED) {
+                bookingValidation.validateTemporaryWindow(newDesk, bookingUpdateCommand.startTime(), bookingUpdateCommand.endTime());
                 throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_ASSIGNED", "A assigned desk cant have active bookings");
             }
 
-            bookingValidation.validateTemporaryWindow(newDesk, bookingUpdateCommand.startTime(), bookingUpdateCommand.endTime());
 
         }
 
