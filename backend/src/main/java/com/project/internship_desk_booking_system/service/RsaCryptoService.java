@@ -20,6 +20,10 @@ public class RsaCryptoService {
     private final RsaProperties rsaProperties;
     private PrivateKey privateKey;
 
+    /**
+     * Initializes the RSA private key from the configured properties after bean construction.
+     * Throws RuntimeException if the key cannot be loaded.
+     */
     @PostConstruct
     public void init() {
         try {
@@ -40,7 +44,12 @@ public class RsaCryptoService {
         }
     }
 
-
+    /**
+     * Decrypts a base64-encoded string using the RSA private key.
+     * @param encryptedBase64 the encrypted base64 string
+     * @return the decrypted string
+     * @throws RuntimeException if decryption fails
+     */
     public String decrypt(String encryptedBase64) {
         try {
             byte[] encryptedBytes = Base64.getDecoder().decode(encryptedBase64);
@@ -55,6 +64,12 @@ public class RsaCryptoService {
             throw new RuntimeException("RSA decrypt failed", e);
         }
     }
+
+    /**
+     * Tries to decrypt a value using RSA. If the value is not base64, returns it as is.
+     * @param value the value to try to decrypt
+     * @return decrypted value or original if not base64
+     */
     public String tryDecrypt(String value) {
         try {
             Base64.getDecoder().decode(value);

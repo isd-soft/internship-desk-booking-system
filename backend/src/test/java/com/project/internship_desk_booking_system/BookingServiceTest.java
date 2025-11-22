@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -282,5 +283,80 @@ class BookingServiceTest {
 
         assertThrows(ExceptionResponse.class,
                 () -> bookingService.getAllUserBookingsByDate("test@example.com", LocalDate.now()));
+    }
+
+    @Test
+    void testGetBookingsByDate_success() {
+        LocalDate date = LocalDate.now();
+        Booking booking = new Booking();
+        Desk desk = new Desk();
+        desk.setId(1L);
+        desk.setStatus(com.project.internship_desk_booking_system.enums.DeskStatus.ACTIVE);
+        booking.setDesk(desk);
+        booking.setStartTime(date.atTime(10, 0));
+        booking.setEndTime(date.atTime(12, 0));
+        when(bookingRepository.findBookingsByDate(date)).thenReturn(List.of(booking));
+        var result = bookingService.getBookingsByDate(date);
+        assertFalse(result.isEmpty());
+    }
+
+    @Test
+    void testGetBookingsByDate_notFound() {
+        LocalDate date = LocalDate.now();
+        when(bookingRepository.findBookingsByDate(date)).thenReturn(List.of());
+        assertThrows(ExceptionResponse.class, () -> bookingService.getBookingsByDate(date));
+    }
+
+    @Test
+    void testGetBookingStatusEnum() {
+        var result = bookingService.getBookingStatusEnum();
+        assertTrue(result.contains("ACTIVE"));
+        assertTrue(result.contains("SCHEDULED"));
+        assertTrue(result.contains("CANCELLED"));
+    }
+
+    @Test
+    void testCreateBooking_deskNotBookable() {
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(10L);
+        req.setStartTime(LocalDateTime.now().plusHours(2));
+        req.setEndTime(req.getStartTime().plusHours(3));
+        doThrow(new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_NOT_BOOKABLE", ""))
+                .when(validation).validateDeskType(any(), any(), any());
+        assertThrows(ExceptionResponse.class, () -> bookingService.createBooking("test@example.com", req));
+    }
+
+    @Test
+    void testCreateBooking_userIsAdmin() {
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(10L);
+        req.setStartTime(LocalDateTime.now().plusHours(2));
+        req.setEndTime(req.getStartTime().plusHours(3));
+        doThrow(new ExceptionResponse(HttpStatus.FORBIDDEN, "USER_CANNOT_BOOK", ""))
+                .when(validation).validateBookingLogic(any(), any());
+        assertThrows(ExceptionResponse.class, () -> bookingService.createBooking("test@example.com", req));
+    }
+
+    @Test
+    void testCancelBooking_saveCalled() {
+        Booking b = Booking.builder()
+                .id(200L)
+                .user(user)
+                .desk(desk)
+                .status(BookingStatus.ACTIVE)
+                .build();
+        when(bookingRepository.findByUserEmailAndId("test@example.com", 200L))
+                .thenReturn(Optional.of(b));
+        bookingService.cancelBooking("test@example.com", 200L);
+        verify(bookingRepository).save(b);
+    }
+
+    @Test
+    void testCancelBooking_emailNotSentOnError() {
+        when(bookingRepository.findByUserEmailAndId(any(), any())).thenReturn(Optional.empty());
+        try {
+            bookingService.cancelBooking("test@example.com", 99L);
+        } catch (Exception ignored) {}
+        verify(emailService, never()).sendCancelledBookingEmail(any(), any(), any(), any(), any());
     }
 }

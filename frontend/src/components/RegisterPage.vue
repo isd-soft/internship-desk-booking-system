@@ -108,7 +108,7 @@
               @click="handleRegister"
             >
               <v-icon left class="mr-2">mdi-account-plus</v-icon>
-              Create User
+              create
             </v-btn>
 
             <div class="text-center helper-section">

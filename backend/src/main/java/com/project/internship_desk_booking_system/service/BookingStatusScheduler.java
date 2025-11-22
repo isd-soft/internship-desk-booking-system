@@ -16,8 +16,12 @@ public class BookingStatusScheduler {
 
     private final BookingRepository bookingRepository;
 
+    /**
+     * Scheduled task that updates booking statuses in the database every 30 minutes.
+     * Activates and confirms bookings based on the current time.
+     */
     @Transactional()
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRateString = "${scheduler.interval}")
     public void updateBookingStatuses() {
         LocalDateTime now = LocalDateTime.now();
 
