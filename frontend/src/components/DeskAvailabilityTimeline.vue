@@ -75,9 +75,7 @@
           <span class="range-separator">—</span>
           <span class="range-time">{{ formatTime(endHour) }}</span>
         </div>
-        <div class="duration-badge">
-          {{ selectedDuration }}h
-        </div>
+        <div class="duration-badge">{{ selectedDuration }}h</div>
       </div>
 
       <div class="timeline-labels">
@@ -156,7 +154,10 @@ interface QuickCast {
 const availabilitySlots = ref<{ hour: number; status: SlotStatus }[]>([]);
 const isLoading = ref(false);
 const trackRef = ref<HTMLElement | null>(null);
+
 const dragState = ref<null | "start" | "end">(null);
+let rafId: number | null = null;
+let lastMoveEvent: MouseEvent | null = null;
 
 const quickCasts = computed<QuickCast[]>(() => {
   const slots = availabilitySlots.value;
@@ -438,54 +439,62 @@ function onTrackMouseDown(event: MouseEvent) {
 }
 
 function handleMouseMove(event: MouseEvent) {
-  if (!dragState.value || !trackRef.value) return;
-
-  const rect = trackRef.value.getBoundingClientRect();
-  const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
-  const percentage = x / rect.width;
-  const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
-
-  const exactHour = MIN_HOUR.value + percentage * totalSpan;
-  let hour = Math.round(exactHour);
-
-  // Ограничиваем границами
-  hour = Math.max(MIN_HOUR.value, Math.min(hour, MAX_HOUR.value));
-
-  if (dragState.value === "start") {
-    if (hour < props.endHour) {
-      // Нормальное движение start handle влево и вправо
-      emit("update:startHour", hour);
-    } else {
-      // Переключаем ручки когда start достигает или превышает end
-      emit("update:startHour", props.endHour);
-      emit("update:endHour", hour);
-      dragState.value = "end";
+  lastMoveEvent = event;
+  if (rafId !== null) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = null;
+    if (!dragState.value || !trackRef.value || !lastMoveEvent) return;
+    const rect = trackRef.value.getBoundingClientRect();
+    const x = Math.max(
+      0,
+      Math.min(lastMoveEvent.clientX - rect.left, rect.width)
+    );
+    const percentage = x / rect.width;
+    const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
+    const exactHour = MIN_HOUR.value + percentage * totalSpan;
+    let hour = Math.round(exactHour);
+    hour = Math.max(MIN_HOUR.value, Math.min(hour, MAX_HOUR.value));
+    if (dragState.value === "start") {
+      if (hour < props.endHour) {
+        if (hour !== props.startHour) emit("update:startHour", hour);
+      } else {
+        emit("update:startHour", props.endHour);
+        emit("update:endHour", hour);
+        dragState.value = "end";
+      }
+    } else if (dragState.value === "end") {
+      if (hour > props.startHour) {
+        if (hour !== props.endHour) emit("update:endHour", hour);
+      } else {
+        emit("update:endHour", props.startHour);
+        emit("update:startHour", hour);
+        dragState.value = "start";
+      }
     }
-  } else if (dragState.value === "end") {
-    if (hour > props.startHour) {
-      // Нормальное движение end handle влево и вправо
-      emit("update:endHour", hour);
-    } else {
-      // Переключаем ручки когда end достигает или меньше start
-      emit("update:endHour", props.startHour);
-      emit("update:startHour", hour);
-      dragState.value = "start";
-    }
-  }
+  });
 }
 
 function handleMouseUp() {
   dragState.value = null;
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+  lastMoveEvent = null;
 }
 
 onMounted(() => {
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("mouseup", handleMouseUp);
+  window.addEventListener("mousemove", handleMouseMove, { passive: true });
+  window.addEventListener("mouseup", handleMouseUp, { passive: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("mousemove", handleMouseMove);
   window.removeEventListener("mouseup", handleMouseUp);
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
 });
 </script>
 
@@ -622,8 +631,11 @@ onBeforeUnmount(() => {
 .timeline-range {
   position: absolute;
   height: 100%;
-  transition: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: left 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .timeline-range.range-free {
@@ -648,9 +660,11 @@ onBeforeUnmount(() => {
   border: 2.5px solid #2a2a2a;
   border-radius: 50%;
   cursor: grab;
-  transition: transform 0.08s ease-out, border-color 0.08s ease-out, box-shadow 0.08s ease-out;
+  transition: left 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.08s ease-out,
+    border-color 0.08s ease-out, box-shadow 0.08s ease-out;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .timeline-handle:hover {
@@ -678,7 +692,8 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   pointer-events: none;
   font-family: inherit;
   opacity: 0;
@@ -855,8 +870,7 @@ onBeforeUnmount(() => {
   border-radius: 16px !important;
   padding: 0 !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(12px);
 }
 
