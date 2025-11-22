@@ -14,12 +14,23 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 
+/**
+ * Custom handler for access denied (HTTP 403) errors in Spring Security.
+ * Returns a JSON error response.
+ */
 @Component
 @RequiredArgsConstructor
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper mapper;
 
+    /**
+     * Handles access denied exceptions and writes a JSON error response.
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param ex the access denied exception
+     * @throws IOException if writing the response fails
+     */
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException ex) throws IOException {
