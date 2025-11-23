@@ -14,6 +14,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service that provides availability information for a desk on a given date.
+ * <p>
+ * It composes working day boundaries from {@link BookingProperties}, queries
+ * {@link BookingRepository} for existing bookings and maps them to DTOs using
+ * {@link BookingAvailabilityMapper}.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +30,13 @@ public class BookingAvailabilityService {
     private final BookingProperties bookingProperties;
     private final BookingAvailabilityMapper mapper;
 
+    /**
+     * Returns availability information for the desk on the requested date.
+     *
+     * @param deskId id of the desk to check
+     * @param date   date for which availability is requested
+     * @return {@link DeskAvailabilityResponse} containing workday bounds and busy intervals
+     */
     @Transactional(readOnly = true)
     public DeskAvailabilityResponse getDeskAvailability(Long deskId, LocalDate date) {
         LocalDateTime workdayStart = createWorkdayStart(date);
@@ -37,14 +51,34 @@ public class BookingAvailabilityService {
         return mapper.toDeskAvailabilityResponse(workdayStart, workdayEnd, busyIntervals);
     }
 
+    /**
+     * Create workday start LocalDateTime for the given date using configured office start hour.
+     *
+     * @param date date to create start time for
+     * @return LocalDateTime representing the start of the workday
+     */
     private LocalDateTime createWorkdayStart(LocalDate date) {
         return date.atTime(bookingProperties.getOfficeStartHour(), 0);
     }
 
+    /**
+     * Create workday end LocalDateTime for the given date using configured office end hour.
+     *
+     * @param date date to create end time for
+     * @return LocalDateTime representing the end of the workday
+     */
     private LocalDateTime createWorkdayEnd(LocalDate date) {
         return date.atTime(bookingProperties.getOfficeEndHour(), 0);
     }
 
+    /**
+     * Collects busy intervals (as DTOs) for the desk between workdayStart and workdayEnd.
+     *
+     * @param deskId       id of the desk
+     * @param workdayStart beginning of the day window
+     * @param workdayEnd   end of the day window
+     * @return list of {@link TimeIntervalDto} representing busy intervals; empty list when none
+     */
     private List<TimeIntervalDto> collectBusyIntervals(
             Long deskId,
             LocalDateTime workdayStart,
@@ -62,5 +96,3 @@ public class BookingAvailabilityService {
     }
 
 }
-
-

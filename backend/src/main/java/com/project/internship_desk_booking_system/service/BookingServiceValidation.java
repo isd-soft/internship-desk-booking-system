@@ -7,6 +7,7 @@ import com.project.internship_desk_booking_system.entity.BookingTimeLimits;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
+import com.project.internship_desk_booking_system.enums.DeskStatus;
 import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -33,7 +34,8 @@ public class BookingServiceValidation {
     /**
      * Validates the business logic for booking creation: user, time, office hours, desk, conflicts, and weekly limits.
      * Throws ExceptionResponse if any validation fails.
-     * @param user the user making the booking
+     *
+     * @param user    the user making the booking
      * @param request the booking creation request
      */
     public void validateBookingLogic(User user, BookingCreateRequest request) {
@@ -52,6 +54,7 @@ public class BookingServiceValidation {
 
     /**
      * Checks that the user is not the system admin (id=1). Throws if so.
+     *
      * @param user the user to check
      */
     public void validateUserOtherThanAdmin(User user) {
@@ -67,16 +70,33 @@ public class BookingServiceValidation {
 
 
     /**
-     * Validates the desk type and its temporary window if needed. Throws if desk is not bookable.
-     * @param desk the desk to validate
-     * @param start booking start time
-     * @param end booking end time
+     * Checks if the desk can be booked.
+     * <p>
+     * Rules:
+     * - DEACTIVATED desks cannot be booked.
+     * - SHARED desks are always bookable.
+     * - If desk has temporary availability, the booking time must fit its window.
+     * - All other desks are not bookable.
+     *
+     * @throws ExceptionResponse if booking is not allowed for this desk
      */
+
     public void validateDeskType(Desk desk, LocalDateTime start, LocalDateTime end) {
-        log.debug("Checking desk type {} for booking.", desk.getId());
+        log.debug("Checking desk {} for booking.", desk.getId());
+
+        if (desk.getStatus() == DeskStatus.DEACTIVATED) {
+            log.warn("Desk {} is deactivated.", desk.getId());
+            throw new ExceptionResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "DESK_DEACTIVATED",
+                    "This desk is deactivated and cannot be booked"
+            );
+        }
+
         if (desk.getType() == DeskType.SHARED) {
             return;
         }
+
         if (Boolean.TRUE.equals(desk.getIsTemporarilyAvailable())) {
             validateTemporaryWindow(desk, start, end);
             return;
@@ -92,9 +112,10 @@ public class BookingServiceValidation {
 
     /**
      * Validates the temporary window for a desk. Throws if not configured or out of range.
-     * @param desk the desk
+     *
+     * @param desk  the desk
      * @param start booking start time
-     * @param end booking end time
+     * @param end   booking end time
      */
     public void validateTemporaryWindow(Desk desk, LocalDateTime start, LocalDateTime end) {
         LocalDateTime from = desk.getTemporaryAvailableFrom();
@@ -117,11 +138,11 @@ public class BookingServiceValidation {
         }
     }
 
-
     /**
      * Validates that booking is within office hours. Throws if not.
+     *
      * @param start booking start time
-     * @param end booking end time
+     * @param end   booking end time
      */
     public void validateOfficeHours(LocalDateTime start, LocalDateTime end) {
         int officeStart = bookingProperties.getOfficeStartHour();
@@ -140,8 +161,9 @@ public class BookingServiceValidation {
 
     /**
      * Validates booking times: not in the past, end after start, duration within allowed range.
+     *
      * @param startTime booking start time
-     * @param endTime booking end time
+     * @param endTime   booking end time
      */
     public void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime) {
         LocalDateTime now = LocalDateTime.now();
@@ -181,9 +203,10 @@ public class BookingServiceValidation {
 
     /**
      * Checks if the desk is already booked for the given time. Throws if so.
+     *
      * @param deskId desk id
-     * @param start booking start time
-     * @param end booking end time
+     * @param start  booking start time
+     * @param end    booking end time
      */
     private void checkDeskAvailability(Long deskId, LocalDateTime start, LocalDateTime end) {
         if (bookingRepository.existsOverlappingBooking(deskId, start, end)) {
@@ -198,6 +221,7 @@ public class BookingServiceValidation {
 
     /**
      * Validates that the booking is not too far in advance. Throws if it exceeds the policy.
+     *
      * @param startTime booking start time
      */
     private void validateMaxDaysInAdvance(LocalDateTime startTime) {
@@ -218,9 +242,10 @@ public class BookingServiceValidation {
 
     /**
      * Validates that the user does not exceed the weekly hours limit. Throws if exceeded.
-     * @param userId user id
+     *
+     * @param userId    user id
      * @param startTime booking start time
-     * @param endTime booking end time
+     * @param endTime   booking end time
      */
     private void validateWeeklyHoursLimit(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
         BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
