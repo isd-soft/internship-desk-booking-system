@@ -446,9 +446,8 @@ onMounted(async () => {
   gap: 8px;
 }
 .drag-hint {
-  font-size: 14px;
+  font-size: 16px;
   color: #555;
-  font-style: italic;
   white-space: nowrap;
 }
 

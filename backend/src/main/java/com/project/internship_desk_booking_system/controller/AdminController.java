@@ -176,6 +176,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllRegisteredUserEmails());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/users/{id}")
+    public ResponseEntity<EmailRoleDTO> getUserById(@PathVariable("id") Long id) {
+        log.info("Admin request to fetch user by id: {}", id);
+        return ResponseEntity.ok(adminService.getUserById(id));
+    }
+
     @GetMapping("/desk-status")
     public ResponseEntity<List<String>> getDeskStatusEnum() {
         return ResponseEntity.ok(deskService.getAllStatusDeskEnum());
@@ -241,13 +248,24 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updateUserRole(dto, principal));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/images/setBackground/{id}")
     public ResponseEntity<byte[]> setBackgroundImage(
             @PathVariable("id") Long id
     ) {
         adminService.setBackgroundImage(id);
 
+        return ResponseEntity
+                .ok()
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/images/delete/{id}")
+    public ResponseEntity<byte[]> deleteImage (
+            @PathVariable("id") Long id
+    ) {
+        adminService.deleteImage(id);
         return ResponseEntity
                 .ok()
                 .build();

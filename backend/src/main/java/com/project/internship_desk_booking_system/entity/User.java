@@ -25,12 +25,6 @@ public class User {
     )
     private Long id;
 
-    @Column(name = "first_name")
-    private String firstName;
-
-    @Column(name = "last_name")
-    private String lastName;
-
     @Column(name = "email")
     private String email;
 
@@ -56,12 +50,10 @@ public class User {
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 
-    public User(String firstName, String lastName, String email, String passwordHash) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.role = Role.USER;
+    public User(String email, String passwordHash) {
         this.email = email;
         this.passwordHash = passwordHash;
+        this.role = Role.USER;
         this.authProvider = AuthProvider.LOCAL;
     }
 
@@ -76,7 +68,6 @@ public class User {
         user.setPasswordHash(null);
         return user;
     }
-
 
     @Override
     public boolean equals(Object o) {

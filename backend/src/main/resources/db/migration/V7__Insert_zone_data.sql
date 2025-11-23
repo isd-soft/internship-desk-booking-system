@@ -4,7 +4,7 @@ VALUES
     ('Engineering', 'ENG'),
     ('Administration', 'ADM'),
     ('Marketing', 'MARK'),
-    ('Power Line Communication', 'PLC'),
+    ('Programmable Logic Controller', 'PLC'),
     ('Service', 'SER'),
     ('Management', 'MAN'),
     ('Front end', 'FRONT');

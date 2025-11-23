@@ -30,6 +30,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Security configuration class for setting up authentication, authorization,
+ * and security filters in the application.
+ */
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
@@ -43,6 +47,10 @@ public class SecurityConfig {
 
     private final LdapProperties ldapProps;
 
+    /**
+     * Creates and configures the LDAP context source for authentication if LDAP is enabled.
+     * @return configured LdapContextSource
+     */
     @Bean
     @ConditionalOnProperty(name = "app.ldap.enabled", havingValue = "true")
     public LdapContextSource ldapContextSource() {
@@ -55,18 +63,13 @@ public class SecurityConfig {
         return ctx;
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(DaoAuthenticationProvider daoProvider, @Autowired(required = false) LdapContextSource ldapContext, SafeLdapAuthenticationProvider ldapProvider) {
-        List<AuthenticationProvider> providers = new ArrayList<>();
-
-        if (ldapProps.isLdapEnabled() && ldapContext != null) {
-            providers.add(ldapProvider);
-        }
-
-        providers.add(daoProvider);
-        return new ProviderManager(providers);
-    }
-
+    /**
+     * Provides a SafeLdapAuthenticationProvider for LDAP authentication.
+     * @param ldapContext the LDAP context source (optional)
+     * @param ldapProperties LDAP properties
+     * @param ldapHealthChecker LDAP health checker
+     * @return SafeLdapAuthenticationProvider bean
+     */
     @Bean
     public SafeLdapAuthenticationProvider safeLdapProvider(
             @Autowired(required = false) LdapContextSource ldapContext,
@@ -76,8 +79,40 @@ public class SecurityConfig {
         return new SafeLdapAuthenticationProvider(ldapContext, ldapProperties, ldapHealthChecker);
     }
 
+    /**
+     * Configures the AuthenticationManager with DAO and (optionally) LDAP providers.
+     * @param daoProvider DAO authentication provider
+     * @param ldapContext LDAP context source (optional)
+     * @param ldapProvider LDAP authentication provider
+     * @return AuthenticationManager bean
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(
+            DaoAuthenticationProvider daoProvider,
+            @Autowired(required = false) LdapContextSource ldapContext,
+            SafeLdapAuthenticationProvider ldapProvider
+    ) {
+
+        List<AuthenticationProvider> providers = new ArrayList<>();
+
+        if (ldapProps.isLdapEnabled() && ldapContext != null) {
+            providers.add(ldapProvider);
+        }
+
+        providers.add(daoProvider);
+
+        return new ProviderManager(providers);
+    }
+
+    /**
+     * Configures the main Spring Security filter chain for the application.
+     * @param http HttpSecurity configuration
+     * @return SecurityFilterChain bean
+     * @throws Exception if configuration fails
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(c -> c.configurationSource(corsConfigurationSource))
@@ -86,22 +121,26 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authEntryPoint)
                         .accessDeniedHandler(deniedHandler)
                 )
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/v1/**").authenticated()
+
+                        .anyRequest().permitAll()
                 )
+
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
+    /**
+     * Provides a DaoAuthenticationProvider for local user authentication.
+     * @param userDetailsService user details service
+     * @param encoder password encoder
+     * @return DaoAuthenticationProvider bean
+     */
     @Bean
     public DaoAuthenticationProvider daoAuthProvider(
             UserDetailsService userDetailsService,
@@ -113,11 +152,20 @@ public class SecurityConfig {
         return provider;
     }
 
+    /**
+     * Provides a UserDetailsService backed by the UserRepository.
+     * @param repo user repository
+     * @return UserDetailsService bean
+     */
     @Bean
     public UserDetailsService userDetailsService(UserRepository repo) {
         return new CustomUserDetailsService(repo);
     }
 
+    /**
+     * Provides a BCryptPasswordEncoder bean for password hashing.
+     * @return PasswordEncoder bean
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

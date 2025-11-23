@@ -11,7 +11,7 @@ import { useFavouritesStore } from "@/stores/favourites";
 const favStore = useFavouritesStore();
 
 onMounted(() => {
-  favStore.ensureLoaded(); // ← ГЛАВНОЕ
+  favStore.ensureLoaded();
 });
 </script>
 

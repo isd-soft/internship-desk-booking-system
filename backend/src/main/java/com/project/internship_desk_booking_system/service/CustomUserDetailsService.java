@@ -14,7 +14,13 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
-
+    /**
+     * Loads a user by username or email for Spring Security authentication.
+     *
+     * @param usernameOrEmail the username or email to search for
+     * @return UserDetails for authentication
+     * @throws UsernameNotFoundException if user is not found
+     */
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         User user = userRepository.findByEmailIgnoreCase(usernameOrEmail)
@@ -24,9 +30,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getPasswordHash(),
                 user.getRole()
         );
-
-
     }
-
 
 }

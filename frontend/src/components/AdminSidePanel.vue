@@ -12,11 +12,12 @@
     <PanelHeader v-if="isExpanded" @toggle="togglePanel" />
 
     <AdminActionSections
-        v-if="isExpanded"
-        :currentType="currentType"
-        :itemsCount="items.length"
-        @openAdmin="openAdmin"
-        @logout="logout"
+      v-if="isExpanded"
+      :currentType="currentType"
+      :itemsCount="items.length"
+      @openAdmin="openAdmin"
+      @openAddUser="showAddUserModal = true"
+      @logout="logout"
     />
     <div v-if="!isExpanded" class="rail-icons">
       <v-tooltip location="right">
@@ -116,6 +117,21 @@
           <v-btn
             icon
             variant="text"
+            class="rail-icon-btn add-user-rail-btn"
+            v-bind="props"
+            @click="showAddUserModal = true"
+          >
+            <v-icon size="24">mdi-account-plus</v-icon>
+          </v-btn>
+        </template>
+        <span>Add User</span>
+      </v-tooltip>
+
+      <v-tooltip location="left">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            icon
+            variant="text"
             class="rail-icon-btn"
             v-bind="props"
             @click="openAdmin('statistics')"
@@ -191,25 +207,25 @@
 
     <v-slide-y-transition>
       <ResultsList
-          v-if="items.length > 0 && isExpanded"
-          :title="currentTitle"
-          :items="items"
-          :page="currentPage"
-          :perPage="itemsPerPage"
-          :currentType="currentType"
-          @page="(p) => (currentPage = p)"
-          @details="openDetails"
+        v-if="items.length > 0 && isExpanded"
+        :title="currentTitle"
+        :items="items"
+        :page="currentPage"
+        :perPage="itemsPerPage"
+        :currentType="currentType"
+        @page="(p) => (currentPage = p)"
+        @details="openDetails"
       />
     </v-slide-y-transition>
 
     <v-snackbar
-        v-model="snackbar.show"
-        :color="snackbar.color"
-        timeout="2200"
-        rounded="lg"
-        elevation="8"
-        location="top"
-        class="snackbar"
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="2200"
+      rounded="lg"
+      elevation="8"
+      location="top"
+      class="snackbar"
     >
       <div class="d-flex align-center">
         <v-icon class="mr-3" size="20">mdi-alert-circle</v-icon>
@@ -218,6 +234,35 @@
     </v-snackbar>
 
     <DetailsDialog v-model="details.open" :item="details.item" />
+
+    <v-dialog
+      v-model="showAddUserModal"
+      max-width="480"
+      persistent
+      transition="dialog-bottom-transition"
+    >
+      <v-card class="add-user-card">
+        <v-card-title class="add-user-header">
+          <div class="header-content">
+            <v-icon size="28" class="header-icon">mdi-account-plus</v-icon>
+            <div>
+              <div class="header-title">Add New User</div>
+              <div class="header-subtitle">Create a new account</div>
+            </div>
+          </div>
+          <v-btn icon variant="text" size="small" @click="closeAddUserModal">
+            <v-icon size="20">mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="add-user-body">
+          <RegisterForm
+            @success="handleUserCreated"
+            @cancel="closeAddUserModal"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-navigation-drawer>
 </template>
 
@@ -230,6 +275,7 @@ import PanelHeader from "../components/panel/PanelHeader.vue";
 import ResultsList from "../components/panel/ResultList.vue";
 import DetailsDialog from "../components/panel/DetailsDialog.vue";
 import AdminActionSections from "../components/panel/AdminActionSections.vue";
+import RegisterForm from "../components/RegisterPage.vue";
 
 const router = useRouter();
 
@@ -249,11 +295,15 @@ const updateLayout = () => {
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'update:expanded', 'update:drawerWidth']);
+const emit = defineEmits([
+  "update:modelValue",
+  "update:expanded",
+  "update:drawerWidth",
+]);
 
 // Control panel expansion state
 const isExpanded = ref(true);
@@ -271,23 +321,30 @@ const currentWidth = computed(() => {
 });
 
 // Watch and emit width changes
-watch(currentWidth, (width) => {
-  emit('update:drawerWidth', width);
-}, { immediate: true });
+watch(
+  currentWidth,
+  (width) => {
+    emit("update:drawerWidth", width);
+  },
+  { immediate: true }
+);
 
 // Toggle panel expansion
 const togglePanel = () => {
   isExpanded.value = !isExpanded.value;
-  emit('update:expanded', isExpanded.value);
+  emit("update:expanded", isExpanded.value);
 };
 
 // Watch modelValue changes
-watch(() => props.modelValue, (val) => {
-  isOpen.value = val;
-});
+watch(
+  () => props.modelValue,
+  (val) => {
+    isOpen.value = val;
+  }
+);
 
 watch(isOpen, (val) => {
-  emit('update:modelValue', val);
+  emit("update:modelValue", val);
 });
 
 onMounted(() => {
@@ -298,7 +355,7 @@ onBeforeUnmount(() => window.removeEventListener("resize", updateLayout));
 
 const panelStyle = computed(() => {
   const vwWidth = Math.round(window.innerWidth * 0.34);
-  const w = Math.min(Math.max(vwWidth, 360), 400); // Changes the width of the side panel based on the screen size
+  const w = Math.min(Math.max(vwWidth, 360), 400);
   return `width:${w}px;max-width:100vw;`;
 });
 
@@ -311,8 +368,19 @@ const details = ref<{ open: boolean; item: any | null }>({
   open: false,
   item: null,
 });
+const showAddUserModal = ref(false);
 
-function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | "settings"| "deleted-desks" | "background-gallery") {
+function openAdmin(
+  page:
+    | "bookings"
+    | "desks"
+    | "users"
+    | "statistics"
+    | "map"
+    | "settings"
+    | "deleted-desks"
+    | "background-gallery"
+) {
   const role = localStorage.getItem("role");
 
   if (String(role).toUpperCase() !== "ADMIN") {
@@ -324,10 +392,19 @@ function openAdmin(page: "bookings" | "desks" | "users" |"statistics" | "map" | 
     return;
   }
 
-  const validPages = ["bookings", "desks", "users","statistics", "map", "settings", "deleted-desks", "background-gallery"];
+  const validPages = [
+    "bookings",
+    "desks",
+    "users",
+    "statistics",
+    "map",
+    "settings",
+    "deleted-desks",
+    "background-gallery",
+  ];
   const path = validPages.includes(page)
-      ? `/admin-dashboard/${page}`
-      : "/admin-dashboard";
+    ? `/admin-dashboard/${page}`
+    : "/admin-dashboard";
 
   router.push(path);
 }
@@ -340,6 +417,19 @@ function openDetails(item: any) {
 function logout() {
   localStorage.removeItem("token");
   router.push("/login");
+}
+
+function closeAddUserModal() {
+  showAddUserModal.value = false;
+}
+
+function handleUserCreated() {
+  showAddUserModal.value = false;
+  snackbar.value = {
+    show: true,
+    message: "User created successfully!",
+    color: "success",
+  };
 }
 </script>
 
@@ -359,7 +449,7 @@ function logout() {
 
 * {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-  sans-serif;
+    sans-serif;
 }
 
 .user-panel {
@@ -410,7 +500,83 @@ function logout() {
 .rail-icon-btn.danger:hover {
   background: rgba(185, 28, 28, 0.1) !important;
 }
-.gradient-btn{
+
+.rail-icon-btn.add-user-rail-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+}
+
+.add-user-card {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.add-user-header {
+  background: linear-gradient(135deg, rgb(255, 152, 0), rgb(245, 124, 0));
+  color: white;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.add-user-body {
+  padding: 0 !important;
+}
+
+.add-user-body :deep(.register-container) {
+  height: auto !important;
+  background: white !important;
+  padding: 24px !important;
+}
+
+.add-user-body :deep(.bg-decoration) {
+  display: none !important;
+}
+
+.add-user-body :deep(.register-card) {
+  box-shadow: none !important;
+  border: none !important;
+  background: white !important;
+  max-width: 100% !important;
+}
+
+.add-user-body :deep(.logo-section) {
+  display: none !important;
+}
+
+.add-user-body :deep(.form-content) {
+  padding: 5px !important;
+}
+
+.add-user-body :deep(.helper-section) {
+  display: none !important;
+}
+
+.gradient-btn {
   background: linear-gradient(135deg, #eadf66 0%, #e16531 100%) !important;
 }
 
@@ -419,7 +585,6 @@ function logout() {
   font-weight: 750;
 }
 
-/* Ensure proper z-index for tooltips */
 :deep(.v-overlay) {
   z-index: 9999 !important;
 }
@@ -428,7 +593,7 @@ function logout() {
   .user-panel {
     width: 100% !important;
   }
-  
+
   .user-panel:deep(.v-navigation-drawer--rail) {
     width: 72px !important;
   }

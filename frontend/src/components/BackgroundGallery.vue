@@ -67,6 +67,7 @@
         :image="selectedImage"
         @close="selectedImage = null"
         @updated="handleBackgroundUpdate"
+        @deleted="handleDeleted"
       />
     </div>
   </div>
@@ -104,6 +105,10 @@ const handleBackgroundUpdate = (newBackgroundId: number) => {
       selectedImage.value.isBackground = true;
   }
 };
+
+const handleDeleted = () => {
+  fetchImages();
+}
 
 const fetchImages = async () => {
   loading.value = true;

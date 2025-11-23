@@ -5,7 +5,6 @@ import {
   rowHeight,
   loadDesksFromBackend,
   resetLayout,
-  horizontalDesks,
   loadAllColors,
   selectedDate as sharedSelectedDate,
   imageUrl,
@@ -13,7 +12,7 @@ import {
   imageDimensions,
 } from "../VisualFloorMap/floorLayout";
 
-import {getColor,fetchColors} from "@/utils/useEnums";
+import { getColor, fetchColors } from "@/utils/useEnums";
 import BookingModal from "../VisualFloorMap/BookingModal.vue";
 import { useFavouritesStore } from "@/stores/favourites";
 
@@ -49,7 +48,9 @@ const scaledContainerHeight = computed(() =>
 );
 // dont remove please !!
 const scaledHeightCompensation = computed(() =>
-  scale.value >= 1 ? 0 : Math.round(imageDimensions.value.height * (1 - scale.value))
+  scale.value >= 1
+    ? 0
+    : Math.round(imageDimensions.value.height * (1 - scale.value))
 );
 
 onMounted(async () => {
@@ -91,7 +92,8 @@ onMounted(async () => {
   };
 
   if (container.value) {
-    containerWidth.value = container.value.clientWidth || imageDimensions.value.width;
+    containerWidth.value =
+      container.value.clientWidth || imageDimensions.value.width;
     containerHeightAvailable.value = container.value.clientHeight || null;
     updateScale();
   }
@@ -247,7 +249,7 @@ watch(
               favourite: isDeskFavourite(item.i),
               vertical: !(item.w >= item.h),
               'non-interactive': item.isNonInteractive,
-              'dimmed': isDeskDimmed(item),
+              dimmed: isDeskDimmed(item),
             }"
             @click="handleDeskClick(item)"
             :style="{

@@ -14,12 +14,23 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 
+/**
+ * Custom authentication entry point for handling unauthorized (HTTP 401) errors in Spring Security.
+ * Returns a JSON error response.
+ */
 @Component
 @RequiredArgsConstructor
 public class CustomAuthEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper mapper;
 
+    /**
+     * Handles authentication exceptions and writes a JSON error response.
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param authException the authentication exception
+     * @throws IOException if writing the response fails
+     */
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {

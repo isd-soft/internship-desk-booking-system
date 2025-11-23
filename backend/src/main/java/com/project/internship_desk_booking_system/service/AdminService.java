@@ -170,6 +170,35 @@ public class AdminService {
 
         Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk with id: " + id + " not found"));
 
+        if (hasActiveBookings(desk)) {
+            throw new ExceptionResponse(HttpStatus.CONFLICT, "ACTIVE_BOOKING_CONFLICT", "Can't deactivate desk with active booking on it");
+        }
+
+        if (hasScheduledBookings(desk)) {
+            log.info("Desk {} has scheduled bookings. Processing cancellations and notifications.", id);
+
+            List<Booking> scheduledBookings = bookingRepository.findScheduledBookingsByDeskId(id);
+
+            for (Booking booking : scheduledBookings) {
+                booking.setStatus(BookingStatus.CANCELLED);
+                try {
+                    String userEmail = booking.getUser().getEmail();
+                    emailService.sendCancelledBookingEmail(
+                            userEmail,
+                            booking.getId(),
+                            desk.getDeskName(),
+                            desk.getZone().getZoneAbv(),
+                            OffsetDateTime.now()
+                    );
+                    log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
+                } catch (Exception e) {
+                    log.error("Failed to send cancellation email for booking {}: {}", booking.getId(), e.getMessage());
+                }
+            }
+
+            bookingRepository.saveAll(scheduledBookings);
+        }
+
         desk.setIsTemporarilyAvailable(false);
         desk.setStatus(DeskStatus.DEACTIVATED);
 
@@ -265,9 +294,6 @@ public class AdminService {
         return deskMapper.toDto(desk);
     }
 
-
-// Update the deleteDesk method in AdminService.java
-
     /**
      * Soft deletes a desk by marking it as deleted, but still leave it in the DB,
      * so the Admin could restore it.
@@ -281,21 +307,37 @@ public class AdminService {
      */
     @Transactional
     public void deleteDesk(Long id, String reason) {
-        Desk desk = deskRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
-        List<Booking> bookings = new ArrayList<>();
+        Desk desk = deskRepository.findById(id)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with id: " + id));
 
         if (hasActiveBookings(desk)) {
-            log.info("Desk {} has active bookings. Cancelling them before deletion.", id);
-            bookings.addAll(bookingRepository.findActiveBookingsForDesk(id));
-            bookingRepository.cancelAllActiveBookingsForDesk(id);
-            log.info("All active bookings for desk {} have been cancelled", id);
+            throw new ExceptionResponse(HttpStatus.CONFLICT, "ACTIVE_BOOKING_CONFLICT", "Can't delete desk with active booking on it");
         }
+
         if (hasScheduledBookings(desk)) {
-            log.info("Desk {} has scheduled bookings. Cancelling them before deletion.", id);
-            bookings.addAll(bookingRepository.findPendingBookingsForDesk(id));
-            bookingRepository.cancelAllPendingBookingsForDesk(id);
-            log.info("All scheduled bookings for desk {} have been cancelled", id);
+            log.info("Desk {} has scheduled bookings. Processing cancellations and notifications.", id);
+
+            List<Booking> scheduledBookings = bookingRepository.findScheduledBookingsByDeskId(id);
+
+            for (Booking booking : scheduledBookings) {
+                booking.setStatus(BookingStatus.CANCELLED);
+                try {
+                    String userEmail = booking.getUser().getEmail();
+                    emailService.sendCancelledBookingEmail(
+                            userEmail,
+                            booking.getId(),
+                            desk.getDeskName(),
+                            desk.getZone().getZoneAbv(),
+                            OffsetDateTime.now()
+                    );
+                    log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
+                } catch (Exception e) {
+                    log.error("Failed to send cancellation email for booking {}: {}", booking.getId(), e.getMessage());
+                }
+            }
+
+            bookingRepository.saveAll(scheduledBookings);
         }
 
         desk.setIsDeleted(true);
@@ -304,24 +346,6 @@ public class AdminService {
 
         deskRepository.save(desk);
         log.info("Desk {} soft deleted successfully with reason: {}", id, reason);
-        for (Booking booking : bookings) {
-            try {
-                String userEmail = booking.getUser().getEmail();
-                emailService.sendCancelledBookingEmail(
-                        userEmail,
-                        booking.getId(),
-                        booking.getDesk().getDeskName(),
-                        booking.getDesk().getZone().getZoneAbv(),
-                        OffsetDateTime.now()
-                );
-                log.info("Cancellation email sent to {} for booking {}", userEmail, booking.getId());
-            } catch (Exception e) {
-                log.error("Failed to send cancellation email for booking {}: {}",
-                        booking.getId(), e.getMessage());
-            }
-        }
-
-        log.info("Sent {} cancellation emails for deleted desk {}", bookings.size(), id);
     }
 
     @Transactional
@@ -484,10 +508,10 @@ public class AdminService {
 
 
             if (newDesk.getType() == DeskType.ASSIGNED) {
+                bookingValidation.validateTemporaryWindow(newDesk, bookingUpdateCommand.startTime(), bookingUpdateCommand.endTime());
                 throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "DESK_ASSIGNED", "A assigned desk cant have active bookings");
             }
 
-            bookingValidation.validateTemporaryWindow(newDesk, bookingUpdateCommand.startTime(), bookingUpdateCommand.endTime());
 
         }
 
@@ -588,6 +612,12 @@ public class AdminService {
         }
 
         return users;
+    }
+
+    public EmailRoleDTO getUserById(Long id) {
+        log.info("Fetching user by id: {}", id);
+        User user = userRepository.findById(id).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", String.format("User with id: {%d} not found", id)));
+        return new EmailRoleDTO(user.getEmail(), user.getRole());
     }
 
     public List<ZoneDto> getAllZones() {
@@ -692,11 +722,44 @@ public class AdminService {
         newBackground.setBackground(true);
     }
 
+    public void deleteImage(
+            Long id
+    ){
+        Image image = imageRepository
+                .findById(id)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "IMAGE_NOT_FOUND",
+                        String.format(
+                                "Image with id %d not found",
+                                id
+                        )
+                ));
+        if(image.isBackground()){
+            throw new ExceptionResponse(
+                    HttpStatus.CONFLICT,
+                    "IMAGE_IS_BACKGROUND",
+                    "You cant delete image that is background"
+            );
+        }
+        imageRepository.delete(image);
+    }
+
     private String normalizeName(String name) {
         if (name == null) return null;
 
         return name.trim().replaceAll("\\s+", " ");
     }
+    // for testing purposes only
+    public void applyTemporaryAvailabilityForTest(
+            Desk desk,
+            Boolean isTemporarilyAvailable,
+            LocalDateTime from,
+            LocalDateTime until
 
+
+    ) {
+        applyTemporaryAvailability(desk, isTemporarilyAvailable, from, until);
+    }
 
 }

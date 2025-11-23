@@ -26,7 +26,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.lenient;
-
 @ExtendWith(MockitoExtension.class)
 class BookingServiceValidationTest {
 
@@ -42,6 +41,19 @@ class BookingServiceValidationTest {
     @InjectMocks
     BookingServiceValidation validation;
 
+    final LocalDateTime fixedNow = LocalDateTime.of(2025, 11, 22, 10, 0);
+
+    static class TestableBookingServiceValidation extends BookingServiceValidation {
+        private final LocalDateTime now;
+        public TestableBookingServiceValidation(BookingRepository repo, BookingProperties props, BookingTimeLimitsService limits, LocalDateTime now) {
+            super(repo, props, limits);
+            this.now = now;
+        }
+        protected LocalDateTime now() {
+            return now;
+        }
+    }
+
     @BeforeEach
     void setup() {
         lenient().when(bookingProperties.getOfficeStartHour()).thenReturn(9);
@@ -56,6 +68,7 @@ class BookingServiceValidationTest {
         limits.setMaxHoursPerWeek(40);
 
         lenient().when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
+        validation = new TestableBookingServiceValidation(bookingRepository, bookingProperties, bookingTimeLimitsService, fixedNow);
     }
     @Test
     void testStartInPast() {
@@ -111,67 +124,30 @@ class BookingServiceValidationTest {
         assertDoesNotThrow(() ->
                 validation.validateOfficeHours(day.withHour(10), day.withHour(17)));
     }
-
-//    @Test
-////    void testTooFarAhead() {
-////        BookingTimeLimits limits = new BookingTimeLimits();
-////        limits.setMaxDaysInAdvance(3);
-////        limits.setMaxHoursPerWeek(40);
-////
-////        lenient().when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
-////
-////        User user = new User("A", "B", "test@test.com", "pass");
-////
-////        LocalDateTime start = LocalDateTime.now().plusDays(5).withHour(10);
-////        LocalDateTime end = start.plusHours(2);
-////
-////        BookingCreateRequest req = new BookingCreateRequest();
-////        req.setDeskId(1L);
-////        req.setStartTime(start);
-////        req.setEndTime(end);
-////
-////        lenient().when(bookingRepository.existsOverlappingBooking(any(), any(), any()))
-////                .thenReturn(List.of(Booking.class));
-////        lenient().when(bookingRepository.existsUserConflict(any(), any(), any()))
-////                .thenReturn(false);
-////        lenient().when(bookingRepository.findUserBookings(any(), any(), any()))
-////                .thenReturn(List.of());
-////
-////        assertThrows(ExceptionResponse.class,
-////                () -> validation.validateBookingLogic(user, req));
-////    }
-//    @Test
+    @Test
     void testWeeklyLimitExceeded() {
         BookingTimeLimits limits = new BookingTimeLimits();
         limits.setMaxHoursPerWeek(8);
         limits.setMaxDaysInAdvance(14);
-
-        lenient().when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
-
-        User user = new User("A", "B", "u@test.com", "pass");
-
-        LocalDateTime monday = LocalDateTime.now().with(DayOfWeek.MONDAY).withHour(9);
-
+        when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+        LocalDateTime monday = fixedNow.plusWeeks(1).with(DayOfWeek.MONDAY).withHour(9);
         Booking b = Booking.builder()
                 .user(user)
                 .desk(new Desk())
                 .startTime(monday)
                 .endTime(monday.plusHours(6))
                 .build();
-
-        lenient().when(bookingRepository.findUserBookings(any(), any(), any()))
-                .thenReturn(List.of(b));
-
+        when(bookingRepository.findUserBookings(any(), any(), any())).thenReturn(List.of(b));
         LocalDateTime start = monday.plusDays(1).withHour(10);
         LocalDateTime end = start.plusHours(3);
-
         BookingCreateRequest req = new BookingCreateRequest();
         req.setDeskId(1L);
         req.setStartTime(start);
         req.setEndTime(end);
-
-        assertThrows(ExceptionResponse.class,
-                () -> validation.validateBookingLogic(user, req));
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
+        assertEquals("WEEKLY_HOURS_EXCEEDED", ex.getCode());
     }
     @Test
     void testSharedDeskOK() {
@@ -250,5 +226,129 @@ class BookingServiceValidationTest {
                 BookingStatus.ACTIVE,
                 validation.resolveStatus(LocalDateTime.now().minusMinutes(1))
         );
+    }
+
+    @Test
+    void testValidateUserOtherThanAdmin_forbidden() {
+        User admin = new User("admin@test.com", "pass");
+        admin.setId(1L);
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateUserOtherThanAdmin(admin));
+        assertEquals("USER_CANNOT_BOOK", ex.getCode());
+    }
+
+    @Test
+    void testValidateTemporaryWindow_nullFromOrUntil() {
+        Desk desk = new Desk();
+        desk.setType(DeskType.ASSIGNED);
+        desk.setIsTemporarilyAvailable(true);
+        desk.setTemporaryAvailableFrom(null);
+        desk.setTemporaryAvailableUntil(null);
+        LocalDateTime now = LocalDateTime.now();
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                validation.validateTemporaryWindow(desk, now, now.plusHours(1)));
+        assertEquals("TEMPORARY_WINDOW_INVALID", ex.getCode());
+    }
+
+    @Test
+    void testValidateTemporaryWindow_outOfRange() {
+        Desk desk = new Desk();
+        desk.setType(DeskType.ASSIGNED);
+        desk.setIsTemporarilyAvailable(true);
+        LocalDateTime from = LocalDateTime.now().plusHours(1);
+        LocalDateTime until = from.plusHours(2);
+        desk.setTemporaryAvailableFrom(from);
+        desk.setTemporaryAvailableUntil(until);
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () ->
+                validation.validateTemporaryWindow(desk, from.minusHours(1), until.plusHours(1)));
+        assertEquals("OUT_OF_TEMPORARY_RANGE", ex.getCode());
+    }
+
+    @Test
+    void testCheckDeskAvailability_alreadyBooked() {
+        when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(true);
+
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(1L);
+
+        req.setStartTime(fixedNow.plusDays(2).withHour(10));
+        req.setEndTime(req.getStartTime().plusHours(2));
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class,
+                () -> validation.validateBookingLogic(user, req));
+
+        assertEquals("DESK_ALREADY_BOOKED", ex.getCode());
+    }
+
+
+    @Test
+    void testValidateMaxDaysInAdvance_tooFar() {
+        BookingTimeLimits limits = new BookingTimeLimits();
+        limits.setMaxDaysInAdvance(1);
+        limits.setMaxHoursPerWeek(40);
+        when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
+        LocalDateTime start = fixedNow.plusDays(3);
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(1L);
+        req.setStartTime(start);
+        req.setEndTime(start.plusHours(1));
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
+        assertEquals("BOOKING_TOO_FAR_AHEAD", ex.getCode());
+    }
+
+    @Test
+    void testEffectiveHoursExcludingLunch() {
+        LocalDateTime start = fixedNow.plusDays(2).withHour(12);
+        LocalDateTime end = start.plusHours(3);
+
+        when(bookingProperties.getLunchStartHour()).thenReturn(13);
+        when(bookingProperties.getLunchEndHour()).thenReturn(14);
+
+        assertDoesNotThrow(() -> validation.validateBookingTimes(start, end));
+    }
+
+
+    @Test
+    void testValidateBookingLogic_success() {
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(1L);
+        req.setStartTime(LocalDateTime.now().plusDays(1).withHour(10));
+        req.setEndTime(req.getStartTime().plusHours(2));
+        when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(false);
+        when(bookingRepository.existsUserConflict(any(), any(), any())).thenReturn(false);
+        when(bookingRepository.findUserBookings(any(), any(), any())).thenReturn(List.of());
+        assertDoesNotThrow(() -> validation.validateBookingLogic(user, req));
+    }
+
+    @Test
+    void testValidateBookingLogic_deskConflict() {
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(1L);
+        req.setStartTime(LocalDateTime.now().plusDays(1).withHour(10));
+        req.setEndTime(req.getStartTime().plusHours(2));
+        when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(true);
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
+        // DESK_ALREADY_BOOKED
+    }
+
+    @Test
+    void testValidateBookingLogic_userConflict() {
+        User user = new User("u@test.com", "pass");
+        user.setId(2L);
+        BookingCreateRequest req = new BookingCreateRequest();
+        req.setDeskId(1L);
+        req.setStartTime(LocalDateTime.now().plusDays(1).withHour(10));
+        req.setEndTime(req.getStartTime().plusHours(2));
+        when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(false);
+        when(bookingRepository.existsUserConflict(any(), any(), any())).thenReturn(true);
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
     }
 }

@@ -10,6 +10,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.ldap.LdapBindAuthenticationManagerFactory;
 import org.springframework.security.core.Authentication;
 
+/**
+ * AuthenticationProvider implementation that safely attempts LDAP authentication,
+ * falling back to DB if LDAP is unavailable or disabled.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class SafeLdapAuthenticationProvider implements AuthenticationProvider {
@@ -19,6 +23,11 @@ public class SafeLdapAuthenticationProvider implements AuthenticationProvider {
     private final LdapHealthChecker ldapHealthChecker;
 
 
+    /**
+     * Attempts to authenticate using LDAP. If LDAP is disabled or unavailable, returns null to allow fallback.
+     * @param authentication the authentication request object
+     * @return Authentication if successful, or null to fallback
+     */
     @Override
     public Authentication authenticate(Authentication authentication) {
 
@@ -49,9 +58,13 @@ public class SafeLdapAuthenticationProvider implements AuthenticationProvider {
     }
 
 
+    /**
+     * Checks if this provider supports the given authentication type.
+     * @param authentication the authentication class
+     * @return true if supported
+     */
     @Override
     public boolean supports(Class<?> authentication) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
-
