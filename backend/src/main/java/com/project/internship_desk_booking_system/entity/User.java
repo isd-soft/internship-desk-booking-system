@@ -51,9 +51,9 @@ public class User {
     private List<Booking> bookings = new ArrayList<>();
 
     public User(String email, String passwordHash) {
-        this.role = Role.USER;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.role = Role.USER;
         this.authProvider = AuthProvider.LOCAL;
     }
 
