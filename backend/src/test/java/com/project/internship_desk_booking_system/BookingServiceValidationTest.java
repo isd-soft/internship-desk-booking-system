@@ -266,15 +266,22 @@ class BookingServiceValidationTest {
     @Test
     void testCheckDeskAvailability_alreadyBooked() {
         when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(true);
+
         User user = new User("u@test.com", "pass");
         user.setId(2L);
+
         BookingCreateRequest req = new BookingCreateRequest();
         req.setDeskId(1L);
-        req.setStartTime(fixedNow.plusDays(1).withHour(10));
+
+        req.setStartTime(fixedNow.plusDays(2).withHour(10));
         req.setEndTime(req.getStartTime().plusHours(2));
-        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
+
+        ExceptionResponse ex = assertThrows(ExceptionResponse.class,
+                () -> validation.validateBookingLogic(user, req));
+
         assertEquals("DESK_ALREADY_BOOKED", ex.getCode());
     }
+
 
     @Test
     void testValidateMaxDaysInAdvance_tooFar() {
@@ -295,12 +302,15 @@ class BookingServiceValidationTest {
 
     @Test
     void testEffectiveHoursExcludingLunch() {
-        LocalDateTime start = fixedNow.plusDays(1).withHour(12).withMinute(0);
+        LocalDateTime start = fixedNow.plusDays(2).withHour(12);
         LocalDateTime end = start.plusHours(3);
+
         when(bookingProperties.getLunchStartHour()).thenReturn(13);
         when(bookingProperties.getLunchEndHour()).thenReturn(14);
+
         assertDoesNotThrow(() -> validation.validateBookingTimes(start, end));
     }
+
 
     @Test
     void testValidateBookingLogic_success() {
