@@ -273,8 +273,9 @@ class BookingServiceValidationTest {
         BookingCreateRequest req = new BookingCreateRequest();
         req.setDeskId(1L);
 
-        req.setStartTime(fixedNow.plusDays(2).withHour(10));
-        req.setEndTime(req.getStartTime().plusHours(2));
+        LocalDateTime start = LocalDateTime.now().plusDays(2).withHour(10);
+        req.setStartTime(start);
+        req.setEndTime(start.plusHours(2));
 
         ExceptionResponse ex = assertThrows(ExceptionResponse.class,
                 () -> validation.validateBookingLogic(user, req));
@@ -283,22 +284,38 @@ class BookingServiceValidationTest {
     }
 
 
+
+
     @Test
     void testValidateMaxDaysInAdvance_tooFar() {
         BookingTimeLimits limits = new BookingTimeLimits();
         limits.setMaxDaysInAdvance(1);
         limits.setMaxHoursPerWeek(40);
         when(bookingTimeLimitsService.getActivePolicy()).thenReturn(limits);
-        LocalDateTime start = fixedNow.plusDays(3);
+
+        LocalDateTime start = LocalDateTime.now().plusDays(3).withHour(10);
+
         User user = new User("u@test.com", "pass");
         user.setId(2L);
+
         BookingCreateRequest req = new BookingCreateRequest();
         req.setDeskId(1L);
         req.setStartTime(start);
         req.setEndTime(start.plusHours(1));
-        ExceptionResponse ex = assertThrows(ExceptionResponse.class, () -> validation.validateBookingLogic(user, req));
+
+        lenient().when(bookingRepository.existsOverlappingBooking(any(), any(), any())).thenReturn(false);
+        lenient().when(bookingRepository.existsUserConflict(any(), any(), any())).thenReturn(false);
+        lenient().when(bookingRepository.findUserBookings(any(), any(), any())).thenReturn(List.of());
+
+        ExceptionResponse ex = assertThrows(
+                ExceptionResponse.class,
+                () -> validation.validateBookingLogic(user, req)
+        );
+
         assertEquals("BOOKING_TOO_FAR_AHEAD", ex.getCode());
     }
+
+
 
     @Test
     void testEffectiveHoursExcludingLunch() {
