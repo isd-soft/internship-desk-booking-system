@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -319,7 +320,7 @@ class BookingServiceValidationTest {
 
     @Test
     void testEffectiveHoursExcludingLunch() {
-        LocalDateTime start = fixedNow.plusDays(2).withHour(12);
+        LocalDateTime start = LocalDateTime.now().plusDays(2).withHour(12);
         LocalDateTime end = start.plusHours(3);
 
         when(bookingProperties.getLunchStartHour()).thenReturn(13);
