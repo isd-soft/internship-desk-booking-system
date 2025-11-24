@@ -874,4 +874,84 @@ const typeChipColor = computed(() => "grey-darken-1");
   opacity: 0.6;
   font-size: 0.88em;
 }
+@media (max-width: 480px) {
+
+  .results-section {
+    padding: 6px !important;
+  }
+
+  .results-container {
+    padding: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .results-header {
+    margin-bottom: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .results-title {
+    font-size: 0.9rem !important;
+  }
+
+  .results-sub {
+    font-size: 0.75rem !important;
+  }
+
+  .results-badge {
+    font-size: 0.65rem !important;
+    padding: 0 4px !important;
+  }
+
+  .data-item {
+    padding: 10px 10px 10px 42px !important;
+    margin-bottom: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .index-badge {
+    min-width: 26px !important;
+    height: 26px !important;
+    font-size: 0.7rem !important;
+    top: 6px !important;
+    left: 6px !important;
+  }
+
+  .item-title {
+    font-size: 0.85rem !important;
+  }
+
+  .item-header {
+    gap: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .item-actions {
+    gap: 4px !important;
+  }
+
+  .more-btn {
+    font-size: 0.75rem !important;
+    min-height: 26px !important;
+  }
+
+  .status-chip {
+    font-size: 0.58rem !important;
+    padding: 0 4px !important;
+  }
+  .item-meta {
+    font-size: 0.75rem !important;
+    gap: 3px !important;
+  }
+
+  .pagination-btn {
+    min-width: 30px !important;
+    min-height: 30px !important;
+  }
+
+  .page-text {
+    font-size: 0.75rem !important;
+  }
+}
+
 </style>
