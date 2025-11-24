@@ -13,27 +13,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 /**
- * Service layer responsible for managing by ADMIN role users - desk color metadata used within the booking system.
- * <p>
+ * Service layer responsible for managing desk color metadata for ADMIN users.
+ *
  * Provides CRUD operations for desk colors, including:
- * <ul>
- *     <li>Retrieving all defined colors</li>
- *     <li>Fetching a color by its identifier</li>
- *     <li>Creating new desk color definitions</li>
- *     <li>Updating existing desk color attributes</li>
- *     <li>Deleting color entries</li>
- * </ul>
+ * - Retrieving all defined colors
+ * - Fetching a color by its identifier
+ * - Creating new desk color definitions
+ * - Updating existing desk color attributes
+ * - Deleting color entries
  *
  * Additionally, this service ensures:
- * <ul>
- *     <li>Validation of color fields such as name, meaning, and HEX code format</li>
- *     <li>Uniqueness constraints for color name, color code, and meaning</li>
- *     <li>Transformation between entity objects and data transfer objects</li>
- * </ul>
+ * - Validation of color fields such as name, meaning, and HEX code format
+ * - Uniqueness constraints for color name, color code, and meaning
+ * - Transformation between entity objects and data transfer objects
  *
- * All operations interact with {@link DeskColorRepository} and make use of custom
- * exception handling via {@link ExceptionResponse} to enforce domain rules and improve API clarity.
+ * All operations interact with DeskColorRepository and use ExceptionResponse
+ * to enforce domain rules and improve API clarity.
  */
 @Slf4j
 @Service
@@ -43,6 +40,11 @@ public class DeskColorService {
     private final DeskColorRepository deskColorRepository;
     private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#[0-9A-Fa-f]{6}$");
 
+    /**
+     * Retrieves all desk colors from the database and maps them to DColorDTOs.
+     *
+     * @return a list of all desk colors as DColorDTO objects
+     */
     @Transactional(readOnly = true)
     public List<DColorDTO> getAllColors() {
         log.info("Fetching all desk colors");
@@ -51,6 +53,13 @@ public class DeskColorService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves a desk color by its ID.
+     *
+     * @param id the ID of the desk color to fetch
+     * @return the desk color as a DColorDTO
+     * @throws ExceptionResponse if the color with the given ID is not found
+     */
     @Transactional(readOnly = true)
     public DColorDTO getColorById(Long id) {
         log.info("Fetching desk color with id: {}", id);
@@ -63,6 +72,14 @@ public class DeskColorService {
         return toDto(color);
     }
 
+    /**
+     * Creates a new desk color entry in the system.
+     * Performs validation and uniqueness checks on the color name, code, and meaning.
+     *
+     * @param dto the DColorDTO containing the color details
+     * @return the newly created desk color as a DColorDTO
+     * @throws ExceptionResponse if validation fails or uniqueness constraints are violated
+     */
     @Transactional
     public DColorDTO createColor(DColorDTO dto) {
         log.info("Creating new desk color: {}", dto.getColorName());
@@ -105,6 +122,15 @@ public class DeskColorService {
         return toDto(saved);
     }
 
+    /**
+     * Updates an existing desk color by ID.
+     * Performs validation and uniqueness checks on updated fields.
+     *
+     * @param id  the ID of the desk color to update
+     * @param dto the updated desk color data
+     * @return the updated desk color as a DColorDTO
+     * @throws ExceptionResponse if the color is not found or validation/uniqueness checks fail
+     */
     @Transactional
     public DColorDTO updateColor(Long id, DColorDTO dto) {
         log.info("Updating desk color with id: {}", id);
@@ -159,6 +185,12 @@ public class DeskColorService {
         return toDto(updated);
     }
 
+    /**
+     * Deletes a desk color by its ID.
+     *
+     * @param id the ID of the desk color to delete
+     * @throws ExceptionResponse if the color does not exist
+     */
     @Transactional
     public void deleteColor(Long id) {
         log.info("Deleting desk color with id: {}", id);
@@ -175,6 +207,13 @@ public class DeskColorService {
         log.info("Desk color deleted successfully: {}", id);
     }
 
+    /**
+     * Validates a DColorDTO object.
+     * Checks for null/empty fields, correct HEX code format, and length constraints.
+     *
+     * @param dto the DColorDTO to validate
+     * @throws ExceptionResponse if validation fails
+     */
     private void validateColorDto(DColorDTO dto) {
         if (dto.getColorName() == null || dto.getColorName().trim().isEmpty()) {
             throw new ExceptionResponse(
@@ -217,6 +256,12 @@ public class DeskColorService {
         }
     }
 
+    /**
+     * Maps a DeskColor entity to a DColorDTO.
+     *
+     * @param entity the DeskColor entity
+     * @return the corresponding DColorDTO
+     */
     private DColorDTO toDto(DeskColor entity) {
         return DColorDTO.builder()
                 .id(entity.getId())

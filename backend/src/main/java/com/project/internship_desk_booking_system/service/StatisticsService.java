@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 public class StatisticsService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
-    private final BookingMapper bookingMapper;
 
     public StatisticsDTO getStatistics() {
         LocalDateTime now = LocalDateTime.now();
@@ -39,13 +38,11 @@ public class StatisticsService {
         DeskStatsDTO mostBookedDesk = convertToDTO(bookingRepository.findMostBookedDesk());
         DeskStatsDTO leastBookedDesk = convertToDTO(bookingRepository.findLeastBookedDesk());
 
-        // Get aggregated daily booking data for the last day
         LocalDateTime dayStart = now.minusDays(1);
         List<BookingChartDataDTO> bookingHoursPerDay = convertToChartData(
                 bookingRepository.countBookingsGroupedByDay(dayStart, now)
         );
 
-        // Get aggregated weekly booking data for the last week
         List<BookingChartDataDTO> bookingHoursPerWeek = convertToChartData(
                 bookingRepository.countBookingsGroupedByWeek(weekStart, now)
         );
@@ -72,12 +69,10 @@ public class StatisticsService {
         DeskStatsDTO mostBooked = convertToDTO(bookingRepository.findMostBookedDeskInRange(startDate, endDate));
         DeskStatsDTO leastBooked = convertToDTO(bookingRepository.findLeastBookedDeskInRange(startDate, endDate));
 
-        // Get aggregated chart data for the date range
         List<BookingChartDataDTO> bookingHoursInRange = convertToChartData(
                 bookingRepository.countBookingsGroupedByDay(startDate, endDate)
         );
 
-        // For weekly view in custom date range
         List<BookingChartDataDTO> weeklyBookingsInRange = convertToChartData(
                 bookingRepository.countBookingsGroupedByWeek(startDate, endDate)
         );
