@@ -11,7 +11,6 @@ import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
 import com.project.internship_desk_booking_system.enums.DeskColor;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
-import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.mapper.BookingMapper;
 import com.project.internship_desk_booking_system.repository.BookingRepository;
@@ -28,6 +27,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Service class responsible for handling all booking-related operations.
+ * Responsibilities:
+ *     Creating and cancelling bookings with proper validation
+ *     Retrieving bookings by user, by date, and all system bookings
+ *     Mapping Booking entities to response DTOs for API consumption
+ *     Sending email notifications for booking confirmation and cancellation
+ *     Determining desk availability with color-coded status
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,6 +47,21 @@ public class BookingService {
     private final BookingServiceValidation bookingValidation;
     private final EmailService emailService;
 
+    /**
+     * Creates a new booking for the given user and desk.
+     * Steps:
+     *     Find the user by email
+     *     Fetch the desk by ID
+     *     Validate booking logic (conflicts, limits)
+     *     Validate desk type constraints
+     *     Create and persist a new Booking entity
+     *     Send booking confirmation email
+     *
+     *
+     * @param email   User’s email
+     * @param request Booking creation request
+     * @throws ExceptionResponse if user/desk not found or validation fails
+     */
     @Transactional
     public void createBooking(String email, BookingCreateRequest request) {
         User user = userRepository.findByEmailIgnoreCase(email)
@@ -46,8 +69,8 @@ public class BookingService {
 
         Desk desk = deskRepository.findById(request.getDeskId())
                 .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "Desk not found with that id"));
-        bookingValidation.validateBookingLogic(user, request);
 
+        bookingValidation.validateBookingLogic(user, request);
         bookingValidation.validateDeskType(desk, request.getStartTime(), request.getEndTime());
 
         Booking newBooking = Booking.builder()
@@ -69,11 +92,20 @@ public class BookingService {
         );
     }
 
-
+    /**
+     * Cancels an existing booking belonging to the given user.
+     * Only ACTIVE or SCHEDULED bookings can be cancelled.
+     * The booking status is updated to CANCELLED and a cancellation email is sent.
+     *
+     * @param email     User email
+     * @param bookingId Booking ID
+     * @throws ExceptionResponse if booking not found or cannot be cancelled
+     */
     @Transactional
     public void cancelBooking(String email, Long bookingId) {
         Booking bookingToCancel = bookingRepository.findByUserEmailAndId(email, bookingId)
                 .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found"));
+
         if (bookingToCancel.getStatus() != BookingStatus.ACTIVE
                 && bookingToCancel.getStatus() != BookingStatus.SCHEDULED) {
             throw new ExceptionResponse(
@@ -82,14 +114,28 @@ public class BookingService {
                     "Only active bookings can be cancelled"
             );
         }
+
         bookingToCancel.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(bookingToCancel);
-        emailService.sendCancelledBookingEmail(email, bookingToCancel.getId(), bookingToCancel.getDesk().getDeskName(), bookingToCancel.getDesk().getZone().getZoneAbv(), OffsetDateTime.now());
+
+        emailService.sendCancelledBookingEmail(
+                email,
+                bookingToCancel.getId(),
+                bookingToCancel.getDesk().getDeskName(),
+                bookingToCancel.getDesk().getZone().getZoneAbv(),
+                OffsetDateTime.now()
+        );
     }
 
+    /**
+     * Retrieves all upcoming bookings (ACTIVE and SCHEDULED) for a user,
+     * ordered by start time ascending.
+     *
+     * @param email User email
+     * @return List of BookingResponse DTOs
+     */
     @Transactional(readOnly = true)
     public List<BookingResponse> getUpcomingBookings(String email) {
-
         List<Booking> active = bookingRepository
                 .findByUserEmailAndStatusOrderByStartTimeAsc(email, BookingStatus.ACTIVE);
 
@@ -101,9 +147,14 @@ public class BookingService {
                 .toList();
     }
 
+    /**
+     * Retrieves all bookings made by the user, ordered by start time descending.
+     *
+     * @param email User email
+     * @return List of BookingResponse DTOs
+     */
     @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(String email) {
-
         log.info("Fetching bookings for user: {}", email);
 
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> {
@@ -115,16 +166,19 @@ public class BookingService {
 
         log.info("Found {} bookings for user: {}", bookings.size(), email);
 
-        List<BookingResponse> responses = bookings.stream()
+        return bookings.stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
-
-        log.debug("Mapped {} bookings to response DTOs for user: {}", responses.size(), email);
-
-        return responses;
     }
 
-
+    /**
+     * Fetches a single booking by ID for a specific user.
+     *
+     * @param email      User email (for ownership verification)
+     * @param booking_id Booking ID
+     * @return BookingResponseDto
+     * @throws ExceptionResponse if booking not found or belongs to another user
+     */
     public BookingResponseDto getBookingById(String email, Long booking_id) {
         log.info("Fetching booking id: {} for user: {}", booking_id, email);
 
@@ -135,13 +189,19 @@ public class BookingService {
 
         if (!booking.getUser().getEmail().equals(email)) {
             log.error("User {} attempted to access booking {} belonging to another user", email, booking_id);
-            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_NOT_AVAILABLE", "Booking is not available for user with email " + email);
+            throw new ExceptionResponse(HttpStatus.BAD_REQUEST, "BOOKING_NOT_AVAILABLE",
+                    "Booking is not available for user with email " + email);
         }
 
         log.info("Booking id: {} retrieved successfully for user: {}", booking_id, email);
         return bookingMapper.maptoDto(booking);
     }
 
+    /**
+     * Retrieves all bookings in the system with no filtering.
+     *
+     * @return List of BookingResponse DTOs
+     */
     @Transactional(readOnly = true)
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAll()
@@ -150,6 +210,16 @@ public class BookingService {
                 .toList();
     }
 
+    /**
+     * Retrieves all bookings for a specific date, with desk color-coding.
+     * Desk color logic:
+     *     RED – Desk fully booked for the remaining day
+     *     AMBER – Desk partially booked
+     *     GRAY – Desk deactivated
+     * @param localDate Target date
+     * @return List of BookingDTO representing desk booking status
+     * @throws ExceptionResponse if no bookings found
+     */
     public List<BookingDTO> getBookingsByDate(LocalDate localDate) {
         log.info("looking for bookings at time {}", localDate);
 
@@ -163,7 +233,6 @@ public class BookingService {
                     String.format("Bookings for %s date not found", localDate.toString())
             );
         }
-
         Map<Long, List<Booking>> bookingsByDesk = bookings.stream()
                 .collect(Collectors.groupingBy(booking -> booking.getDesk().getId()));
 
@@ -185,10 +254,7 @@ public class BookingService {
         }
 
         long secondsUntilEnd = Duration.between(interestStart, workEnd).getSeconds();
-
-        if (interestStart.isBefore(lunchStart)) {
-            secondsUntilEnd -= 3600;
-        }
+        if (interestStart.isBefore(lunchStart)) secondsUntilEnd -= 3600;
         double hoursRequiredToBlock = Math.max(0, secondsUntilEnd / 3600.0);
 
         for (Map.Entry<Long, List<Booking>> entry : bookingsByDesk.entrySet()) {
@@ -208,7 +274,6 @@ public class BookingService {
                 }
                 if (booking.getStatus() == BookingStatus.CANCELLED) continue;
 
-
                 if (minStart == null || booking.getStartTime().isBefore(minStart)) minStart = booking.getStartTime();
                 if (maxEnd == null || booking.getEndTime().isAfter(maxEnd)) maxEnd = booking.getEndTime();
 
@@ -221,11 +286,7 @@ public class BookingService {
                 LocalTime effectiveEnd = bEnd.isBefore(workEnd) ? bEnd : workEnd;
 
                 if (effectiveStart.isBefore(effectiveEnd)) {
-                    blockedHours += Duration
-                            .between(
-                                    effectiveStart,
-                                    effectiveEnd
-                            ).getSeconds() / 3600.0;
+                    blockedHours += Duration.between(effectiveStart, effectiveEnd).getSeconds() / 3600.0;
                 }
             }
 
@@ -236,11 +297,9 @@ public class BookingService {
 
             if (isDeactivated) {
                 deskColorDTO.setDeskColor(DeskColor.GRAY);
-            }
-            else if (totalHours >= 9 || (hoursRequiredToBlock > 0 && isFullyBlocked)) {
+            } else if (totalHours >= 9 || (hoursRequiredToBlock > 0 && isFullyBlocked)) {
                 deskColorDTO.setDeskColor(DeskColor.RED);
-            }
-            else if (totalHours > 0) {
+            } else if (totalHours > 0) {
                 deskColorDTO.setDeskColor(DeskColor.AMBER);
             }
 
@@ -252,60 +311,54 @@ public class BookingService {
                 resultList.add(bookingDTO);
             }
         }
+
         return resultList;
     }
 
+    /**
+     * Retrieves all non-cancelled bookings for a user on a specific date.
+     *
+     * @param email     User email
+     * @param localDate Target date
+     * @return List of BookingResponse DTOs
+     * @throws ExceptionResponse if no matching bookings are found
+     */
     @Transactional(readOnly = true)
-    public List<BookingResponse> getAllUserBookingsByDate(
-            String email,
-            LocalDate localDate
-    ) {
-        log.info(
-                "Looking for user with email {}",
-                email
-        );
-        User user = userRepository
-                .findByEmailIgnoreCase(email)
+    public List<BookingResponse> getAllUserBookingsByDate(String email, LocalDate localDate) {
+        log.info("Looking for user with email {}", email);
+
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ExceptionResponse(
                         HttpStatus.NOT_FOUND,
                         "USER_NOT_FOUND",
                         String.format("User with email: %s is not found", email)
                 ));
 
-        log.info(
-                "Looking for bookigs with user_id {} and start date {}",
-                user.getId(),
-                localDate
-        );
+        log.info("Looking for bookings with user_id {} and start date {}", user.getId(), localDate);
 
-        List<Booking> bookings = bookingRepository
-                .findUserBookingsByDateNotCancelled(
-                        user.getId(),
-                        localDate
-                );
+        List<Booking> bookings = bookingRepository.findUserBookingsByDateNotCancelled(user.getId(), localDate);
 
         if (bookings == null || bookings.isEmpty()) {
-            log.warn(
-                    "Bookings with user_id {} and start date {} was not found",
-                    user.getId(),
-                    localDate
-            );
+            log.warn("Bookings with user_id {} and start date {} was not found", user.getId(), localDate);
 
             throw new ExceptionResponse(
                     HttpStatus.NOT_FOUND,
                     "BOOKINGS_BY_DATE_NOT_FOUND",
-                    String.format(
-                            "Bookings by date %s for user with id %d not found",
-                            localDate.toString(),
-                            user.getId()
-                    )
+                    String.format("Bookings by date %s for user with id %d not found",
+                            localDate.toString(), user.getId())
             );
         }
+
         return bookings.stream()
                 .map(bookingMapper::toResponse)
                 .toList();
     }
 
+    /**
+     * Provides all BookingStatus enum names.
+     *
+     * @return List of booking status names
+     */
     public List<String> getBookingStatusEnum() {
         return Arrays.stream(BookingStatus.values())
                 .map(Enum::name)

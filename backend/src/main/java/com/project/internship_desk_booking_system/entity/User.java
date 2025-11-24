@@ -57,7 +57,7 @@ public class User {
         this.authProvider = AuthProvider.LOCAL;
     }
 
-    protected User() {
+    public User() {
     }
 
     public static User ldapUser(String email) {

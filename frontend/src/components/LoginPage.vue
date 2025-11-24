@@ -25,7 +25,7 @@
               class="logo-img"
             />
           </div>
-          <h1 class="welcome-text mt-4">Welcome to ISD Desk System</h1>
+          <h1 class="welcome-text mt-4">Welcome to ISD Booking System</h1>
           <p class="welcome-subtitle">Please sign in to continue.</p>
         </div>
 

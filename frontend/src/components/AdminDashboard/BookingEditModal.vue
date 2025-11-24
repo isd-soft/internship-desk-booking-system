@@ -44,13 +44,13 @@
           <div class="section mb-6">
             <div class="input-label">Target Desk</div>
             <v-text-field
-                v-model.number="bookingForm.deskId"
-                type="number"
+                v-model="deskNameInput"
+                type="text"
                 variant="outlined"
                 density="comfortable"
                 hide-details
                 class="modern-input"
-                placeholder="Enter Desk ID"
+                placeholder="Enter Desk Name"
                 prepend-inner-icon="mdi-desk"
             />
           </div>
@@ -214,61 +214,112 @@ const bookingForm = reactive({
   status: "ACTIVE",
 });
 
+const deskNameInput = ref<string>("");
 const deskName = ref<string>("");
 const deskZone = ref<string>("");
 const deskType = ref<string>("");
 const loadingDesk = ref(false);
 const deskError = ref<string>("");
+const fetchedDeskId = ref<number>(0);
 
-// Sync with existing booking
 watch(
     () => props.booking,
-    (booking) => {
+    async (booking) => {
       if (booking) {
         bookingForm.deskId = booking.deskId;
         bookingForm.startTime = booking.startTime;
         bookingForm.endTime = booking.endTime;
         bookingForm.status = booking.status;
+        if (booking.deskId) {
+          await fetchDeskDetailsById(booking.deskId);
+        }
       } else {
         bookingForm.deskId = 0;
         bookingForm.startTime = "";
         bookingForm.endTime = "";
         bookingForm.status = "ACTIVE";
+        deskNameInput.value = "";
+        deskName.value = "";
+        deskZone.value = "";
+        deskType.value = "";
+        fetchedDeskId.value = 0;
       }
     },
     { immediate: true }
 );
 
-// Watch desk ID changes to fetch desk details
 watch(
-    () => bookingForm.deskId,
-    async (newDeskId) => {
-      if (newDeskId && newDeskId > 0) {
-        await fetchDeskDetails(newDeskId);
+    deskNameInput,
+    async (newDeskName) => {
+      if (newDeskName && newDeskName.trim().length > 0) {
+        await fetchDeskDetailsByName(newDeskName.trim());
       } else {
         deskName.value = "";
         deskZone.value = "";
         deskType.value = "";
         deskError.value = "";
+        fetchedDeskId.value = 0;
       }
     }
 );
 
-async function fetchDeskDetails(deskId: number) {
+async function fetchDeskDetailsByName(name: string) {
   try {
     loadingDesk.value = true;
     deskError.value = "";
-    const response = await api.get(`/admin/desk/${deskId}`);
-    const desk = response.data;
-    deskName.value = desk.displayName || "Unknown Desk";
-    deskZone.value = desk.zoneDto?.zoneName || "Unknown Zone";
-    deskType.value = desk.type || "Unknown";
+    const response = await api.get(`/admin/desks`);
+    const allDesks = response.data;
+    
+    const matchedDesk = allDesks.find((desk: any) => 
+      (desk.displayName || desk.name || "").toLowerCase().includes(name.toLowerCase())
+    );
+    
+    if (matchedDesk) {
+      fetchedDeskId.value = matchedDesk.id;
+      bookingForm.deskId = matchedDesk.id;
+      deskName.value = matchedDesk.displayName || "Unknown Desk";
+      deskZone.value = matchedDesk.zoneDto?.zoneName || "Unknown Zone";
+      deskType.value = matchedDesk.type || "Unknown";
+    } else {
+      deskError.value = "Desk not found";
+      deskName.value = "";
+      deskZone.value = "";
+      deskType.value = "";
+      fetchedDeskId.value = 0;
+      bookingForm.deskId = 0;
+    }
   } catch (err: any) {
     console.error("Error fetching desk details:", err);
     deskError.value = "Desk not found";
     deskName.value = "";
     deskZone.value = "";
     deskType.value = "";
+    fetchedDeskId.value = 0;
+    bookingForm.deskId = 0;
+  } finally {
+    loadingDesk.value = false;
+  }
+}
+
+async function fetchDeskDetailsById(deskId: number) {
+  try {
+    loadingDesk.value = true;
+    deskError.value = "";
+    const response = await api.get(`/admin/desk/${deskId}`);
+    const desk = response.data;
+    deskNameInput.value = desk.displayName || "";
+    deskName.value = desk.displayName || "Unknown Desk";
+    deskZone.value = desk.zoneDto?.zoneName || "Unknown Zone";
+    deskType.value = desk.type || "Unknown";
+    fetchedDeskId.value = desk.id;
+  } catch (err: any) {
+    console.error("Error fetching desk details:", err);
+    deskError.value = "Desk not found";
+    deskNameInput.value = "";
+    deskName.value = "";
+    deskZone.value = "";
+    deskType.value = "";
+    fetchedDeskId.value = 0;
   } finally {
     loadingDesk.value = false;
   }

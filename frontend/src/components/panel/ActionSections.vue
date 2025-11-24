@@ -1,13 +1,13 @@
 <template>
   <div class="actions-section px-6 pb-4">
     <v-btn
-        v-if="isAdmin"
-        block
-        variant="flat"
-        class="neo-btn mb-3 admin-gradient-btn"
-        elevation="3"
-        size="large"
-        @click="$router.push('/admin-dashboard/map')"
+      v-if="isAdmin"
+      block
+      variant="flat"
+      class="neo-btn mb-3 admin-gradient-btn"
+      elevation="3"
+      size="large"
+      @click="$router.push('/admin-dashboard/map')"
     >
       <v-icon class="mr-2" size="20">mdi-shield-crown-outline</v-icon>
       <span class="btn-text">Switch to Admin Dashboard</span>
@@ -36,6 +36,7 @@
     >
       <v-icon class="mr-2" size="20">mdi-map</v-icon>
       <span class="btn-text">Map</span>
+      <span class="new-badge ml-2">NEW</span>
     </v-btn>
 
     <v-btn
@@ -627,9 +628,9 @@ async function loadDesksFromApi() {
 
 async function toggleFav(desk: any) {
   try {
-    console.log('[ActionSections] Toggling favourite for desk:', desk.id);
+    console.log("[ActionSections] Toggling favourite for desk:", desk.id);
     await favStore.toggle(desk.id);
-    console.log('[ActionSections] Toggle complete, emitting event');
+    console.log("[ActionSections] Toggle complete, emitting event");
     // refresh local flag
     desk.isFavourite = favStore.isFav(desk.id);
     // Notify parent to refresh favourites list
@@ -1526,5 +1527,45 @@ const formatDateTime = (dateTime: string | null) => {
   background: linear-gradient(135deg, #e16531 0%, #eadf66 100%) !important;
   color: white !important;
 }
-</style>
+.new-badge {
+  background: #ef4444;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.neo-btn :deep(.v-btn__content) {
+  justify-content: flex-start !important;
+}
 
+@media (max-width: 768px) {
+  .stats-section {
+    padding: 12px 12px 10px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 10px 6px 8px;
+    border-radius: 10px;
+  }
+
+  .stat-icon v-icon {
+    font-size: 20px !important;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+}
+</style>
