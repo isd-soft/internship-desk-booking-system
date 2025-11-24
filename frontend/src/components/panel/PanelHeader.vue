@@ -15,7 +15,7 @@
         <h2 class="header-title animate-fade">Quick Actions</h2>
         <div class="title-accent"></div>
         <p class="header-subtitle animate-fade-delay">
-          Manage your workspace · ISD desk bookings
+          Manage your workspace
         </p>
       </div>
       <div class="head-right">
