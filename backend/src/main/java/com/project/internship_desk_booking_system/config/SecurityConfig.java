@@ -123,12 +123,11 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                         .requestMatchers("/api/v1/**").authenticated()
-
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/static/**", "/assets/**", "/js/**", "/css/**", "/img/**", "/favicon.ico").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
+                        .anyRequest().authenticated()
                 )
 
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
