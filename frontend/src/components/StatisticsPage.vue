@@ -173,6 +173,7 @@
 <script>
 import { ref, onMounted, watch, nextTick } from 'vue';
 import Chart from 'chart.js/auto';
+import api from "../plugins/axios";
 
 export default {
   name: 'BookingStatistics',
@@ -200,58 +201,44 @@ export default {
 
     const apiService = {
       async getStatistics() {
-        const response = await fetch('http://localhost:8080/api/statistics', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch statistics: ${response.status} - ${errorText}`);
+        try {
+          const response = await api.get("/admin/statistics");
+          return response.data;
+        } catch (err) {
+          throw new Error(
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to fetch statistics"
+          );
         }
-
-        return await response.json();
       },
 
       async getStatisticsForRange(start, end) {
-        const params = new URLSearchParams({
-          startDate: start,
-          endDate: end
-        });
-
-        const response = await fetch(`http://localhost:8080/api/statistics/range?${params}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch statistics: ${response.status} - ${errorText}`);
+        try {
+          const params = { startDate: start, endDate: end };
+          const response = await api.get("/admin/statistics/range", { params });
+          return response.data;
+        } catch (err) {
+          throw new Error(
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to fetch range statistics"
+          );
         }
-
-        return await response.json();
       }
     };
-
     const fetchStatistics = async () => {
-      loading.value = true;
-      error.value = null;
-
       try {
+        loading.value = true;
+        error.value = null;
+
         const data = await apiService.getStatistics();
-        console.log('Fetched statistics:', data);
+        console.log("Fetched statistics:", data);
         stats.value = data;
+
       } catch (err) {
-        error.value = err.message;
-        console.error('Error fetching statistics:', err);
+        console.error("Error fetching statistics:", err);
+        error.value = err.message || "Failed to fetch statistics";
       } finally {
         loading.value = false;
       }
@@ -259,27 +246,29 @@ export default {
 
     const fetchStatisticsForRange = async () => {
       if (!startDate.value || !endDate.value) {
-        error.value = 'Please select both start and end dates';
+        error.value = "Please select both start and end dates";
         return;
       }
 
-      loading.value = true;
-      error.value = null;
-
       try {
+        loading.value = true;
+        error.value = null;
+
         const start = new Date(startDate.value).toISOString();
         const end = new Date(endDate.value).toISOString();
 
         const data = await apiService.getStatisticsForRange(start, end);
-        console.log('Fetched range statistics:', data);
+        console.log("Fetched range statistics:", data);
         stats.value = data;
+
       } catch (err) {
-        error.value = err.message;
-        console.error('Error fetching statistics:', err);
+        console.error("Error fetching range statistics:", err);
+        error.value = err.message || "Failed to fetch statistics";
       } finally {
         loading.value = false;
       }
     };
+
 
     const resetToDefault = () => {
       startDate.value = '';
