@@ -110,7 +110,6 @@ public class StatisticsService {
         return results.stream()
                 .map(row -> {
                     LocalDate date;
-                    // Handle both java.sql.Date and java.time.LocalDate
                     if (row[0] instanceof Date) {
                         date = ((Date) row[0]).toLocalDate();
                     } else if (row[0] instanceof LocalDate) {
