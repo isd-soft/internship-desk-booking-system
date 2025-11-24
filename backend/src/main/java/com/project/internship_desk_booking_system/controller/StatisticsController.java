@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/statistics")
+@RequestMapping("/api/v1/admin/statistics")
 @RequiredArgsConstructor
 public class StatisticsController {
     private final StatisticsService statisticsService;
