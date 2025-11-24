@@ -3,13 +3,13 @@ import { onMounted, ref, onBeforeUnmount, computed, watch } from "vue";
 import {
   layout,
   rowHeight,
-  loadDesksFromBackend,
-  resetLayout,
-  loadAllColors,
+  DeskColors,
   selectedDate as sharedSelectedDate,
   imageUrl,
   getBackgroundFromBackend,
   imageDimensions,
+  loadAllColors,
+  updateDeskColors,
 } from "../VisualFloorMap/floorLayout";
 
 import { getColor, fetchColors } from "@/utils/useEnums";
@@ -44,23 +44,24 @@ const showLegend = ref(!isMobileView.value);
 
 // dont remove please !!
 const scaledContainerHeight = computed(() =>
-  Math.round(imageDimensions.value.height * scale.value)
+    Math.round(imageDimensions.value.height * scale.value)
 );
 // dont remove please !!
 const scaledHeightCompensation = computed(() =>
-  scale.value >= 1
-    ? 0
-    : Math.round(imageDimensions.value.height * (1 - scale.value))
+    scale.value >= 1
+        ? 0
+        : Math.round(imageDimensions.value.height * (1 - scale.value))
 );
 
 onMounted(async () => {
-  resetLayout();
-  await fetchColors(); // Load color mappings from backend FIRST
-  loadDesksFromBackend();
-  getBackgroundFromBackend();
-  console.log(imageUrl);
-  await favStore.ensureLoaded();
+  // Load enum colors and favorites first
+  await Promise.all([
+    fetchColors(),
+    favStore.ensureLoaded(),
+    getBackgroundFromBackend()
+  ]);
 
+  // Setup scaling and resize observer
   const updateScale = () => {
     if (!container.value) return;
 
@@ -93,7 +94,7 @@ onMounted(async () => {
 
   if (container.value) {
     containerWidth.value =
-      container.value.clientWidth || imageDimensions.value.width;
+        container.value.clientWidth || imageDimensions.value.width;
     containerHeightAvailable.value = container.value.clientHeight || null;
     updateScale();
   }
@@ -185,6 +186,7 @@ async function handleCancelBooking(payload?: { deskId?: number }) {
 
   try {
     await loadAllColors();
+    updateDeskColors(); // Update existing desks with new colors
   } catch (error) {
     console.warn("[Map] Failed to refresh colors after cancellation", error);
   }
@@ -193,27 +195,30 @@ async function handleCancelBooking(payload?: { deskId?: number }) {
   emit("booking-cancelled", payload);
 }
 
+// Watch for date changes - only reload colors, not desk coordinates
 watch(
-  () => props.selectedDateISO,
-  async (newDate) => {
-    if (!newDate) return;
-    console.log("[Map] Date changed to:", newDate);
-    try {
-      sharedSelectedDate.value = newDate;
-      await loadAllColors();
-      console.log("[Map] Colors reloaded successfully");
-    } catch (e) {
-      console.warn("[Map] Could not reload colors on date change", e);
+    () => props.selectedDateISO,
+    async (newDate) => {
+      if (!newDate) return;
+      console.log("[Map] Date changed to:", newDate);
+
+      try {
+        sharedSelectedDate.value = newDate;
+        await loadAllColors();
+        updateDeskColors(); // Update existing desks with new colors
+        console.log("[Map] Colors reloaded successfully");
+      } catch (e) {
+        console.warn("[Map] Could not reload colors on date change", e);
+      }
     }
-  }
 );
 </script>
 
 <template>
   <div ref="container" class="floorplan-container no-anim">
     <div
-      class="floorplan-inner"
-      :style="{
+        class="floorplan-inner"
+        :style="{
         width: imageDimensions.width + 'px',
         height: imageDimensions.height + 'px',
         transform: 'scale(' + scale + ')',
@@ -221,38 +226,38 @@ watch(
       }"
     >
       <img
-        :src="imageUrl"
-        alt="Office floor plan"
-        class="floorplan-bg"
-        draggable="false"
+          :src="imageUrl"
+          alt="Office floor plan"
+          class="floorplan-bg"
+          draggable="false"
       />
       <GridLayout
-        v-model:layout="layout"
-        :col-num="imageDimensions.width"
-        :row-height="rowHeight"
-        :width="imageDimensions.width"
-        :max-rows="imageDimensions.height"
-        :margin="[0, 0]"
-        :responsive="false"
-        :vertical-compact="false"
-        prevent-collision
-        :use-css-transforms="true"
-        :is-draggable="false"
-        :is-resizable="false"
-        style="position: relative; width: 100%; height: 100%"
+          v-model:layout="layout"
+          :col-num="imageDimensions.width"
+          :row-height="rowHeight"
+          :width="imageDimensions.width"
+          :max-rows="imageDimensions.height"
+          :margin="[0, 0]"
+          :responsive="false"
+          :vertical-compact="false"
+          prevent-collision
+          :use-css-transforms="true"
+          :is-draggable="false"
+          :is-resizable="false"
+          style="position: relative; width: 100%; height: 100%"
       >
         <template #item="{ item }">
           <div
-            class="desk"
-            :class="{
+              class="desk"
+              :class="{
               static: item.isNonInteractive,
               favourite: isDeskFavourite(item.i),
               vertical: !(item.w >= item.h),
               'non-interactive': item.isNonInteractive,
               dimmed: isDeskDimmed(item),
             }"
-            @click="handleDeskClick(item)"
-            :style="{
+              @click="handleDeskClick(item)"
+              :style="{
               backgroundColor: getColor(item.color),
               cursor: item.isNonInteractive ? 'default' : 'pointer',
             }"
@@ -260,13 +265,13 @@ watch(
             <span class="text">{{ item.deskName || item.i }}</span>
             <div v-if="isDeskFavourite(item.i)" class="favourite-badge">
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="heart-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  class="heart-icon"
               >
                 <path
-                  d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"
+                    d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"
                 />
               </svg>
             </div>
@@ -276,15 +281,15 @@ watch(
     </div>
 
     <BookingModal
-      v-model="showBookingModal"
-      :desk="selectedDesk"
-      :is-booked="selectedDesk ? isDeskBooked(selectedDesk.i) : false"
-      :selectedDateISO="props.selectedDateISO"
-      :office-start-hour="8"
-      :office-end-hour="18"
-      @created="handleCreated"
-      @cancel="handleCancelBooking"
-      @favourite-toggled="handleFavouriteToggled"
+        v-model="showBookingModal"
+        :desk="selectedDesk"
+        :is-booked="selectedDesk ? isDeskBooked(selectedDesk.i) : false"
+        :selectedDateISO="props.selectedDateISO"
+        :office-start-hour="8"
+        :office-end-hour="18"
+        @created="handleCreated"
+        @cancel="handleCancelBooking"
+        @favourite-toggled="handleFavouriteToggled"
     />
   </div>
 </template>
@@ -414,7 +419,7 @@ watch(
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25),
-    0 4px 10px rgba(59, 130, 246, 0.15);
+  0 4px 10px rgba(59, 130, 246, 0.15);
   transform: translateY(-3px) scale(1.02);
 }
 
