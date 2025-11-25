@@ -16,6 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Service layer responsible for managing user's favourite desks.
+ *
+ * This service provides methods to:
+ * - Add a desk to a user's favourites
+ * - Remove a desk from a user's favourites
+ * - Retrieve all favourite desks for a specific user
+ * - Notify users about changes to their favourite desks
+ *
+ * The service ensures that users and desks exist before performing operations
+ * and uses FavouriteDeskMapper to convert entities into DTOs for API responses.
+ */
 @Service
 @RequiredArgsConstructor
 public class FavouriteDesksService {
@@ -26,6 +38,14 @@ public class FavouriteDesksService {
     private final FavouriteDeskMapper favouriteDeskMapper;
     private final EmailService emailService;
 
+    /**
+     * Adds a desk to the favourites of a specific user.
+     * If the desk is already in the favourites, the method does nothing.
+     *
+     * @param email the email of the user
+     * @param deskId the identifier of the desk to add
+     * @throws ExceptionResponse if the user or desk does not exist
+     */
     @Transactional
     public void addFavouriteDesk(String email, Long deskId) {
         User user = userRepository.findByEmailIgnoreCase(email)
@@ -36,13 +56,19 @@ public class FavouriteDesksService {
         }
 
         Desk desk = deskRepository.findById(deskId)
-                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK NOT_FOUND", "desk not found"));
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "DESK_NOT_FOUND", "desk not found"));
 
         FavouriteDesks favourite = new FavouriteDesks(user, desk);
         favouriteDesksRepository.save(favourite);
     }
 
-
+    /**
+     * Removes a desk from the favourites of a specific user.
+     *
+     * @param email the email of the user
+     * @param deskId the identifier of the desk to remove
+     * @throws ExceptionResponse if the user does not exist
+     */
     @Transactional
     public void removeFavouriteDesk(String email, Long deskId) {
         User user = userRepository.findByEmailIgnoreCase(email)
@@ -51,9 +77,17 @@ public class FavouriteDesksService {
         favouriteDesksRepository.deleteByUserIdAndDeskId(user.getId(), deskId);
     }
 
+    /**
+     * Retrieves all favourite desks of a specific user.
+     *
+     * @param email the email of the user
+     * @return a list of FavouriteDesksDTO representing the user's favourite desks
+     * @throws ExceptionResponse if the user does not exist
+     */
     @Transactional(readOnly = true)
     public List<FavouriteDesksDTO> getFavouriteDesks(String email) {
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "user not found"));
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "user not found"));
 
         return favouriteDesksRepository.findByUser(user)
                 .stream()
@@ -61,6 +95,12 @@ public class FavouriteDesksService {
                 .toList();
     }
 
+    /**
+     * Sends notifications to users about important changes to a desk they have marked as favourite.
+     *
+     * @param desk the Desk entity that has changed
+     * @param changes a list of changes to notify users about
+     */
     public void notifyUsersAboutDeskChanges(Desk desk, List<String> changes) {
         if (changes == null || changes.isEmpty()) {
             return;
@@ -77,5 +117,4 @@ public class FavouriteDesksService {
                         )
                 );
     }
-
 }

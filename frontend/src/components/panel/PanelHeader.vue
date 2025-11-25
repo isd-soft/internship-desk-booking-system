@@ -15,7 +15,7 @@
         <h2 class="header-title animate-fade">Quick Actions</h2>
         <div class="title-accent"></div>
         <p class="header-subtitle animate-fade-delay">
-          Manage your workspace · ISD desk bookings
+          Manage your workspace
         </p>
       </div>
       <div class="head-right">
@@ -27,33 +27,40 @@
           />
         </div>
         <v-btn
-          v-if="isAdmin"
-          icon
-          variant="text"
-          size="small"
-          @click="$emit('toggle')"
-          class="toggle-btn"
-        >
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
+  v-if="isAdminPage"
+  icon
+  variant="text"
+  size="small"
+  @click="$emit('toggle')"
+  class="toggle-btn"
+>
+  <v-icon>mdi-chevron-left</v-icon>
+</v-btn>
+
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
 
 defineEmits(["toggle"]);
 
 const userEmail = ref("");
 const isAdmin = ref(false);
+
+const route = useRoute();
+
+const isAdminPage = computed(() => route.path.startsWith("/admin-dashboard"));
+
 onMounted(() => {
   const role = localStorage.getItem("role");
   isAdmin.value = String(role).toUpperCase() === "ADMIN";
   userEmail.value = localStorage.getItem("email") || "";
 });
 </script>
+
 
 <style scoped>
 .panel-header {

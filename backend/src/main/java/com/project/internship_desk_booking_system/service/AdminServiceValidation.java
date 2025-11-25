@@ -48,6 +48,8 @@ public class AdminServiceValidation {
             desk.setIsTemporarilyAvailable(false);
             desk.setTemporaryAvailableFrom(null);
             desk.setTemporaryAvailableUntil(null);
+        } else {
+            desk.setType(newType);
         }
     }
 
