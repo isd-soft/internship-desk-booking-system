@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: desk_password
       POSTGRES_DB: desk_booking_system
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -38,7 +38,7 @@ services:
       PHPLDAPADMIN_HTTPS: "false"
       PHPLDAPADMIN_TRUST_PROXY: "true"
     ports:
-      - "8081:80"
+      - "8083:80"
     depends_on:
       - openldap
 
