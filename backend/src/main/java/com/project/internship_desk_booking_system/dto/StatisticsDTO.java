@@ -1,7 +1,5 @@
 package com.project.internship_desk_booking_system.dto;
 
-import com.project.internship_desk_booking_system.command.BookingResponse;
-import com.project.internship_desk_booking_system.command.BookingResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +19,14 @@ public class StatisticsDTO {
     private DeskStatsDTO mostBookedDesk;
     private DeskStatsDTO leastBookedDesk;
 
+    private Long weeklyCancelledBookings;
+    private Long monthlyCancelledBookings;
+    private Double weeklyCancellationRate;
+    private Double monthlyCancellationRate;
+    private DeskStatsDTO mostCancelledDesk;
+
     private List<BookingChartDataDTO> bookingHoursPerDay;
     private List<BookingChartDataDTO> bookingHoursPerWeek;
+    private List<BookingChartDataDTO> cancelledBookingsPerDay;
+    private List<BookingChartDataDTO> cancelledBookingsPerWeek;
 }
