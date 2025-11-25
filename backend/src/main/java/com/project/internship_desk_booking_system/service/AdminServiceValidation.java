@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.service;
 
+import com.project.internship_desk_booking_system.command.AdminCreateBookingRequest;
 import com.project.internship_desk_booking_system.entity.Desk;
 import com.project.internship_desk_booking_system.entity.User;
 import com.project.internship_desk_booking_system.enums.DeskStatus;
@@ -7,17 +8,20 @@ import com.project.internship_desk_booking_system.enums.DeskType;
 import com.project.internship_desk_booking_system.enums.Role;
 import com.project.internship_desk_booking_system.error.ExceptionResponse;
 import com.project.internship_desk_booking_system.repository.DeskRepository;
+import com.project.internship_desk_booking_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The type Admin service validation.
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminServiceValidation {
     private final DeskRepository deskRepository;
+    private final UserRepository userRepository;
+    private final GuestUserService guestUserService;
 
 
     /**
@@ -79,5 +83,18 @@ public class AdminServiceValidation {
         }
     }
 
+    @Transactional
+    public User resolveUser(AdminCreateBookingRequest req) {
+        if (!req.isGuest()) {
+            return guestUserService.createGuestUser();
 
+        } else {
+            return userRepository.findByEmailIgnoreCase(req.getEmail())
+                    .orElseThrow(() -> new ExceptionResponse(
+                            HttpStatus.NOT_FOUND,
+                            "USER_NOT_FOUND",
+                            "User with the provided email was not found"
+                    ));
+        }
+    }
 }
