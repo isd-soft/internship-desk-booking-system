@@ -228,9 +228,9 @@ public class AdminService {
     }
 
     /**
-     * Edites an existing desk
+     * Edits an existing desk
      *
-     * @param id, DeskUpdsteDto
+     * @param id, DeskUpdateDto
      * @return updates desk with what was changed (displayName, Zone, type, status,
      * TemporaryAvailability, map coordinates
      * @throws ExceptionResponse if the deskId was not found in the DeskRepository,

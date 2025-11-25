@@ -24,18 +24,35 @@ public class AdminServiceValidation {
     private final GuestUserService guestUserService;
 
 
+    /**
+     * Validate not updating self.
+     *
+     * @param currentEmail the current email
+     * @param targetEmail  the target email
+     */
     public void validateNotUpdatingSelf(String currentEmail, String targetEmail) {
         if (currentEmail.equalsIgnoreCase(targetEmail)) {
             throw new ExceptionResponse(HttpStatus.CONFLICT, "UPDATING_YOURSELF", "You cannot change your own role");
         }
     }
 
+    /**
+     * Validate is admin.
+     *
+     * @param user the user
+     */
     public void validateIsAdmin(User user) {
         if (user.getRole() != Role.ADMIN) {
             throw new ExceptionResponse(HttpStatus.CONFLICT, "IS_ADMIN", "You cannot change your role");
         }
     }
 
+    /**
+     * Validate desk name uniqueness.
+     *
+     * @param currentName the current name
+     * @param newName     the new name
+     */
     public void validateDeskNameUniqueness(String currentName, String newName) {
         if (!currentName.equals(newName)) {
             if (deskRepository.existsByDeskName(newName)) {
@@ -48,6 +65,12 @@ public class AdminServiceValidation {
         }
     }
 
+    /**
+     * Apply auto deactivation for type.
+     *
+     * @param desk    the desk
+     * @param newType the new type
+     */
     public void applyAutoDeactivationForType(Desk desk, DeskType newType) {
         if (newType == DeskType.UNAVAILABLE) {
             desk.setType(newType);
