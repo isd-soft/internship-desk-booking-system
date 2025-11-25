@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -249,16 +250,18 @@ public class BookingServiceValidation {
      */
     private void validateWeeklyHoursLimit(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
         BookingTimeLimits policy = bookingTimeLimitsService.getActivePolicy();
-        LocalDateTime weekStart = startTime.with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS);
-        LocalDateTime weekEnd = weekStart.plusDays(7);
+        LocalDate weekStartDate = startTime.toLocalDate().with(DayOfWeek.MONDAY);
+        LocalDateTime weekStart = weekStartDate.atStartOfDay();
+        LocalDateTime weekEnd = weekStart.plusDays(5);
         log.debug("Checking weekly hours limit for user {}: {} - {}.", userId, weekStart, weekEnd);
         List<Booking> weeklyBookings = bookingRepository.findUserBookings(
                 userId, weekStart, weekEnd
         );
         long bookedHours = weeklyBookings.stream()
-                .mapToLong(b -> Duration.between(b.getStartTime(), b.getEndTime()).toHours())
-                .sum();
-        long newBookingHours = Duration.between(startTime, endTime).toHours();
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                .mapToLong(b -> Duration.between(b.getStartTime(), b.getEndTime()).toMinutes())
+                .sum() / 60;
+        long newBookingHours = Duration.between(startTime, endTime).toMinutes() / 60;
         long totalHours = bookedHours + newBookingHours;
         log.debug("User {} has {} hours booked, requesting {} more (total: {}).", userId, bookedHours, newBookingHours, totalHours);
         if (totalHours > policy.getMaxHoursPerWeek()) {

@@ -9,6 +9,8 @@ export const statusDeskOptions = ref([{ title: "All", value: "ALL" }]);
 export const error = ref<string | null>(null);
 export const loading = ref(false);
 
+// Cache flag to prevent multiple fetches
+let colorsFetched = false;
 
 function formatTitle(value: string): string {
     return value.charAt(0) + value.slice(1).toLowerCase();
@@ -57,6 +59,12 @@ export async function fetchBookingStatus(includeAll = true) {
 }
 
 export async function fetchColors() {
+    // Return early if already fetched
+    if (colorsFetched) {
+        console.log("Colors already cached, skipping fetch");
+        return;
+    }
+
     try {
         const response = await api.get("/admin/desk-colors");
 
@@ -71,6 +79,7 @@ export async function fetchColors() {
         });
 
         statusColorMap.value = colorMap;
+        colorsFetched = true;
 
         console.log("Color map loaded:", statusColorMap.value);
     } catch (err) {

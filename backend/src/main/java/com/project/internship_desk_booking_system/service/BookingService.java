@@ -23,18 +23,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Service class responsible for handling all booking-related operations.
  * Responsibilities:
- *     Creating and cancelling bookings with proper validation
- *     Retrieving bookings by user, by date, and all system bookings
- *     Mapping Booking entities to response DTOs for API consumption
- *     Sending email notifications for booking confirmation and cancellation
- *     Determining desk availability with color-coded status
+ * Creating and cancelling bookings with proper validation
+ * Retrieving bookings by user, by date, and all system bookings
+ * Mapping Booking entities to response DTOs for API consumption
+ * Sending email notifications for booking confirmation and cancellation
+ * Determining desk availability with color-coded status
  */
 @Slf4j
 @Service
@@ -50,13 +53,12 @@ public class BookingService {
     /**
      * Creates a new booking for the given user and desk.
      * Steps:
-     *     Find the user by email
-     *     Fetch the desk by ID
-     *     Validate booking logic (conflicts, limits)
-     *     Validate desk type constraints
-     *     Create and persist a new Booking entity
-     *     Send booking confirmation email
-     *
+     * Find the user by email
+     * Fetch the desk by ID
+     * Validate booking logic (conflicts, limits)
+     * Validate desk type constraints
+     * Create and persist a new Booking entity
+     * Send booking confirmation email
      *
      * @param email   User’s email
      * @param request Booking creation request
@@ -83,13 +85,15 @@ public class BookingService {
 
         bookingRepository.save(newBooking);
 
-        emailService.sendBookingConfirmationEmail(
-                email,
-                newBooking.getId(),
-                newBooking.getDesk().getDeskName(),
-                newBooking.getDesk().getZone().getZoneAbv(),
-                OffsetDateTime.now()
-        );
+        if (!user.isGuest()) {
+            emailService.sendBookingConfirmationEmail(
+                    email,
+                    newBooking.getId(),
+                    newBooking.getDesk().getDeskName(),
+                    newBooking.getDesk().getZone().getZoneAbv(),
+                    OffsetDateTime.now()
+            );
+        }
     }
 
     /**
@@ -213,9 +217,10 @@ public class BookingService {
     /**
      * Retrieves all bookings for a specific date, with desk color-coding.
      * Desk color logic:
-     *     RED – Desk fully booked for the remaining day
-     *     AMBER – Desk partially booked
-     *     GRAY – Desk deactivated
+     * RED – Desk fully booked for the remaining day
+     * AMBER – Desk partially booked
+     * GRAY – Desk deactivated
+     *
      * @param localDate Target date
      * @return List of BookingDTO representing desk booking status
      * @throws ExceptionResponse if no bookings found
@@ -270,7 +275,8 @@ public class BookingService {
 
             for (Booking booking : deskBookings) {
                 if (booking.getDesk().getStatus() == DeskStatus.DEACTIVATED) {
-                    isDeactivated = true; break;
+                    isDeactivated = true;
+                    break;
                 }
                 if (booking.getStatus() == BookingStatus.CANCELLED) continue;
 

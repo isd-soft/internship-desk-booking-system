@@ -36,61 +36,71 @@
           />
 
           <v-select
-            v-model="typeFilter"
-            :items="typeDeskOptions"
-            item-title="title"
-            item-value="value"
-            density="compact"
-            variant="outlined"
-            :disabled="loading"
-            :clearable="false"
-            hide-details
-            label="Filter by desk type"
-            class="control-select"
+              v-model="typeFilter"
+              :items="typeDeskOptions"
+              item-title="title"
+              item-value="value"
+              density="compact"
+              variant="outlined"
+              :disabled="loading"
+              :clearable="false"
+              hide-details
+              label="Filter by desk type"
+              class="control-select"
           />
 
           <v-btn
-            color="#171717"
-            variant="flat"
-            @click="resetFilters"
-            class="control-button"
+              color="#171717"
+              variant="flat"
+              @click="resetFilters"
+              class="control-button"
           >
             Reset Filters
           </v-btn>
+
+          <v-btn
+              color="#FF0000"
+              variant="flat"
+              @click="createBooking"
+              class="control-button"
+          >
+            CreateBooking
+          </v-btn>
         </div>
+
       </div>
 
       <v-alert
-        v-if="error"
-        type="error"
-        variant="tonal"
-        class="mb-4"
-        density="compact"
-        closable
+          v-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+          density="compact"
+          closable
       >
         {{ error }}
       </v-alert>
 
       <div v-if="loading" class="loading-container">
         <v-progress-circular
-          indeterminate
-          size="48"
-          width="4"
-          color="#171717"
+            indeterminate
+            size="48"
+            width="4"
+            color="#171717"
         />
         <p class="loading-message mt-3">Loading bookings…</p>
       </div>
 
       <template v-else>
         <v-data-table
-          :headers="headers"
-          :items="filteredBookings"
-          item-key="id"
-          density="compact"
-          class="bookings-table"
-          :items-per-page="15"
-          fixed-header
-          height="70vh"
+            :headers="headers"
+            :items="filteredBookings"
+            item-key="id"
+            density="compact"
+            class="bookings-table"
+            :items-per-page="15"
+            fixed-header
+            height="70vh"
         >
           <template #item.userId="{ item }">
             <span class="table-text-bold">{{ item.userId ?? "—" }}</span>
@@ -111,10 +121,10 @@
 
           <template #item.deskType="{ item }">
             <v-chip
-              size="x-small"
-              :color="getColor(item.deskType)"
-              variant="flat"
-              class="table-chip"
+                size="x-small"
+                :color="getColor(item.deskType)"
+                variant="flat"
+                class="table-chip"
             >
               {{ item.deskType }}
             </v-chip>
@@ -142,10 +152,10 @@
 
           <template #item.status="{ item }">
             <v-chip
-              size="x-small"
-              :color="getColor(item.status)"
-              variant="flat"
-              class="table-chip"
+                size="x-small"
+                :color="getColor(item.status)"
+                variant="flat"
+                class="table-chip"
             >
               {{ item.status }}
             </v-chip>
@@ -155,23 +165,23 @@
             <v-menu :close-on-content-click="true" location="bottom end">
               <template #activator="{ props }">
                 <v-btn
-                  v-bind="props"
-                  icon
-                  variant="text"
-                  size="small"
-                  color="#171717"
-                  :loading="cancellingId === item.id"
-                  :disabled="cancellingId === item.id"
-                  class="table-action-button"
+                    v-bind="props"
+                    icon
+                    variant="text"
+                    size="small"
+                    color="#171717"
+                    :loading="cancellingId === item.id"
+                    :disabled="cancellingId === item.id"
+                    class="table-action-button"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
               <v-list density="compact" class="table-action-menu">
                 <v-list-item
-                  @click="viewBooking(item)"
-                  prepend-icon="mdi-eye"
-                  title="View"
+                    @click="viewBooking(item)"
+                    prepend-icon="mdi-eye"
+                    title="View"
                 >
                 </v-list-item>
                 <v-list-item
@@ -195,7 +205,7 @@
           <template #no-data>
             <div class="table-empty-state">
               <v-icon size="48" color="#a3a3a3" class="mb-3"
-                >mdi-calendar-blank</v-icon
+              >mdi-calendar-blank</v-icon
               >
               <div class="table-empty-title">No bookings found</div>
               <div class="table-empty-subtitle">
@@ -206,18 +216,28 @@
         </v-data-table>
 
         <BookingViewModal
-          :show="showViewModal"
-          v-model="showViewModal"
-          :booking="selectedBooking"
+            v-if="showViewModal"
+            :show="showViewModal"
+            v-model="showViewModal"
+            :booking="selectedBooking"
         />
 
         <BookingEditModal
-          :show="showEditModal"
-          :booking="selectedBooking"
-          :error="error"
-          @close="showEditModal = false"
-          @save="handleSaveBooking"
+            v-if="showEditModal"
+            :show="showEditModal"
+            :booking="selectedBooking"
+            :error="error"
+            @close="showEditModal = false"
+            @save="handleSaveBooking"
         />
+
+        <AdminCreateBookingModal
+            v-if="showCreateModal"
+            :show="showCreateModal"
+            @close="showCreateModal = false"
+            @created="handleBookingCreated"
+        />
+
         <v-dialog v-model="showCancelDialog" max-width="500">
           <v-card class="delete-dialog">
             <v-card-title class="dialog-title">
@@ -267,14 +287,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
-import {fetchDeskTypeEnum,fetchBookingStatus, statusBookingOptions, typeDeskOptions,fetchColors,getColor} from "@/utils/useEnums";
-import { formatDateTimeLocal, formatTime, formatDate, calculateDuration} from "@/utils/useFormatDate";
-
+import AdminCreateBookingModal from "../components/AdminDashboard/AdminCreateBookingModal.vue";
+import {
+  fetchDeskTypeEnum,
+  fetchBookingStatus,
+  statusBookingOptions,
+  typeDeskOptions,
+  fetchColors,
+  getColor,
+} from "@/utils/useEnums";
+import {
+  formatDateTimeLocal,
+  formatTime,
+  formatDate,
+  calculateDuration,
+} from "@/utils/useFormatDate";
 
 const router = useRouter();
 const route = useRoute();
@@ -290,84 +322,33 @@ const searchQuery = ref("");
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
+const showCreateModal = ref(false);
 const showCancelDialog = ref(false);
 const successMessage = ref(null);
-const cancelReason = ref('');
-const cancelReasonError = ref('');
-const statusColorMap = ref<Record<string, string>>({});
+const cancelReason = ref("");
+const cancelReasonError = ref("");
+
 const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
 const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
 
+// Auto-refresh interval (1 hour = 3600000ms)
+let refreshInterval = null;
+
 const headers = [
   { title: "ID", key: "id", width: 80, align: "start", sortable: true },
-  {
-    title: "User Email",
-    key: "userEmail",
-    width: 200,
-    align: "start",
-    sortable: true,
-  },
-  {
-    title: "Desk Name",
-    key: "deskName",
-    width: 150,
-    align: "start",
-    sortable: true,
-  },
-  {
-    title: "Zone",
-    key: "zoneName",
-    width: 150,
-    align: "start",
-    sortable: true,
-  },
-  {
-    title: "Type",
-    key: "deskType",
-    width: 100,
-    align: "center",
-    sortable: false,
-  },
-  {
-    title: "Start Time",
-    key: "startTime",
-    width: 160,
-    align: "center",
-    sortable: false,
-  },
-  {
-    title: "End Time",
-    key: "endTime",
-    width: 160,
-    align: "center",
-    sortable: false,
-  },
-  {
-    title: "Duration",
-    key: "duration",
-    width: 120,
-    align: "center",
-    sortable: false,
-  },
-  {
-    title: "Status",
-    key: "status",
-    width: 120,
-    align: "center",
-    sortable: false,
-  },
-  {
-    title: "Actions",
-    key: "actions",
-    width: 120,
-    align: "center",
-    sortable: false,
-  },
+  { title: "User Email", key: "userEmail", width: 200, align: "start", sortable: true },
+  { title: "Desk Name", key: "deskName", width: 150, align: "start", sortable: true },
+  { title: "Zone", key: "zoneName", width: 150, align: "start", sortable: true },
+  { title: "Type", key: "deskType", width: 100, align: "center", sortable: false },
+  { title: "Start Time", key: "startTime", width: 160, align: "center", sortable: false },
+  { title: "End Time", key: "endTime", width: 160, align: "center", sortable: false },
+  { title: "Duration", key: "duration", width: 120, align: "center", sortable: false },
+  { title: "Status", key: "status", width: 120, align: "center", sortable: false },
+  { title: "Actions", key: "actions", width: 120, align: "center", sortable: false },
 ] as const;
 
 const filteredBookings = computed(() => {
   const transformed = bookings.value.map(transformBookingData);
-
   let filtered = transformed;
 
   if (statusFilter.value !== "ALL") {
@@ -388,12 +369,12 @@ const filteredBookings = computed(() => {
 function applySearchFilter(bookingsList: any[], query: string) {
   const search = query.toLowerCase();
   return bookingsList.filter(
-    (b) =>
-      b.deskName?.toLowerCase().includes(search) ||
-      b.email?.toLowerCase().includes(search) ||
-      b.userId?.toString().includes(search) ||
-      b.id?.toString().includes(search) ||
-      b.zoneName?.toLowerCase().includes(search)
+      (b) =>
+          b.deskName?.toLowerCase().includes(search) ||
+          b.email?.toLowerCase().includes(search) ||
+          b.userId?.toString().includes(search) ||
+          b.id?.toString().includes(search) ||
+          b.zoneName?.toLowerCase().includes(search)
   );
 }
 
@@ -403,7 +384,7 @@ function transformBookingData(booking: any) {
     id: booking.bookingId ?? "—",
     deskId: booking.desk?.id ?? null,
     userId: userId,
-    email: userId ? (usersMap.value.get(userId) || "—") : "—",
+    email: userId ? usersMap.value.get(userId) || "—" : "—",
     deskName: booking.desk ? booking.desk.displayName : "[Deleted Desk]",
     zoneId: booking.desk?.zoneDto?.id ?? "0",
     zoneName: booking.desk?.zoneDto?.zoneName ?? "N/A",
@@ -420,15 +401,15 @@ async function fetchBookings() {
   try {
     loading.value = true;
     error.value = null;
-    const params =
-      statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
+    const params = statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
+
     const response = await api.get("/booking/all", { params });
     bookings.value = response.data;
+
     await fetchUserEmails();
   } catch (err: any) {
     console.error("Error fetching bookings:", err);
-    error.value =
-      err.response?.data?.message || err.message || "Failed to fetch bookings";
+    error.value = err.response?.data?.message || err.message || "Failed to fetch bookings";
   } finally {
     loading.value = false;
   }
@@ -436,30 +417,36 @@ async function fetchBookings() {
 
 async function fetchUserEmails() {
   try {
-    const userIds = [...new Set(bookings.value.map(b => b.userId).filter(id => id != null))];
-    
-    const userPromises = userIds.map(async (userId) => {
-      try {
+    const userIds = [
+      ...new Set(bookings.value.map((b) => b.userId).filter((id) => id != null)),
+    ];
 
+    const userPromises = userIds.map(async (userId) => {
+      if (usersMap.value.has(userId)) return;
+
+      try {
         const response = await api.get(`/admin/users/${userId}`);
-        return { id: userId, email: response.data.email };
+        usersMap.value.set(userId, response.data.email);
       } catch (err) {
         console.warn(`Could not fetch user ${userId}:`, err);
-        return { id: userId, email: 'Unknown' };
+        usersMap.value.set(userId, "Unknown");
       }
     });
-    
-    const usersData = await Promise.all(userPromises);
-    
-    usersData.forEach(user => {
-      usersMap.value.set(user.id, user.email);
-    });
+
+    await Promise.all(userPromises);
   } catch (err: any) {
     console.error("Error fetching user emails:", err);
   }
 }
 
+function createBooking() {
+  showCreateModal.value = true;
+}
 
+async function handleBookingCreated() {
+  showCreateModal.value = false;
+  await fetchBookings();
+}
 
 async function updateBooking(bookingId: number, updateData: any) {
   await api.patch(`/admin/edit/booking/${bookingId}`, updateData);
@@ -506,24 +493,25 @@ async function handleSaveBooking(updatedData: any) {
     error.value = err.response?.data?.message || "Failed to update booking";
   }
 }
-function CancelBooking(item) {
+
+function CancelBooking(item: any) {
   selectedBooking.value = item;
-  cancelReason.value = '';
-  cancelReasonError.value = '';
+  cancelReason.value = "";
+  cancelReasonError.value = "";
   showCancelDialog.value = true;
 }
 
 function closeCancelDialog() {
   showCancelDialog.value = false;
-  cancelReason.value = '';
-  cancelReasonError.value = '';
+  cancelReason.value = "";
+  cancelReasonError.value = "";
 }
 
 async function confirmCancelBooking() {
   if (!selectedBooking.value?.id) return;
 
   if (!cancelReason.value || cancelReason.value.trim().length === 0) {
-    cancelReasonError.value = 'Please provide a reason for cancellation';
+    cancelReasonError.value = "Please provide a reason for cancellation";
     return;
   }
 
@@ -533,7 +521,7 @@ async function confirmCancelBooking() {
     successMessage.value = null;
 
     await api.patch(`/admin/cancel/booking/${selectedBooking.value.id}`, {
-      reason: cancelReason.value.trim()
+      reason: cancelReason.value.trim(),
     });
 
     successMessage.value = `Booking #${selectedBooking.value.id} cancelled successfully`;
@@ -541,9 +529,9 @@ async function confirmCancelBooking() {
     selectedBooking.value = null;
 
     await fetchBookings();
-  } catch (err) {
-    console.error('Error cancelling booking:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to cancel booking';
+  } catch (err: any) {
+    console.error("Error cancelling booking:", err);
+    error.value = err.response?.data?.message || err.message || "Failed to cancel booking";
     showCancelDialog.value = false;
   } finally {
     cancellingId.value = null;
@@ -559,12 +547,32 @@ function updateRouteQuery(status: string) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchDeskTypeEnum(),
-    fetchColors(),
-    fetchBookings(),
-    fetchBookingStatus()
-  ]);
+  const initialPromises = [fetchBookings()];
+
+  if (!typeDeskOptions.value || typeDeskOptions.value.length === 0) {
+    initialPromises.push(fetchDeskTypeEnum());
+  }
+
+  if (!statusBookingOptions.value || statusBookingOptions.value.length === 0) {
+    initialPromises.push(fetchBookingStatus());
+  }
+  initialPromises.push(fetchColors());
+
+  await Promise.all(initialPromises);
+
+
+
+  // Set up auto-refresh every 1 hour (3600000ms)
+  refreshInterval = setInterval(() => {
+    console.log('Auto-refreshing bookings...');
+    fetchBookings();
+  }, 3600000); // 1 hour = 3600000ms , 1 m = 60000ms
+});
+
+onBeforeUnmount(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 
 watch(statusFilter, (val) => {
@@ -578,7 +586,7 @@ watch(statusFilter, (val) => {
 
 * {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

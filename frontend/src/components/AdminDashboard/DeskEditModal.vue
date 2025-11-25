@@ -123,9 +123,9 @@
           <v-sheet border rounded="lg" class="pa-4 bg-grey-lighten-5 mb-6">
             <v-row dense>
               <v-col cols="6">
-                <span class="sub-label">Current X <span class="text-grey">(Saved: {{ desk?.baseX }})</span></span>
+                  <span class="sub-label">Base X <span class="text-grey">(Current: {{ desk?.currentX }})</span></span>
                 <v-text-field
-                    v-model.number="deskForm.currentX"
+                    v-model.number="deskForm.baseX"
                     type="number"
                     variant="outlined"
                     density="compact"
@@ -135,9 +135,9 @@
                 />
               </v-col>
               <v-col cols="6">
-                <span class="sub-label">Current Y <span class="text-grey">(Saved: {{ desk?.baseY }})</span></span>
+                <span class="sub-label">Base Y <span class="text-grey">(Current: {{ desk?.currentY }})</span></span>
                 <v-text-field
-                    v-model.number="deskForm.currentY"
+                    v-model.number="deskForm.baseY"
                     type="number"
                     variant="outlined"
                     density="compact"
@@ -554,21 +554,18 @@ function closeModal() {
   background: #f9fafb;
 }
 
-/* Active State: Default (Dark) */
 .option-btn.active-dark {
   background: #171717 !important;
   border-color: #171717 !important;
   color: #ffffff !important;
 }
 
-/* Active State: Error (Deactivated) */
 .option-btn.active-error {
   background: #fef2f2 !important;
   border-color: #ef4444 !important;
   color: #b91c1c !important;
 }
 
-/* Switch Styling */
 .modern-switch :deep(.v-switch__track) {
   background: #e5e7eb;
   opacity: 1;
@@ -579,7 +576,6 @@ function closeModal() {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Footer Actions */
 .card-actions {
   padding: 0 28px 28px;
   background: #ffffff;

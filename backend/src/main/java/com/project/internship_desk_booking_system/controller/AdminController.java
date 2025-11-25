@@ -1,5 +1,6 @@
 package com.project.internship_desk_booking_system.controller;
 
+import com.project.internship_desk_booking_system.command.AdminCreateBookingRequest;
 import com.project.internship_desk_booking_system.command.BookingResponse;
 import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
 import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
@@ -119,7 +120,7 @@ public class AdminController {
     public ResponseEntity<BookingResponse> cancelBooking(
             @PathVariable("id") Long bookingId,
             @RequestBody CancelBookingDTO request
-    ){
+    ) {
         return ResponseEntity
                 .ok(adminService.cancelBooking(bookingId, request.getReason()));
     }
@@ -262,12 +263,19 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/images/delete/{id}")
-    public ResponseEntity<byte[]> deleteImage (
+    public ResponseEntity<byte[]> deleteImage(
             @PathVariable("id") Long id
     ) {
         adminService.deleteImage(id);
         return ResponseEntity
                 .ok()
                 .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/booking/create")
+    public ResponseEntity<Void> createBooking(@Valid @RequestBody AdminCreateBookingRequest request) {
+        adminService.createBookingForUserOrGuest(request);
+        return ResponseEntity.ok().build();
     }
 }

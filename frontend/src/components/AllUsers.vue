@@ -130,6 +130,12 @@
                     title="Set as USER"
                     @click="updateUserRole(item, 'USER')"
                 />
+                <v-list-item
+                    prepend-icon="mdi-delete"
+                    title="Delete USER"
+                    class="text-red"
+                    @click="deleteUser(item)"
+                />
               </v-list>
             </v-menu>
           </template>
@@ -146,6 +152,42 @@
         </v-data-table>
       </template>
     </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500">
+      <v-card class="delete-dialog">
+        <v-card-title class="dialog-title">
+          <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+          Delete User
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          <p class="mb-4">
+            Are you sure you want to delete user <strong>{{ selectedUser?.email }}</strong>?
+          </p>
+          <p class="text-warning">
+            This action cannot be undone.
+          </p>
+        </v-card-text>
+        <v-card-actions class="dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn
+              variant="text"
+              @click="closeDeleteDialog"
+              :disabled="deletingUser"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+              color="error"
+              variant="flat"
+              @click="confirmDeleteUser"
+              :loading="deletingUser"
+          >
+            Yes, Delete User
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Success Snackbar -->
     <v-snackbar
@@ -177,6 +219,9 @@ export default {
       selectedUser: null,
       showRoleModal: false,
       originalRole: null,
+
+      showDeleteDialog: false,
+      deletingUser: false,
 
       showSuccessSnackbar: false,
       successMessage: '',
@@ -266,6 +311,43 @@ export default {
       }
     },
 
+    deleteUser(user) {
+      if (!user || !user.email) {
+        this.error = 'Invalid user';
+        return;
+      }
+      this.selectedUser = user;
+      this.showDeleteDialog = true;
+    },
+
+    closeDeleteDialog() {
+      this.showDeleteDialog = false;
+      this.selectedUser = null;
+    },
+
+    async confirmDeleteUser() {
+      if (!this.selectedUser?.email) return;
+
+      try {
+        this.deletingUser = true;
+        this.error = null;
+
+        const payload = { email: this.selectedUser.email };
+        await api.delete(`/users`, { data: payload });
+        
+        this.successMessage = 'User deleted successfully';
+        this.showSuccessSnackbar = true;
+        this.closeDeleteDialog();
+        await this.fetchUsers();
+      } catch (err) {
+        console.error('Delete error:', err.response);
+        this.error = err.response?.data?.message || "Failed to delete user.";
+        this.showDeleteDialog = false;
+      } finally {
+        this.deletingUser = false;
+      }
+    },
+
     getRoleColor(role) {
       return role === 'ADMIN' ? '#171717' : '#737373';
     },
@@ -283,7 +365,7 @@ export default {
       this.modalNotification = { message, type };
 
       if (type === 'success') {
-        this.modalNotificationTimeout = setTimeout(() => {
+        this.modalFNotificationTimeout = setTimeout(() => {
           this.modalNotification = null;
           setTimeout(() => {
             this.closeRoleModal();
@@ -490,12 +572,6 @@ export default {
   border-bottom: 1px solid #f5f5f5 !important;
 }
 
-.table-text-bold {
-  font-weight: 700;
-  color: #171717;
-  letter-spacing: -0.2px;
-}
-
 .table-chip {
   font-weight: 700 !important;
   text-transform: uppercase;
@@ -545,45 +621,8 @@ export default {
   letter-spacing: 0.3px;
 }
 
-/* Role Dialog */
-.role-dialog {
-  border-radius: 16px !important;
-}
-
-.dialog-title {
-  font-weight: 700;
-  font-size: 20px;
-  color: #171717;
-  padding: 24px 24px 8px;
-}
-
-.dialog-subtitle {
-  font-size: 14px;
-  color: #737373;
-  padding: 0 24px 16px;
-  font-weight: 600;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-}
-
 .role-select :deep(.v-field) {
-  border-radius: 12px !important;
-}
-
-.slide-down-enter-active, .slide-down-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-down-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
+  border-radius: 20px !important;
 }
 
 /* Responsive */

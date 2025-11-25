@@ -77,11 +77,11 @@ function handleFavouriteToggled(payload) {
 
 const legends = [
   { color: "#50c878", label: "Available", icon: "mdi-check-circle", deskColor: "GREEN" },
-  { color: "#ee4b2b", label: "Fully booked", icon: "mdi-close-circle", deskColor: "RED" },
-  { color: "#ffbf00", label: "Partially booked", icon: "mdi-clock-outline", deskColor: "AMBER" },
+  { color: "#ee4b2b", label: "Fully Booked", icon: "mdi-close-circle", deskColor: "RED" },
+  { color: "#ffbf00", label: "Partially Booked", icon: "mdi-clock-outline", deskColor: "AMBER" },
   { color: "#7393b3", label: "Assigned", icon: "mdi-account", deskColor: "BLUE" },
   { color: "#818589", label: "Unavailable", icon: "mdi-minus-circle", deskColor: "GRAY" },
-  { color: "#E1BEE7", label: "Your booking", icon: "mdi-minus-circle", deskColor: "PURPLE" },
+  { color: "#E1BEE7", label: "Your Booking", icon: "mdi-account-check", deskColor: "PURPLE" },
 ];
 
 function handleLegendClick(deskColor) {
