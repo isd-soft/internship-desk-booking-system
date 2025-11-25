@@ -1,8 +1,6 @@
 package com.project.internship_desk_booking_system.service;
 
-import com.project.internship_desk_booking_system.command.BookingResponse;
-import com.project.internship_desk_booking_system.command.BookingUpdateCommand;
-import com.project.internship_desk_booking_system.command.CoordinatesUpdateCommand;
+import com.project.internship_desk_booking_system.command.*;
 import com.project.internship_desk_booking_system.dto.*;
 import com.project.internship_desk_booking_system.entity.*;
 import com.project.internship_desk_booking_system.enums.BookingStatus;
@@ -65,6 +63,7 @@ public class AdminService {
     private final FavouriteDesksService favouriteDesksService;
 
     private final DeskDiffService diffService;
+    private final BookingService bookingService;
 
     @Value("${app.default-admin-id}")
     private Long defaultAdminId;
@@ -724,7 +723,7 @@ public class AdminService {
 
     public void deleteImage(
             Long id
-    ){
+    ) {
         Image image = imageRepository
                 .findById(id)
                 .orElseThrow(() -> new ExceptionResponse(
@@ -735,7 +734,7 @@ public class AdminService {
                                 id
                         )
                 ));
-        if(image.isBackground()){
+        if (image.isBackground()) {
             throw new ExceptionResponse(
                     HttpStatus.CONFLICT,
                     "IMAGE_IS_BACKGROUND",
@@ -750,6 +749,7 @@ public class AdminService {
 
         return name.trim().replaceAll("\\s+", " ");
     }
+
     // for testing purposes only
     public void applyTemporaryAvailabilityForTest(
             Desk desk,
@@ -760,6 +760,17 @@ public class AdminService {
 
     ) {
         applyTemporaryAvailability(desk, isTemporarilyAvailable, from, until);
+    }
+
+    public void createBookingForUserOrGuest(AdminCreateBookingRequest request) {
+        User user = adminServiceValidation.resolveUser(request);
+        BookingCreateRequest userBookingReq = BookingCreateRequest.builder()
+                .deskId(request.getDeskId())
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .build();
+
+        bookingService.createBooking(user.getEmail(),userBookingReq);
     }
 
 }

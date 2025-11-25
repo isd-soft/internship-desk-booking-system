@@ -18,11 +18,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(
-            name = "user_seq",
-            sequenceName = "user_id_seq",
-            allocationSize = 1
-    )
+    @SequenceGenerator(name = "user_seq", sequenceName = "user_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(name = "email")
@@ -39,22 +35,19 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @OneToMany(
-            mappedBy = "user",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FavouriteDesks> favourites = new ArrayList<>();
-    @OneToMany(
-            mappedBy = "user",
-            cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
+    @Column(name = "is_guest")
+    private boolean isGuest;
 
     public User(String email, String passwordHash) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = Role.USER;
         this.authProvider = AuthProvider.LOCAL;
+        this.isGuest = false;
     }
 
     public User() {
@@ -66,6 +59,7 @@ public class User {
         user.setRole(Role.USER);
         user.setAuthProvider(AuthProvider.LDAP);
         user.setPasswordHash(null);
+        user.setGuest(false);
         return user;
     }
 
