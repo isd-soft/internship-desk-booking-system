@@ -123,9 +123,9 @@
           <v-sheet border rounded="lg" class="pa-4 bg-grey-lighten-5 mb-6">
             <v-row dense>
               <v-col cols="6">
-                <span class="sub-label">Current X <span class="text-grey">(Saved: {{ desk?.baseX }})</span></span>
+                  <span class="sub-label">Base X <span class="text-grey">(Saved: {{ desk?.currentX }})</span></span>
                 <v-text-field
-                    v-model.number="deskForm.currentX"
+                    v-model.number="deskForm.baseX"
                     type="number"
                     variant="outlined"
                     density="compact"
@@ -135,9 +135,9 @@
                 />
               </v-col>
               <v-col cols="6">
-                <span class="sub-label">Current Y <span class="text-grey">(Saved: {{ desk?.baseY }})</span></span>
+                <span class="sub-label">Base Y <span class="text-grey">(Saved: {{ desk?.currentY }})</span></span>
                 <v-text-field
-                    v-model.number="deskForm.currentY"
+                    v-model.number="deskForm.baseY"
                     type="number"
                     variant="outlined"
                     density="compact"
