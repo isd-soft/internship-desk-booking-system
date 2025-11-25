@@ -63,14 +63,15 @@ public class AdminServiceValidation {
     @Transactional
     public User resolveUser(AdminCreateBookingRequest req) {
         if (!req.isGuest()) {
+            return guestUserService.createGuestUser();
+
+        } else {
             return userRepository.findByEmailIgnoreCase(req.getEmail())
                     .orElseThrow(() -> new ExceptionResponse(
                             HttpStatus.NOT_FOUND,
                             "USER_NOT_FOUND",
                             "User with the provided email was not found"
                     ));
-        } else {
-            return guestUserService.createGuestUser();
         }
     }
 }
