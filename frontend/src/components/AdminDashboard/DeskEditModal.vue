@@ -554,21 +554,18 @@ function closeModal() {
   background: #f9fafb;
 }
 
-/* Active State: Default (Dark) */
 .option-btn.active-dark {
   background: #171717 !important;
   border-color: #171717 !important;
   color: #ffffff !important;
 }
 
-/* Active State: Error (Deactivated) */
 .option-btn.active-error {
   background: #fef2f2 !important;
   border-color: #ef4444 !important;
   color: #b91c1c !important;
 }
 
-/* Switch Styling */
 .modern-switch :deep(.v-switch__track) {
   background: #e5e7eb;
   opacity: 1;
@@ -579,7 +576,6 @@ function closeModal() {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Footer Actions */
 .card-actions {
   padding: 0 28px 28px;
   background: #ffffff;
