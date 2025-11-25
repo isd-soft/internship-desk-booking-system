@@ -130,6 +130,12 @@
                     title="Set as USER"
                     @click="updateUserRole(item, 'USER')"
                 />
+                <v-list-item
+                    prepend-icon="mdi-delete"
+                    title="Delete USER"
+                    class="text-red"
+                    @click="deleteUser(item)"
+                />
               </v-list>
             </v-menu>
           </template>
@@ -146,6 +152,42 @@
         </v-data-table>
       </template>
     </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500">
+      <v-card class="delete-dialog">
+        <v-card-title class="dialog-title">
+          <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+          Delete User
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          <p class="mb-4">
+            Are you sure you want to delete user <strong>{{ selectedUser?.email }}</strong>?
+          </p>
+          <p class="text-warning">
+            This action cannot be undone.
+          </p>
+        </v-card-text>
+        <v-card-actions class="dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn
+              variant="text"
+              @click="closeDeleteDialog"
+              :disabled="deletingUser"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+              color="error"
+              variant="flat"
+              @click="confirmDeleteUser"
+              :loading="deletingUser"
+          >
+            Yes, Delete User
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Success Snackbar -->
     <v-snackbar
@@ -177,6 +219,9 @@ export default {
       selectedUser: null,
       showRoleModal: false,
       originalRole: null,
+
+      showDeleteDialog: false,
+      deletingUser: false,
 
       showSuccessSnackbar: false,
       successMessage: '',
@@ -266,6 +311,43 @@ export default {
       }
     },
 
+    deleteUser(user) {
+      if (!user || !user.email) {
+        this.error = 'Invalid user';
+        return;
+      }
+      this.selectedUser = user;
+      this.showDeleteDialog = true;
+    },
+
+    closeDeleteDialog() {
+      this.showDeleteDialog = false;
+      this.selectedUser = null;
+    },
+
+    async confirmDeleteUser() {
+      if (!this.selectedUser?.email) return;
+
+      try {
+        this.deletingUser = true;
+        this.error = null;
+
+        const payload = { email: this.selectedUser.email };
+        await api.delete(`/users`, { data: payload });
+        
+        this.successMessage = 'User deleted successfully';
+        this.showSuccessSnackbar = true;
+        this.closeDeleteDialog();
+        await this.fetchUsers();
+      } catch (err) {
+        console.error('Delete error:', err.response);
+        this.error = err.response?.data?.message || "Failed to delete user.";
+        this.showDeleteDialog = false;
+      } finally {
+        this.deletingUser = false;
+      }
+    },
+
     getRoleColor(role) {
       return role === 'ADMIN' ? '#171717' : '#737373';
     },
@@ -283,7 +365,7 @@ export default {
       this.modalNotification = { message, type };
 
       if (type === 'success') {
-        this.modalNotificationTimeout = setTimeout(() => {
+        this.modalFNotificationTimeout = setTimeout(() => {
           this.modalNotification = null;
           setTimeout(() => {
             this.closeRoleModal();
@@ -569,7 +651,7 @@ export default {
 }
 
 .role-select :deep(.v-field) {
-  border-radius: 12px !important;
+  border-radius: 20px !important;
 }
 
 .slide-down-enter-active, .slide-down-leave-active {
