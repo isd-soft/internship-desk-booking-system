@@ -54,7 +54,7 @@
               >
                 <template #append-inner>
                   <v-chip size="x-small" color="#171717" class="current-chip">
-                    Current: {{ originalLimits?.maxDaysInAdvance || 30 }}
+                    Current: {{ originalLimits?.maxDaysInAdvance }}
                   </v-chip>
                 </template>
               </v-text-field>
@@ -73,7 +73,7 @@
               >
                 <template #append-inner>
                   <v-chip size="x-small" color="#171717" class="current-chip">
-                    Current: {{ originalLimits?.maxHoursPerWeek || 20 }}
+                    Current: {{ originalLimits?.maxHoursPerWeek }}
                   </v-chip>
                 </template>
               </v-text-field>
@@ -364,8 +364,8 @@ export default {
 
       // Booking Limits
       limitsForm: {
-        maxDaysInAdvance: 30,
-        maxHoursPerWeek: 20,
+        maxDaysInAdvance: null,
+        maxHoursPerWeek: null,
       },
       originalLimits: null,
       limitsSaving: false,
@@ -690,7 +690,64 @@ showColorPickerNew: false,
       if (event.key === 'Escape' && this.showConfirmDialog) {
         this.cancelDelete();
       }
-    },
+     },
+
+     async fetchBookingLimits() {
+  const response = await api.get('/admin/booking-time-limits');
+  this.limitsForm = {
+    maxDaysInAdvance: response.data.maxDaysInAdvance,
+    maxHoursPerWeek: response.data.maxHoursPerWeek,
+  };
+  this.originalLimits = { ...this.limitsForm };
+},
+
+validateLimitsField(field) {
+  delete this.limitsErrors[field];
+
+  if (field === 'maxDaysInAdvance') {
+    const val = this.limitsForm.maxDaysInAdvance;
+    if (!val || val < 1) {
+      this.limitsErrors.maxDaysInAdvance = 'Must be at least 1 day';
+    } else if (val > 365) {
+      this.limitsErrors.maxDaysInAdvance = 'Cannot exceed 365 days';
+    }
+  }
+
+  if (field === 'maxHoursPerWeek') {
+    const val = this.limitsForm.maxHoursPerWeek;
+    if (!val || val < 1) {
+      this.limitsErrors.maxHoursPerWeek = 'Must be at least 1 hour';
+    } else if (val > 168) {
+      this.limitsErrors.maxHoursPerWeek = 'Cannot exceed 168 hours';
+    }
+  }
+
+  this.limitsErrors = { ...this.limitsErrors };
+},
+
+async saveBookingLimits() {
+  this.limitsSaving = true;
+
+  try {
+    const response = await api.put('/admin/booking-time-limits', this.limitsForm);
+    this.limitsForm = { ...response.data };
+    this.originalLimits = { ...this.limitsForm };
+    this.showLimitsNotification('Booking limits updated successfully!', 'success');
+  } catch (err) {
+    console.error(err);
+    this.showLimitsNotification(err.response?.data?.message || 'Failed to update booking limits', 'error');
+  } finally {
+    this.limitsSaving = false;
+  }
+},
+
+resetLimitsForm() {
+  if (this.originalLimits) {
+    this.limitsForm = { ...this.originalLimits };
+    this.limitsErrors = {};
+    this.limitsNotification = null;
+  }
+},
     updateEditColor(color) {
   // Convert color object to hex string
   if (typeof color === 'string') {
