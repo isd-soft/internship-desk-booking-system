@@ -14,8 +14,8 @@ public class UserService {
     private final UserValidationService userValidationService;
 
     @Transactional
-    public void deleteUser(CustomUserPrincipal principal, Long userId) {
-        User userToDelete = userValidationService.validateDeleteUser(principal, userId);
+    public void deleteUser(CustomUserPrincipal principal, String email) {
+        User userToDelete = userValidationService.validateDeleteUser(principal, email);
         userRepository.delete(userToDelete);
     }
 }

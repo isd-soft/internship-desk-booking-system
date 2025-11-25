@@ -21,11 +21,11 @@ public class UserValidationService {
     private Long mainAdminId;
     private final UserRepository userRepository;
 
-    @Transactional
-    public User validateDeleteUser(CustomUserPrincipal principal, Long userIdToDelete) {
+    @Transactional(readOnly = true)
+    public User validateDeleteUser(CustomUserPrincipal principal, String emailToDelete) {
 
         User admin = getCurrentAdmin(principal);
-        User userToDelete = findTargetUser(userIdToDelete);
+        User userToDelete = findTargetUser(emailToDelete);
 
         validateNotSelfDelete(admin, userToDelete);
         validateNotMainAdmin(userToDelete);
@@ -43,8 +43,8 @@ public class UserValidationService {
         return user;
     }
 
-    private User findTargetUser(Long userIdToDelete) {
-        return userRepository.findById(userIdToDelete).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User to delete not found"));
+    private User findTargetUser(String emailToDelete) {
+        return userRepository.findByEmailIgnoreCase(emailToDelete).orElseThrow(() -> new ExceptionResponse(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User to delete not found"));
     }
 
     private void validateNotSelfDelete(User admin, User userToDelete) {
