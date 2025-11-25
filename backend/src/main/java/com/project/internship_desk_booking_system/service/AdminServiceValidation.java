@@ -69,7 +69,8 @@ public class AdminServiceValidation {
                             "USER_NOT_FOUND",
                             "User with the provided email was not found"
                     ));
+        } else {
+            return guestUserService.createGuestUser();
         }
-        return guestUserService.createGuestUser();
     }
 }
