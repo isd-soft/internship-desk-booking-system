@@ -49,6 +49,7 @@ public class SecurityConfig {
 
     /**
      * Creates and configures the LDAP context source for authentication if LDAP is enabled.
+     *
      * @return configured LdapContextSource
      */
     @Bean
@@ -65,8 +66,9 @@ public class SecurityConfig {
 
     /**
      * Provides a SafeLdapAuthenticationProvider for LDAP authentication.
-     * @param ldapContext the LDAP context source (optional)
-     * @param ldapProperties LDAP properties
+     *
+     * @param ldapContext       the LDAP context source (optional)
+     * @param ldapProperties    LDAP properties
      * @param ldapHealthChecker LDAP health checker
      * @return SafeLdapAuthenticationProvider bean
      */
@@ -81,8 +83,9 @@ public class SecurityConfig {
 
     /**
      * Configures the AuthenticationManager with DAO and (optionally) LDAP providers.
-     * @param daoProvider DAO authentication provider
-     * @param ldapContext LDAP context source (optional)
+     *
+     * @param daoProvider  DAO authentication provider
+     * @param ldapContext  LDAP context source (optional)
      * @param ldapProvider LDAP authentication provider
      * @return AuthenticationManager bean
      */
@@ -106,6 +109,7 @@ public class SecurityConfig {
 
     /**
      * Configures the main Spring Security filter chain for the application.
+     *
      * @param http HttpSecurity configuration
      * @return SecurityFilterChain bean
      * @throws Exception if configuration fails
@@ -123,7 +127,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register","/api/v1/auth/refresh").permitAll()
                         .requestMatchers("/api/v1/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/static/**", "/assets/**", "/js/**", "/css/**", "/img/**", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
@@ -136,8 +140,9 @@ public class SecurityConfig {
 
     /**
      * Provides a DaoAuthenticationProvider for local user authentication.
+     *
      * @param userDetailsService user details service
-     * @param encoder password encoder
+     * @param encoder            password encoder
      * @return DaoAuthenticationProvider bean
      */
     @Bean
@@ -153,6 +158,7 @@ public class SecurityConfig {
 
     /**
      * Provides a UserDetailsService backed by the UserRepository.
+     *
      * @param repo user repository
      * @return UserDetailsService bean
      */
@@ -163,6 +169,7 @@ public class SecurityConfig {
 
     /**
      * Provides a BCryptPasswordEncoder bean for password hashing.
+     *
      * @return PasswordEncoder bean
      */
     @Bean

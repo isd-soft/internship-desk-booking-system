@@ -1,14 +1,12 @@
-package com.project.internship_desk_booking_system.command;
+package com.project.internship_desk_booking_system.dto;
 
 import com.project.internship_desk_booking_system.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Data
 @AllArgsConstructor
-public class LoginResponseDto {
+@Data
+public class UserInfoDto {
     private String email;
     private Role role;
-    private String token;
-    private String refreshToken;
 }

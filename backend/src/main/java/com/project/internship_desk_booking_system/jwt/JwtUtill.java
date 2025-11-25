@@ -1,7 +1,7 @@
 package com.project.internship_desk_booking_system.jwt;
 
-import com.project.internship_desk_booking_system.enums.AuthProvider;
 import com.project.internship_desk_booking_system.enums.Role;
+import com.project.internship_desk_booking_system.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -22,8 +22,12 @@ public class JwtUtill {
     @Value("${auth.jwt.secret}")
     private String secret;
 
+    @Value("${auth.jwt.refresh-expiration}")
+    private long refreshExpiration;
+
     @Value("${auth.jwt.expiration}")
     private long expiration;
+    private final UserRepository userRepository;
 
     private Key signingKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
@@ -45,6 +49,7 @@ public class JwtUtill {
                 .signWith(signingKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }
@@ -53,7 +58,6 @@ public class JwtUtill {
         Object r = parseClaims(token).get("role");
         return (r != null) ? Role.valueOf(r.toString()) : null;
     }
-
 
 
     public boolean validateToken(String token) {
@@ -72,4 +76,26 @@ public class JwtUtill {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    public String generateRefreshToken(String email) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + refreshExpiration);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(exp)
+                .signWith(signingKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+
+    public Claims validateRefreshToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(signingKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
 }

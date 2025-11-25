@@ -131,8 +131,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../plugins/axios";
-import JSEncrypt from "jsencrypt"; // 🔹 Вот этого не хватало
-
+import JSEncrypt from "jsencrypt";
 
 const router = useRouter();
 const valid = ref(false);
@@ -156,8 +155,6 @@ m0DTAfIMtiXAIT6hN65Ky31RYTcvoLyA+GrpWTIm1jFN13I39RIeWAvM1qyRnEpQ
 GQ64Pn+sFnqrXROQ5QIDAQAB
 -----END PUBLIC KEY-----`;
 
-
-
 const encryptPassword = (rawPassword) => {
   const encryptor = new JSEncrypt();
   encryptor.setPublicKey(PUBLIC_KEY);
@@ -165,7 +162,6 @@ const encryptPassword = (rawPassword) => {
   const encrypted = encryptor.encrypt(rawPassword);
   return encrypted;
 };
-
 
 const usernameRules = [
   (v) => !!v || "Email is required",
@@ -200,6 +196,7 @@ const handleLogin = async () => {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("email", response.data.email);
       localStorage.setItem("role", response.data.role);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
 
       snackbar.value = {
         show: true,
