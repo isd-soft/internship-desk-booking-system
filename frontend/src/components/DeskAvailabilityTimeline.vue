@@ -18,6 +18,7 @@
         class="timeline-track"
         :class="{ dragging: dragState !== null }"
         @mousedown="onTrackMouseDown"
+        @touchstart="onTrackTouchStart"
       >
         <div class="slots-container">
           <div
@@ -44,6 +45,7 @@
           class="timeline-handle"
           :style="{ left: `${startPosition}%` }"
           @mousedown.stop="startDrag('start', $event)"
+          @touchstart.stop="startDragTouch('start', $event)"
         >
           <div class="handle-time">{{ formatTime(startHour) }}</div>
         </div>
@@ -52,6 +54,7 @@
           class="timeline-handle"
           :style="{ left: `${endPosition}%` }"
           @mousedown.stop="startDrag('end', $event)"
+          @touchstart.stop="startDragTouch('end', $event)"
         >
           <div class="handle-time">{{ formatTime(endHour) }}</div>
         </div>
@@ -157,13 +160,11 @@ const trackRef = ref<HTMLElement | null>(null);
 
 const dragState = ref<null | "start" | "end">(null);
 let rafId: number | null = null;
-let lastMoveEvent: MouseEvent | null = null;
+let lastMoveEvent: MouseEvent | TouchEvent | null = null;
 
 const quickCasts = computed<QuickCast[]>(() => {
   const slots = availabilitySlots.value;
-  const freeSlots = slots.filter(
-    (s) => s.status === "FREE" && s.hour !== LUNCH_HOUR
-  );
+  const freeSlots = slots.filter((s) => s.status === "FREE");
 
   if (freeSlots.length === 0) return [];
 
@@ -384,7 +385,7 @@ const selectedSegments = computed(() => {
 
 function handleSlotClick(hour: number) {
   const status = slotStatus(hour);
-  if (status !== "FREE" || hour === LUNCH_HOUR) return;
+  if (status !== "FREE") return;
 
   const isAdjacent = hour === props.startHour - 1 || hour === props.endHour;
 
@@ -392,22 +393,22 @@ function handleSlotClick(hour: number) {
     if (hour === props.startHour - 1) {
       emit("update:startHour", hour);
     } else if (hour === props.endHour) {
-      let nextHour = hour + 1;
-      if (nextHour === LUNCH_HOUR) nextHour = LUNCH_HOUR + 1;
-      nextHour = Math.min(nextHour, MAX_HOUR.value);
+      const nextHour = Math.min(hour + 1, MAX_HOUR.value);
       emit("update:endHour", nextHour);
     }
   } else {
-    let nextHour = hour + 1;
-    if (nextHour === LUNCH_HOUR) nextHour = LUNCH_HOUR + 1;
-    nextHour = Math.min(nextHour, MAX_HOUR.value);
-
+    const nextHour = Math.min(hour + 1, MAX_HOUR.value);
     emit("update:startHour", hour);
     emit("update:endHour", nextHour);
   }
 }
 
 function startDrag(which: "start" | "end", event: MouseEvent) {
+  event.preventDefault();
+  dragState.value = which;
+}
+
+function startDragTouch(which: "start" | "end", event: TouchEvent) {
   event.preventDefault();
   dragState.value = which;
 }
@@ -424,36 +425,68 @@ function onTrackMouseDown(event: MouseEvent) {
   let hour = Math.round(exactHour);
 
   const status = slotStatus(hour);
-  if (status !== "FREE" || hour === LUNCH_HOUR) return;
+  if (status !== "FREE") return;
 
   const currentMid = (props.startHour + props.endHour) / 2;
 
   if (exactHour < currentMid) {
     emit("update:startHour", hour);
   } else {
-    let nextHour = hour + 1;
-    if (hour === LUNCH_HOUR - 1) nextHour = LUNCH_HOUR + 1;
-    nextHour = Math.min(nextHour, MAX_HOUR.value);
+    const nextHour = Math.min(hour + 1, MAX_HOUR.value);
     emit("update:endHour", nextHour);
   }
 }
 
-function handleMouseMove(event: MouseEvent) {
+function onTrackTouchStart(event: TouchEvent) {
+  const rect = trackRef.value?.getBoundingClientRect();
+  if (!rect || event.touches.length === 0) return;
+
+  const touch = event.touches[0];
+  const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
+  const percentage = x / rect.width;
+
+  const exactHour =
+    MIN_HOUR.value + percentage * (MAX_HOUR.value - MIN_HOUR.value);
+  let hour = Math.round(exactHour);
+
+  const status = slotStatus(hour);
+  if (status !== "FREE") return;
+
+  const currentMid = (props.startHour + props.endHour) / 2;
+
+  if (exactHour < currentMid) {
+    emit("update:startHour", hour);
+  } else {
+    const nextHour = Math.min(hour + 1, MAX_HOUR.value);
+    emit("update:endHour", nextHour);
+  }
+}
+
+function handleMouseMove(event: MouseEvent | TouchEvent) {
   lastMoveEvent = event;
   if (rafId !== null) return;
   rafId = requestAnimationFrame(() => {
     rafId = null;
     if (!dragState.value || !trackRef.value || !lastMoveEvent) return;
+
     const rect = trackRef.value.getBoundingClientRect();
-    const x = Math.max(
-      0,
-      Math.min(lastMoveEvent.clientX - rect.left, rect.width)
-    );
+    let clientX: number;
+
+    if ("touches" in lastMoveEvent && lastMoveEvent.touches.length > 0) {
+      clientX = lastMoveEvent.touches[0].clientX;
+    } else if ("clientX" in lastMoveEvent) {
+      clientX = lastMoveEvent.clientX;
+    } else {
+      return;
+    }
+
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const percentage = x / rect.width;
     const totalSpan = MAX_HOUR.value - MIN_HOUR.value;
     const exactHour = MIN_HOUR.value + percentage * totalSpan;
     let hour = Math.round(exactHour);
     hour = Math.max(MIN_HOUR.value, Math.min(hour, MAX_HOUR.value));
+
     if (dragState.value === "start") {
       if (hour < props.endHour) {
         if (hour !== props.startHour) emit("update:startHour", hour);
@@ -484,13 +517,17 @@ function handleMouseUp() {
 }
 
 onMounted(() => {
-  window.addEventListener("mousemove", handleMouseMove, { passive: true });
+  window.addEventListener("mousemove", handleMouseMove, { passive: false });
   window.addEventListener("mouseup", handleMouseUp, { passive: true });
+  window.addEventListener("touchmove", handleMouseMove, { passive: false });
+  window.addEventListener("touchend", handleMouseUp, { passive: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("mousemove", handleMouseMove);
   window.removeEventListener("mouseup", handleMouseUp);
+  window.removeEventListener("touchmove", handleMouseMove);
+  window.removeEventListener("touchend", handleMouseUp);
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -530,13 +567,17 @@ onBeforeUnmount(() => {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   font-family: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.preset-btn:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+@media (hover: hover) {
+  .preset-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .preset-btn.active {
@@ -544,6 +585,14 @@ onBeforeUnmount(() => {
   border-color: #171717;
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(23, 23, 23, 0.18);
+}
+
+@media (max-width: 768px) {
+  .preset-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
 }
 
 .timeline-track {
@@ -554,6 +603,15 @@ onBeforeUnmount(() => {
   cursor: pointer;
   overflow: visible;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .timeline-track {
+    height: 20px;
+    border-radius: 14px;
+  }
 }
 
 .timeline-track.dragging {
@@ -665,19 +723,30 @@ onBeforeUnmount(() => {
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.timeline-handle:hover {
-  transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4),
-    0 0 0 3px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border-color: #3b82f6;
+@media (hover: hover) {
+  .timeline-handle:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4),
+      0 0 0 3px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border-color: #3b82f6;
+  }
 }
 
 .timeline-handle:active {
   cursor: grabbing;
   transform: translate(-50%, -50%) scale(1.05);
   border-color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .timeline-handle {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .handle-time {
@@ -700,10 +769,25 @@ onBeforeUnmount(() => {
   transition: opacity 0.1s ease-out, transform 0.1s ease-out;
 }
 
-.timeline-handle:hover .handle-time,
-.timeline-handle:active .handle-time {
+@media (hover: hover) {
+  .timeline-handle:hover .handle-time,
+  .timeline-handle:active .handle-time {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+
+.timeline-track.dragging .handle-time {
   opacity: 1;
   transform: translateX(-50%) translateY(-4px);
+}
+
+@media (max-width: 768px) {
+  .handle-time {
+    font-size: 14px;
+    padding: 6px 12px;
+    top: -38px;
+  }
 }
 
 .time-display {
@@ -864,6 +948,7 @@ onBeforeUnmount(() => {
   padding-bottom: 4px;
   border-bottom: 3px solid #ffffff;
 }
+
 .lunch-tooltip :deep(.v-overlay__content) {
   background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%) !important;
   border: 1px solid #2a2a2a !important;
