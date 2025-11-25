@@ -36,61 +36,71 @@
           />
 
           <v-select
-            v-model="typeFilter"
-            :items="typeDeskOptions"
-            item-title="title"
-            item-value="value"
-            density="compact"
-            variant="outlined"
-            :disabled="loading"
-            :clearable="false"
-            hide-details
-            label="Filter by desk type"
-            class="control-select"
+              v-model="typeFilter"
+              :items="typeDeskOptions"
+              item-title="title"
+              item-value="value"
+              density="compact"
+              variant="outlined"
+              :disabled="loading"
+              :clearable="false"
+              hide-details
+              label="Filter by desk type"
+              class="control-select"
           />
 
           <v-btn
-            color="#171717"
-            variant="flat"
-            @click="resetFilters"
-            class="control-button"
+              color="#171717"
+              variant="flat"
+              @click="resetFilters"
+              class="control-button"
           >
             Reset Filters
           </v-btn>
+
+          <v-btn
+              color="#FF0000"
+              variant="flat"
+              @click="createBooking"
+              class="control-button"
+          >
+            CreateBooking
+          </v-btn>
         </div>
+
       </div>
 
       <v-alert
-        v-if="error"
-        type="error"
-        variant="tonal"
-        class="mb-4"
-        density="compact"
-        closable
+          v-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+          density="compact"
+          closable
       >
         {{ error }}
       </v-alert>
 
       <div v-if="loading" class="loading-container">
         <v-progress-circular
-          indeterminate
-          size="48"
-          width="4"
-          color="#171717"
+            indeterminate
+            size="48"
+            width="4"
+            color="#171717"
         />
         <p class="loading-message mt-3">Loading bookings…</p>
       </div>
 
       <template v-else>
         <v-data-table
-          :headers="headers"
-          :items="filteredBookings"
-          item-key="id"
-          density="compact"
-          class="bookings-table"
-          :items-per-page="15"
-          fixed-header
-          height="70vh"
+            :headers="headers"
+            :items="filteredBookings"
+            item-key="id"
+            density="compact"
+            class="bookings-table"
+            :items-per-page="15"
+            fixed-header
+            height="70vh"
         >
           <template #item.userId="{ item }">
             <span class="table-text-bold">{{ item.userId ?? "—" }}</span>
@@ -111,10 +121,10 @@
 
           <template #item.deskType="{ item }">
             <v-chip
-              size="x-small"
-              :color="getColor(item.deskType)"
-              variant="flat"
-              class="table-chip"
+                size="x-small"
+                :color="getColor(item.deskType)"
+                variant="flat"
+                class="table-chip"
             >
               {{ item.deskType }}
             </v-chip>
@@ -142,10 +152,10 @@
 
           <template #item.status="{ item }">
             <v-chip
-              size="x-small"
-              :color="getColor(item.status)"
-              variant="flat"
-              class="table-chip"
+                size="x-small"
+                :color="getColor(item.status)"
+                variant="flat"
+                class="table-chip"
             >
               {{ item.status }}
             </v-chip>
@@ -155,23 +165,23 @@
             <v-menu :close-on-content-click="true" location="bottom end">
               <template #activator="{ props }">
                 <v-btn
-                  v-bind="props"
-                  icon
-                  variant="text"
-                  size="small"
-                  color="#171717"
-                  :loading="cancellingId === item.id"
-                  :disabled="cancellingId === item.id"
-                  class="table-action-button"
+                    v-bind="props"
+                    icon
+                    variant="text"
+                    size="small"
+                    color="#171717"
+                    :loading="cancellingId === item.id"
+                    :disabled="cancellingId === item.id"
+                    class="table-action-button"
                 >
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
               <v-list density="compact" class="table-action-menu">
                 <v-list-item
-                  @click="viewBooking(item)"
-                  prepend-icon="mdi-eye"
-                  title="View"
+                    @click="viewBooking(item)"
+                    prepend-icon="mdi-eye"
+                    title="View"
                 >
                 </v-list-item>
                 <v-list-item
@@ -195,7 +205,7 @@
           <template #no-data>
             <div class="table-empty-state">
               <v-icon size="48" color="#a3a3a3" class="mb-3"
-                >mdi-calendar-blank</v-icon
+              >mdi-calendar-blank</v-icon
               >
               <div class="table-empty-title">No bookings found</div>
               <div class="table-empty-subtitle">
@@ -206,18 +216,25 @@
         </v-data-table>
 
         <BookingViewModal
-          :show="showViewModal"
-          v-model="showViewModal"
-          :booking="selectedBooking"
+            :show="showViewModal"
+            v-model="showViewModal"
+            :booking="selectedBooking"
         />
 
         <BookingEditModal
-          :show="showEditModal"
-          :booking="selectedBooking"
-          :error="error"
-          @close="showEditModal = false"
-          @save="handleSaveBooking"
+            :show="showEditModal"
+            :booking="selectedBooking"
+            :error="error"
+            @close="showEditModal = false"
+            @save="handleSaveBooking"
         />
+
+        <AdminCreateBookingModal
+            :show="showCreateModal"
+            @close="showCreateModal = false"
+            @created="handleBookingCreated"
+        />
+
         <v-dialog v-model="showCancelDialog" max-width="500">
           <v-card class="delete-dialog">
             <v-card-title class="dialog-title">
@@ -272,6 +289,7 @@ import { useRouter, useRoute } from "vue-router";
 import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
 import BookingViewModal from "../components/AdminDashboard/BookingViewModal.vue";
+import AdminCreateBookingModal from "../components/AdminDashboard/AdminCreateBookingModal.vue";
 import {fetchDeskTypeEnum,fetchBookingStatus, statusBookingOptions, typeDeskOptions,fetchColors,getColor} from "@/utils/useEnums";
 import { formatDateTimeLocal, formatTime, formatDate, calculateDuration} from "@/utils/useFormatDate";
 
@@ -290,6 +308,7 @@ const searchQuery = ref("");
 const selectedBooking = ref(null);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
+const showCreateModal = ref(false);
 const showCancelDialog = ref(false);
 const successMessage = ref(null);
 const cancelReason = ref('');
@@ -421,7 +440,7 @@ async function fetchBookings() {
     loading.value = true;
     error.value = null;
     const params =
-      statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
+        statusFilter.value !== "ALL" ? { status: statusFilter.value } : {};
     const response = await api.get("/booking/all", { params });
     bookings.value = response.data;
     await fetchUserEmails();
@@ -459,6 +478,14 @@ async function fetchUserEmails() {
   }
 }
 
+function createBooking() {
+  showCreateModal.value = true;
+}
+
+async function handleBookingCreated() {
+  showCreateModal.value = false;
+  await fetchBookings();
+}
 
 
 async function updateBooking(bookingId: number, updateData: any) {
@@ -578,7 +605,7 @@ watch(statusFilter, (val) => {
 
 * {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
