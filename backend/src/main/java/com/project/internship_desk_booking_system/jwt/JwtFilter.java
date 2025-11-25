@@ -26,6 +26,15 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtill jwtUtil;
     private final UserRepository userRepository;
 
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/auth/refresh");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -61,8 +70,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 Role roleFromDb = user.getRole();
-
-                // 🔥 ROLE MISMATCH → НЕ бросаем исключение, а пишем JSON
                 if (!roleFromDb.equals(roleFromToken)) {
                     writeError(response, 403, "ROLE_CHANGED", "User role changed, token outdated");
                     return;
@@ -87,7 +94,6 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // 🔥 правильный способ отдать JSON-ошибку из фильтра
     private void writeError(HttpServletResponse response,
                             int status,
                             String code,
