@@ -23,6 +23,7 @@ public class GuestUserService {
     }
 
     private String generateGuestEmail() {
-        return "guest_" + UUID.randomUUID() + "@guest.local";
+        String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+        return "guest_" + randomPart + "@guest.local";
     }
 }
