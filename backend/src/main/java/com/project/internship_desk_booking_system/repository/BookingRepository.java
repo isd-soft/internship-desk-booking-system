@@ -73,9 +73,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
-            "AND b.status = 'CONFIRMED' " +
-            "AND b.startTime <= :endTime " +
-            "AND b.endTime >= :startTime")
+            "AND b.status IN ('SCHEDULED', 'ACTIVE', 'CONFIRMED') " +
+            "AND b.startTime < :endTime " +
+            "AND b.endTime > :startTime")
     List<Booking> findUserBookings(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,
@@ -246,5 +246,63 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b FROM Booking b WHERE b.desk.id = :deskId AND b.status = 'PENDING'")
     List<Booking> findPendingBookingsForDesk(@Param("deskId") Long deskId);
+
+    long countByStatusAndStartTimeAfter(BookingStatus status, LocalDateTime startTime);
+
+    long countByStatusAndStartTimeBetween(BookingStatus status, LocalDateTime startTime, LocalDateTime endTime);
+
+    @Query(value = """
+    SELECT DATE(b.start_time) as date, COUNT(b.id) as count
+    FROM booking b
+    WHERE b.status = 'CANCELLED'
+      AND b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY DATE(b.start_time)
+    ORDER BY DATE(b.start_time)
+    """, nativeQuery = true)
+    List<Object[]> countCancelledBookingsGroupedByDay(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query(value = """
+    SELECT DATE_TRUNC('week', b.start_time)::date as weekStart, 
+           COUNT(b.id) as count
+    FROM booking b
+    WHERE b.status = 'CANCELLED'
+      AND b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY DATE_TRUNC('week', b.start_time)
+    ORDER BY weekStart
+    """, nativeQuery = true)
+    List<Object[]> countCancelledBookingsGroupedByWeek(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
+    FROM desk d
+    INNER JOIN booking b ON b.desk_id = d.id
+    WHERE b.status = 'CANCELLED'
+    GROUP BY d.id, d.desk_name
+    ORDER BY COUNT(b.id) DESC, d.desk_name ASC
+    LIMIT 1
+    """, nativeQuery = true)
+    DeskStatsProjection findMostCancelledDesk();
+
+    @Query(value = """
+    SELECT d.desk_name AS deskName, COUNT(b.id) AS bookingCount
+    FROM desk d
+    INNER JOIN booking b ON b.desk_id = d.id
+    WHERE b.status = 'CANCELLED'
+      AND b.start_time BETWEEN :startDate AND :endDate
+    GROUP BY d.id, d.desk_name
+    ORDER BY COUNT(b.id) DESC, d.desk_name ASC
+    LIMIT 1
+    """, nativeQuery = true)
+    DeskStatsProjection findMostCancelledDeskInRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 
 }

@@ -572,12 +572,6 @@ export default {
   border-bottom: 1px solid #f5f5f5 !important;
 }
 
-.table-text-bold {
-  font-weight: 700;
-  color: #171717;
-  letter-spacing: -0.2px;
-}
-
 .table-chip {
   font-weight: 700 !important;
   text-transform: uppercase;
@@ -627,45 +621,8 @@ export default {
   letter-spacing: 0.3px;
 }
 
-/* Role Dialog */
-.role-dialog {
-  border-radius: 16px !important;
-}
-
-.dialog-title {
-  font-weight: 700;
-  font-size: 20px;
-  color: #171717;
-  padding: 24px 24px 8px;
-}
-
-.dialog-subtitle {
-  font-size: 14px;
-  color: #737373;
-  padding: 0 24px 16px;
-  font-weight: 600;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-}
-
 .role-select :deep(.v-field) {
   border-radius: 20px !important;
-}
-
-.slide-down-enter-active, .slide-down-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-down-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
 }
 
 /* Responsive */

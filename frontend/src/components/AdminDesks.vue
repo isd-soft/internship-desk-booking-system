@@ -184,15 +184,15 @@
           </template>
         </v-data-table>
 
-        <!-- View Modal -->
         <DeskViewModal
+            v-if="showViewModal"
             :show="showViewModal"
             v-model="showViewModal"
             :desk="selectedDesk"
         />
 
-        <!-- Edit Modal -->
         <DeskEditModal
+            v-if="showEditModal"
             v-model="showEditModal"
             :desk="selectedDesk"
             :error="error"
@@ -275,9 +275,15 @@ import { useRoute } from "vue-router";
 import api from '../plugins/axios';
 import DeskEditModal from "../components/AdminDashboard/DeskEditModal.vue";
 import DeskViewModal from "../components/AdminDashboard/DeskViewModal.vue";
-import { fetchDeskTypeEnum, fetchDeskStatusEnum, fetchColors, getColor,statusDeskOptions,typeDeskOptions } from "@/utils/useEnums";
+import {
+  fetchDeskTypeEnum,
+  fetchDeskStatusEnum,
+  fetchColors,
+  getColor,
+  statusDeskOptions,
+  typeDeskOptions
+} from "@/utils/useEnums";
 
-// State
 const desks = ref([]);
 const loading = ref(false);
 const error = ref(null);
@@ -285,51 +291,42 @@ const successMessage = ref(null);
 const searchQuery = ref('');
 const route = useRoute();
 
-// Modals
 const showViewModal = ref(false);
 const showEditModal = ref(false);
 const showDeleteDialog = ref(false);
 const selectedDesk = ref(null);
 const deletingId = ref(null);
 
-// Delete Dialog State
 const deletionReason = ref('');
 const deleteErrorMessage = ref('');
 const isDeleting = ref(false);
 
-// Filter options
 const statusFilter = ref(String(route.query?.deskStatus || 'ALL').toUpperCase());
-const statusOptions = ref([{ title: 'All', value: 'ALL' }]);
-const typeOptions = ref([{ title: 'All', value: 'ALL' }]);
 const typeFilter = ref(String(route.query?.type || 'ALL').toUpperCase());
 
-// Table headers
 const headers = [
   { title: 'ID', key: 'id', width: 80, align: 'start' },
   { title: 'Desk', key: 'name', width: 150 },
-  { title: 'Zone ID', key: 'zoneId', width: 100,align: 'center' },
-  { title: 'Zone Name', key: 'zoneName', width: 140,align: 'center' },
+  { title: 'Zone ID', key: 'zoneId', width: 100, align: 'center' },
+  { title: 'Zone Name', key: 'zoneName', width: 140, align: 'center' },
   { title: 'Type', key: 'type', width: 120, align: 'center' },
-  { title: 'Status', key: 'status', width: 120,align: 'center' },
+  { title: 'Status', key: 'status', width: 120, align: 'center' },
   { title: 'Temp Available', key: 'isTemporarilyAvailable', width: 130, align: 'center' },
   { title: '', key: 'actions', width: 56, align: 'end', sortable: false }
 ] as const;
 
-// Computed
 const filteredDesks = computed(() => {
   let filtered = desks.value || [];
 
-  // Status filter
+
   if (statusFilter.value !== 'ALL') {
     filtered = filtered.filter((d) => d.deskStatus === statusFilter.value);
   }
 
-  // Type filter
   if (typeFilter.value !== 'ALL') {
     filtered = filtered.filter((d) => d.type === typeFilter.value);
   }
 
-  // Search filter
   if (searchQuery.value) {
     const search = searchQuery.value.toLowerCase();
     filtered = filtered.filter((d) =>
@@ -339,7 +336,6 @@ const filteredDesks = computed(() => {
     );
   }
 
-  // Map to display format
   return filtered.map((d) => ({
     id: d.id ?? '—',
     name: d.displayName ?? 'N/A',
@@ -359,13 +355,11 @@ const filteredDesks = computed(() => {
   }));
 });
 
-// Methods
 const fetchDesks = async () => {
   try {
     loading.value = true;
     error.value = null;
     const response = await api.get('/admin/desks');
-
     desks.value = response.data;
   } catch (err) {
     console.error('Error fetching desks:', err);
@@ -388,7 +382,6 @@ function onView(item) {
 
 function onEdit(item) {
   selectedDesk.value = item;
-  console.log(selectedDesk.value);
   showEditModal.value = true;
 }
 
@@ -403,7 +396,6 @@ async function handleSave(updatedDesk) {
     showEditModal.value = false;
     selectedDesk.value = null;
 
-    // Refresh desk list
     await fetchDesks();
   } catch (err) {
     console.error('Error updating desk:', err);
@@ -411,7 +403,6 @@ async function handleSave(updatedDesk) {
   }
 }
 
-// Delete Dialog Methods
 function onDeleteClick(item) {
   selectedDesk.value = item;
   deletionReason.value = '';
@@ -449,7 +440,6 @@ async function handleDeleteConfirm() {
     deleteErrorMessage.value = '';
     error.value = null;
 
-    // Call API with reason as query parameter
     await api.delete(`/admin/delete/desk/${selectedDesk.value.id}`, {
       params: { reason }
     });
@@ -459,7 +449,6 @@ async function handleDeleteConfirm() {
     selectedDesk.value = null;
     deletionReason.value = '';
 
-    // Refresh desk list
     await fetchDesks();
   } catch (err) {
     console.error('Error deleting desk:', err);
@@ -471,11 +460,17 @@ async function handleDeleteConfirm() {
   }
 }
 
-onMounted(() => {
-  fetchDeskTypeEnum();
-  fetchDeskStatusEnum();
-  fetchColors();
-  fetchDesks();
+onMounted(async () => {
+  const initialPromises = [fetchDesks(), fetchColors()];
+  if (!statusDeskOptions.value || statusDeskOptions.value.length === 0) {
+    initialPromises.push(fetchDeskStatusEnum());
+  }
+
+  if (!typeDeskOptions.value || typeDeskOptions.value.length === 0) {
+    initialPromises.push(fetchDeskTypeEnum());
+  }
+
+  await Promise.all(initialPromises);
 });
 </script>
 

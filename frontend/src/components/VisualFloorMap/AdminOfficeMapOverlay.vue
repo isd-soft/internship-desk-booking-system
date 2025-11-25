@@ -233,14 +233,14 @@ function checkLowerThanZeroOrMoreThan(toCheck: number, max: number){
 function closeModal(updated: any){
   if(checkLowerThanZeroOrMoreThan(updated.x, imageDimensions.value.width)){
     showEditModal.value = false;
-    toast.warn("{x} is invalid", {
+    toast.warning("{x} is invalid", {
       timeout: 2000
     });
     return;
   }
   if(checkLowerThanZeroOrMoreThan(updated.y, imageDimensions.value.height)){
     showEditModal.value = false;
-    toast.warn("{y} is invalid", {
+    toast.warning("{y} is invalid", {
       timeout: 2000
     });
     return;
@@ -375,7 +375,7 @@ onMounted(async () => {
           :style="{
             left: newDeskPreview.x + 'px',
             top: newDeskPreview.y + 'px',
-            width: (imageDimensions.value.width) + 'px',
+            width: (imageDimensions.width) + 'px',
             height: rowHeight + 'px',
           }"
         ></div>
