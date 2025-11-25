@@ -284,7 +284,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import api from "../plugins/axios";
 import BookingEditModal from "../components/AdminDashboard/BookingEditModal.vue";
@@ -316,6 +316,9 @@ const cancelReasonError = ref('');
 const statusColorMap = ref<Record<string, string>>({});
 const statusFilter = ref(String(route.query?.status || "ALL").toUpperCase());
 const typeFilter = ref(String(route.query?.type || "ALL").toUpperCase());
+
+// Auto-refresh interval (1 hour = 3600000ms)
+let refreshInterval = null;
 
 const headers = [
   { title: "ID", key: "id", width: 80, align: "start", sortable: true },
@@ -592,6 +595,18 @@ onMounted(async () => {
     fetchBookings(),
     fetchBookingStatus()
   ]);
+
+  // Set up auto-refresh every 1 hour (3600000ms)
+  refreshInterval = setInterval(() => {
+    console.log('Auto-refreshing bookings...');
+    fetchBookings();
+  }, 3600000); // 1 hour = 3600000ms , 1 m = 60000ms
+});
+
+onBeforeUnmount(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 
 watch(statusFilter, (val) => {
