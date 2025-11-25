@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * The type Statistics service.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -24,6 +27,11 @@ public class StatisticsService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Gets statistics.
+     *
+     * @return the statistics
+     */
     public StatisticsDTO getStatistics() {
         LocalDateTime now = LocalDateTime.now();
 
@@ -62,6 +70,13 @@ public class StatisticsService {
                 .build();
     }
 
+    /**
+     * Gets statistics for date range.
+     *
+     * @param startDate the start date
+     * @param endDate   the end date
+     * @return the statistics for date range
+     */
     public StatisticsDTO getStatisticsForDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         long bookingsInRange = bookingRepository.countByStartTimeBetween(startDate, endDate);
         long usersInRange = userRepository.countUsersWithBookingsBetween(startDate, endDate);

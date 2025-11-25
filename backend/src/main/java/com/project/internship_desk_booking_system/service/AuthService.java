@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+/**
+ * The type Auth service.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,12 @@ public class AuthService {
     private final RsaCryptoService rsaCryptoService;
 
 
+    /**
+     * Login login response dto.
+     *
+     * @param request the request
+     * @return the login response dto
+     */
     public LoginResponseDto login(LoginRequestCommand request) {
         try {
             log.info("Login attempt for user: {}", request.getEmail());
@@ -73,6 +82,11 @@ public class AuthService {
         }
     }
 
+    /**
+     * Register.
+     *
+     * @param request the request
+     */
     @Transactional
     public void register(RegisterCommandRequest request) {
         log.info("Registering user: {}", request.getEmail());
