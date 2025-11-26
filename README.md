@@ -250,10 +250,10 @@ mvn test
 ## 1️⃣0️⃣ Contributors
 
 👩‍💻 **Fantaziu Irina**  
-👩‍💻 **Gherta Lilian**  
-👩‍💻 **Iachim Vlad**  
-👩‍💻 **Rijenco Vladimir**  
-👩‍💻 **Vlasitchi Stefan**
+👨‍💻 **Gherta Lilian**  
+👨‍💻 **Iachim Vlad**  
+👨‍💻 **Rijenco Vladimir**  
+👨‍💻 **Vlasitchi Stefan**
 
 ---
 
