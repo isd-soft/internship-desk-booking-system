@@ -1,6 +1,6 @@
-# 🪑 Desk Booking System
+#  Desk Booking System
 
-A **web-based application** designed to manage desk reservations within an organization.  
+A **web-based application** designed to manage desk reservations within an organization. 
 The system supports both **regular users (employees)** and **administrators**, providing a clear workflow for booking, managing availability, and organizing workspace resources.
 
 ---
@@ -8,18 +8,18 @@ The system supports both **regular users (employees)** and **administrators**, p
 ## 1️⃣ Project Overview
 
 The Desk Booking System allows users to:  
-- 📝 Register and authenticate  
-- 📅 Browse desks and check their real-time availability, mark as Favourites  
-- ✏️ Create, update, or cancel bookings  
-- 📆 View personal weekly/monthly bookings  
+-  Register and authenticate  
+-  Browse desks and check their real-time availability on map, mark as Favourites  
+-  Create, update, or cancel bookings  
+-  View personal weekly/monthly bookings  
 
 Administrators can do all the user functionalities and additionally:  
-- 🛠 Manage desks (create, edit, delete, enable/disable availability)  
-- 👥 Manage users and assign roles  
-- 📊 Manage users’ bookings and their limitations  
-- 📈 Monitor booking activity, users activity, and space usage  
-- ⚡ Override availability when needed  
-- 🗺 Manage map setup  
+-  Manage desks (create, edit, delete, enable/disable availability)  
+-  Manage users and assign roles  
+-  Manage users’ bookings and their limitations  
+-  Monitor booking activity, users activity, and space usage  
+-  Override availability when needed  
+-  Manage map setup  
 
 **Tech Stack:**  
 - **Backend:** Java 17, Spring Boot, IntelliJ IDEA Ultimate, Spring Security, JPA/Hibernate, Bcrypt, MailService, Mockito  
@@ -33,15 +33,15 @@ Administrators can do all the user functionalities and additionally:
 ## 2️⃣ System Architecture
 
 **Modules included:**  
-- 🔐 **Auth Module:** registration, login, JWT, LDAP, role-based access  
-- 👤 **User Module:** user management, profile  
-- 🪑 **Desk Module:** desk CRUD, coordinates, temporary availability  
-- 📅 **Booking Module:** create/update/cancel bookings, validations  
-- 🛠 **Admin Module:** advanced actions, dashboards, statistics  
+-  **Auth Module:** registration, login, JWT, LDAP, role-based access  
+-  **User Module:** user management, profile  
+-  **Desk Module:** desk CRUD, coordinates, temporary availability  
+-  **Booking Module:** create/update/cancel bookings, validations  
+-  **Admin Module:** advanced actions, dashboards, statistics  
 
 ---
 
-## 🗂 Project Structure
+##  Project Structure
 ```
 internship-desk-booking-system/
 │
@@ -99,21 +99,20 @@ internship-desk-booking-system/
 ## 3️⃣ Features
 
 **User Features**  
-- 📝 Create account & log in (LDAP/JWT)  
-- 📅 View desk availability calendar  
-- 🪑 Book a desk for a specific date and time  
-- ✏️ Edit or cancel existing bookings  
-- ⭐ Add/Remove Favourite Desks  
-- ⏱ Weekly booking limit validations  
-- 📧 Receive email notifications for booking confirmation/cancellation  
+-  Create account & log in (LDAP/JWT)  
+-  View desk availability on map 
+-  Book a desk for a specific date and time  
+-  Edit or cancel existing bookings  
+-  Add/Remove Favourite Desks  
+-  Receive email notifications for booking confirmation/cancellation  
 
 **Admin Features**  
-- 🛠 Create and manage desks  
-- ⏳ Adjust desk temporary availability  
-- 👥 Manage users and assign roles  
-- 🗺 Update desk coordinates and metadata  
-- 📊 View booking history and user activity  
-- ✅ Manage booking validations  
+-  Create and manage desks  
+-  Create/edit and delete user’s bookings
+-  Manage users and assign roles  
+-  Update desk coordinates and metadata  
+-  View booking history and user activity  
+-  Manage validations  
 
 ---
 
@@ -122,9 +121,9 @@ internship-desk-booking-system/
 **Software Requirements**  
 - Java 17+  
 - Maven 3.9+  
-- Node.js 18+  
+- Node.js 21+  
 - Yarn or npm  
-- PostgreSQL 15+  
+- PostgreSQL 17+  
 - YAJSW (for Windows Server deployment)  
 
 **System Requirements**  
@@ -136,95 +135,125 @@ internship-desk-booking-system/
 
 ## 5️⃣ Local Development Setup
 
-**Backend Setup**  
-1. Clone repository  
-2. Import as Maven project  
-3. Configure environment variables or `application.properties`:
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/desk_booking
-    username: your_user
-    password: your_password
-  jpa:
-    hibernate:
-      ddl-auto: update
+### Backend Setup
 
-4.	Run with:
-mvn spring-boot:run
-Frontend Setup
-cd frontend
-npm install    
-npm run dev    
-Build Frontend
-npm run build
+1. **Clone repository**
+2. **Import as Maven project**
+3. **Configure environment variables or `application.properties`:**
+```yaml
+   spring:
+     datasource:
+       url: jdbc:postgresql://localhost:5432/desk_booking_system
+       username: your_user
+       password: your_password
+     jpa:
+       hibernate:
+         ddl-auto: update
+```
 
-6️⃣ Production Deployment (Windows Server + YAJSW)
-a. Database Setup
-Create a new PostgreSQL database:
-CREATE DATABASE desk_booking;
-CREATE USER desk_user WITH ENCRYPTED PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE desk_booking TO desk_user;
+4. **Run with IntelliJ:**
+   - Simply select the "dev" run profile in IntelliJ
+   - No manual frontend build required — Maven handles frontend build during backend startup
 
-b.	Build Backend
+---
+
+## 6️⃣ Production Deployment (Windows Server + YAJSW)
+
+### a. Database Setup
+
+### b. Build the Full Application
+```bash
 mvn clean package -DskipTests
-Output file:
-/target/desk-booking-system.jar
+```
 
-c. Frontend Production Build
-The project uses frontend-maven-plugin and maven-resources-plugin, automating Vue frontend build during backend build.
+### c. YAJSW Configuration
 
-d. YAJSW Configuration
+1. **Place the jar inside the YAJSW `/app` folder**
 
-1. Place the jar inside the YAJSW /app folder
-2. Generate YAJSW config:
-    bin\genConfig.bat C:\path\to\desk-booking-system.jar
-3.	Edit the generated conf/wrapper.conf
-4.	Install as Windows Service:
-    bin\installService.bat
+2. **Generate YAJSW config:**
+```bash
+   bin\genConfig.bat C:\path\to\desk-booking-system.jar
+```
 
-7️⃣ API Documentation
-The project uses Swagger (OpenAPI 3) for automatic REST API documentation. Swagger UI is available at: http://localhost:8080/swagger-ui/index.html 
-Main endpoints:
-•	/api/v1/auth/* – register, login;
-•	/api/v1/booking/* – my, all, upcoming, byDate, my/byDate, booking CRUD;
-•	/api/v1/desk/* – coordinates, {deskId}/availability;
-•	/api/v1/admin/* – admin-specific operations for managing desks, zones, bookings, users;
-•	/api/statistics/* – get statistics for range period of time.
-The backend also includes JavaDoc documentation for services, controllers, and domain logic.
-JavaDoc can be generated with:
+3. **Edit the generated `conf/wrapper.conf` and adjust:**
+   - Java path
+   - JAR path
+   - Working directory
+   - Log path
+   - Active Spring profile:
+```properties
+     wrapper.java.additional.1=-Dspring.profiles.active=prod
+```
+
+4. **Install & Start as Windows Service:**
+```
+   bin\installService.bat
+   bin\startService.bat
+```
+
+---
+
+## 7️⃣ API Documentation
+
+The project uses **Swagger (OpenAPI 3)** for automatic REST API documentation.
+
+**Swagger UI is available at:**  
+👉 `http://localhost:8080/swagger-ui/index.html`
+
+### Main Endpoints
+
+- **`/api/v1/auth/*`** – Register, login
+- **`/api/v1/booking/*`** – My bookings, all, upcoming, by date, booking CRUD
+- **`/api/v1/desk/*`** – Coordinates, `{deskId}/availability`
+- **`/api/v1/admin/*`** – Admin-specific operations for managing desks, zones, bookings, users
+- **`/api/statistics/*`** – Get statistics for range period of time
+
+### JavaDoc Documentation
+
+The backend also includes **JavaDoc documentation** for services, controllers, and domain logic.
+
+**Generate JavaDoc with:**
+```bash
 mvn javadoc:javadoc
+```
 
-8️⃣ Security
+---
 
-🔐 JWT Authentication
+## 8️⃣ Security
 
-🧑‍💼 LDAP Authentication
+✅ **JWT Authentication**  
+✅ **LDAP Authentication**  
+✅ **Role-based authorization:** `USER`, `ADMIN`  
+✅ **Password hashing with Bcrypt**  
+✅ **Password encryption & decryption on frontend**  
+✅ **Token refresh endpoints**  
+✅ **CORS configured for frontend development**
 
-⚖ Role-based authorization: USER, ADMIN
+---
 
-🔑 Password hashing with Bcrypt
+## 9️⃣ Testing
 
-🔒 Password encryption & decryption on frontend
+### Unit Tests
 
-🔄 Token refresh endpoints
+- Booking logic
+- Validation rules
+- User and desk services
+- Admin specific functionalities and validation
 
-🌐 CORS configured for frontend development
-
-
-9️⃣ Testing
-Unit tests
-•	Booking logic
-•	Validation rules
-•	User and desk services
-•	Admin specific functionalities and validation
-Tests executed via Mockito:
+**Tests executed via Mockito:**
+```bash
 mvn test
+```
 
-10️⃣	Contributors 🧑‍🤝‍🧑:
-👩‍💻	Fantaziu Irina
-👩‍💻	Gherta Lilian
-👩‍💻	Iachim Vlad
-👩‍💻	Rijenco Vladimir 
-👩‍💻	Vlasitchi Stefan
+---
 
+## 1️⃣0️⃣ Contributors
+
+👩‍💻 **Fantaziu Irina**  
+👩‍💻 **Gherta Lilian**  
+👩‍💻 **Iachim Vlad**  
+👩‍💻 **Rijenco Vladimir**  
+👩‍💻 **Vlasitchi Stefan**
+
+---
 
