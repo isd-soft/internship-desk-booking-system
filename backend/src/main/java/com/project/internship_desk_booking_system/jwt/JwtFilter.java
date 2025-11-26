@@ -2,6 +2,7 @@ package com.project.internship_desk_booking_system.jwt;
 
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.enums.Role;
+import com.project.internship_desk_booking_system.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,16 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtill jwtUtil;
+    private final UserRepository userRepository;
+
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/auth/refresh");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,24 +60,53 @@ public class JwtFilter extends OncePerRequestFilter {
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 String email = jwtUtil.extractEmail(token);
-                Role role = jwtUtil.extractRole(token);
+                Role roleFromToken = jwtUtil.extractRole(token);
+
+                var user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+
+                if (user == null) {
+                    writeError(response, 404, "USER_NOT_FOUND", "User not found");
+                    return;
+                }
+
+                Role roleFromDb = user.getRole();
+                if (!roleFromDb.equals(roleFromToken)) {
+                    writeError(response, 403, "ROLE_CHANGED", "User role changed, token outdated");
+                    return;
+                }
 
                 var auth = new UsernamePasswordAuthenticationToken(
-                        new CustomUserPrincipal(email, null, role),
+                        new CustomUserPrincipal(email, null, roleFromDb),
                         null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
+                        List.of(new SimpleGrantedAuthority("ROLE_" + roleFromDb.name()))
                 );
 
-                auth.setDetails(new WebAuthenticationDetailsSource()
-                        .buildDetails(request));
-
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();
+            writeError(response, 401, "INVALID_TOKEN", "Invalid or expired token");
+            return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeError(HttpServletResponse response,
+                            int status,
+                            String code,
+                            String message) throws IOException {
+
+        response.setStatus(status);
+        response.setContentType("application/json");
+
+        response.getWriter().write("""
+        {
+            "code": "%s",
+            "message": "%s"
+        }
+        """.formatted(code, message));
     }
 }

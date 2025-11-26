@@ -63,9 +63,10 @@ public class AuthService {
             Role role = user.getRole();
 
             String token = jwtUtill.generateToken(email, role);
+            String refreshToken = jwtUtill.generateRefreshToken(user.getEmail());
 
             log.info("User {} successfully logged in.", email);
-            return new LoginResponseDto(email, role, token);
+            return new LoginResponseDto(email, role, token, refreshToken);
 
         } catch (org.springframework.security.authentication.DisabledException e) {
             log.warn("Login failed: account {} is disabled.", request.getEmail());
@@ -120,4 +121,28 @@ public class AuthService {
                     "User with this email already exists", Map.of("email", email));
         }
     }
+
+    public LoginResponseDto refreshToken(String refreshToken) {
+        var claims = jwtUtill.validateRefreshToken(refreshToken);
+        String email = claims.getSubject();
+
+        var user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ExceptionResponse(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User not found"
+                ));
+
+        String newAccessToken = jwtUtill.generateToken(
+                user.getEmail(),
+                user.getRole()
+        );
+        return new LoginResponseDto(
+                user.getEmail(),
+                user.getRole(),
+                newAccessToken,
+                refreshToken
+        );
+    }
+
 }

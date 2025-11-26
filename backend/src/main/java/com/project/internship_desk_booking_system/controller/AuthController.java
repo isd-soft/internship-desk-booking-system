@@ -3,6 +3,7 @@ package com.project.internship_desk_booking_system.controller;
 import com.project.internship_desk_booking_system.command.LoginRequestCommand;
 import com.project.internship_desk_booking_system.command.LoginResponseDto;
 import com.project.internship_desk_booking_system.command.RegisterCommandRequest;
+import com.project.internship_desk_booking_system.dto.RefreshRequest;
 import com.project.internship_desk_booking_system.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,4 +30,10 @@ public class AuthController {
     public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestCommand command) {
         return ResponseEntity.ok().body(authService.login(command));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDto> refresh(@RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
+    }
+
 }
