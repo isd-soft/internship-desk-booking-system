@@ -549,11 +549,11 @@ function updateRouteQuery(status: string) {
 onMounted(async () => {
   const initialPromises = [fetchBookings()];
 
-  if (!typeDeskOptions.value || typeDeskOptions.value.length === 0) {
+  if (!typeDeskOptions.value || typeDeskOptions.value.length <= 1) {
     initialPromises.push(fetchDeskTypeEnum());
   }
 
-  if (!statusBookingOptions.value || statusBookingOptions.value.length === 0) {
+  if (!statusBookingOptions.value || statusBookingOptions.value.length <= 1) {
     initialPromises.push(fetchBookingStatus());
   }
   initialPromises.push(fetchColors());

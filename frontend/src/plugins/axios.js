@@ -1,5 +1,4 @@
 import axios from "axios";
-import { clearAuthData } from "../utils/auth";
 import router from "../router";
 
 const api = axios.create({
@@ -20,11 +19,35 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      clearAuthData();
-      router.push("/login");
+
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data?.code === "ROLE_CHANGED"
+    ) {
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      return new Promise(async (resolve, reject) => {
+        try {
+          const res = await api.post("/auth/refresh", { refreshToken });
+          const newAccessToken = res.data.token;
+          const newRole = res.data.role;
+
+          localStorage.setItem("token", newAccessToken);
+          localStorage.setItem("role", newRole);
+          window.location.reload();
+          return;
+        } catch (err) {
+          localStorage.clear();
+          router.push("/login");
+          reject(err);
+        }
+      });
     }
+
     return Promise.reject(error);
   }
 );

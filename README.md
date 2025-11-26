@@ -1,259 +1,333 @@
-#  Desk Booking System
+# Desk Booking System
 
-A **web-based application** designed to manage desk reservations within an organization. 
-The system supports both **regular users (employees)** and **administrators**, providing a clear workflow for booking, managing availability, and organizing workspace resources.
-
----
-
-## 1️⃣ Project Overview
-
-The Desk Booking System allows users to:  
--  Register and authenticate  
--  Browse desks and check their real-time availability on map, mark as Favourites  
--  Create, update, or cancel bookings  
--  View personal weekly/monthly bookings  
-
-Administrators can do all the user functionalities and additionally:  
--  Manage desks (create, edit, delete, enable/disable availability)  
--  Manage users and assign roles  
--  Manage users’ bookings and their limitations  
--  Monitor booking activity, users activity, and space usage  
--  Override availability when needed  
--  Manage map setup  
-
-**Tech Stack:**  
-- **Backend:** Java 17, Spring Boot, IntelliJ IDEA Ultimate, Spring Security, JPA/Hibernate, Bcrypt, MailService, Mockito  
-- **Frontend:** Vue 3, Vue Router, Axios, Visual Studio Code, GridLayout  
-- **Database:** PostgreSQL, FlyWay  
-- **Build tools:** Maven, Node/Yarn  
-- **Deployment:** Windows Server + YAJSW (runs as a Windows Service)  
+The Desk Booking System is a **web-based application** designed to manage workspace reservations within an organization.
+It supports both **regular users** and **administrators**, offering functionality for booking desks, managing availability, and monitoring workspace usage.
 
 ---
 
-## 2️⃣ System Architecture
+## 1. Project Overview
 
-**Modules included:**  
--  **Auth Module:** registration, login, JWT, LDAP, role-based access  
--  **User Module:** user management, profile  
--  **Desk Module:** desk CRUD, coordinates, temporary availability  
--  **Booking Module:** create/update/cancel bookings, validations  
--  **Admin Module:** advanced actions, dashboards, statistics  
+**User capabilities:**
+
+* Register and authenticate
+* Browse desks and view real-time availability
+* Create, update, or cancel bookings
+* Mark desks as favourites
+* View weekly and monthly booking history
+
+**Administrator capabilities:**
+
+* All user-level functionality
+* Manage desks (create, edit, disable/enable availability)
+* Manage users and assign roles
+* View booking history, user activity, and statistics
+* Override availability and limitations
+* Configure map layout and desk coordinates
+
+**Technology Stack**
+
+* **Backend:** Java 17, Spring Boot, Spring Security, JPA/Hibernate, BCrypt, MailService, Mockito
+* **Frontend:** Vue 3, Vue Router, Axios, GridLayout
+* **Database:** PostgreSQL (Flyway for migrations)
+* **Build Tools:** Maven, Node/Yarn
+* **Deployment:** Windows Server using YAJSW as a Windows Service
 
 ---
 
-##  Project Structure
+## 2. System Architecture
+
+**Modules**
+
+* **Auth Module:** registration, login, JWT, LDAP, role management
+* **User Module:** user profiles and management
+* **Desk Module:** CRUD operations, coordinates, temporary availability
+* **Booking Module:** booking creation/modification, constraints and validations
+* **Admin Module:** advanced administration tools, analytics, statistics
+
+---
+
+## 3. Project Structure
+
 ```
 internship-desk-booking-system/
 │
-├── 📁 backend/                                 # Spring Boot Backend
-│   ├── .mvn/wrapper/                          # Maven wrapper files
+├── backend/                                 # Spring Boot Backend
+│   ├── .mvn/wrapper/                         # Maven wrapper files
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/project/internship_desk_booking_system/
-│   │   │   │   ├── command/                   # Command pattern implementations
-│   │   │   │   ├── config/                    # Configuration classes
-│   │   │   │   ├── controller/                # REST API controllers
-│   │   │   │   ├── dto/                       # Data Transfer Objects
-│   │   │   │   ├── entity/                    # JPA entities
-│   │   │   │   ├── enums/                     # Enumeration types
-│   │   │   │   ├── errors/                    # Custom error classes
-│   │   │   │   ├── handlers/                  # Exception handlers
-│   │   │   │   ├── jwt/                       # JWT authentication
-│   │   │   │   ├── mapper/                    # Entity-DTO mappers
-│   │   │   │   ├── repository/                # JPA repositories
-│   │   │   │   ├── service/                   # Business logic
+│   │   │   │   ├── command/                  # Command pattern implementations
+│   │   │   │   ├── config/                   # Configuration classes
+│   │   │   │   ├── controller/               # REST API controllers
+│   │   │   │   ├── dto/                      # Data Transfer Objects
+│   │   │   │   ├── entity/                   # JPA entities
+│   │   │   │   ├── enums/                    # Enumeration types
+│   │   │   │   ├── errors/                   # Custom error classes
+│   │   │   │   ├── handlers/                 # Exception handlers
+│   │   │   │   ├── jwt/                      # JWT authentication utilities
+│   │   │   │   ├── mapper/                   # Entity-DTO mappers
+│   │   │   │   ├── repository/               # JPA repositories
+│   │   │   │   ├── service/                  # Business logic
 │   │   │   │   └── InternshipDeskBookingSystemApplication.java
 │   │   │   └── resources/
-│   │   │       ├── db.migration/              # Flyway SQL migrations
-│   │   │       ├── static/                    # Vue frontend build (dist)
-│   │   │       └── application.properties     # App configuration
-│   │   └── test/                              # Unit & integration tests
-│   │       └── java/com/project/internship_desk_booking_system/
-│   ├── docker-compose.yml                     # Docker PostgreSQL setup
-│   └── pom.xml                                # Maven dependencies
+│   │   │       ├── db.migration/             # Flyway SQL migrations
+│   │   │       ├── static/                   # Vue frontend build output
+│   │   │       └── application.properties    # Configuration file
+│   │   └── test/                             # Unit and integration tests
+│   ├── docker-compose.yml                    # PostgreSQL Docker config
+│   └── pom.xml                               # Maven dependencies
 │
-├── 📁 frontend/                                # Vue.js Frontend
+├── frontend/                                 # Vue.js Frontend
 │   ├── src/
-│   │   ├── assets/                            # Images, styles, fonts
-│   │   ├── components/                        # Vue components
-│   │   ├── plugins/                           # Axios, etc.
-│   │   ├── router/                            # Vue Router
-│   │   ├── stores/                            # Pinia state management
-│   │   ├── utils/                             # Helper functions
-│   │   ├── App.vue                            # Root component
-│   │   └── main.js                            # App entry point
-│   ├── public/                                # Static assets
-│   ├── index.html                             # HTML template
-│   ├── jsconfig.json                          # JavaScript config
-│   ├── package.json                           # NPM dependencies
-│   ├── pnpm-lock.yaml                         # PNPM lock file
-│   ├── tsconfig.json                          # TypeScript config
-│   └── vite.config.js                         # Vite bundler config
+│   │   ├── assets/                           # Static assets
+│   │   ├── components/                       # Vue components
+│   │   ├── plugins/                          # Axios configuration
+│   │   ├── router/                           # Vue Router
+│   │   ├── stores/                           # Pinia state store
+│   │   ├── utils/                            # Helper utilities
+│   │   ├── App.vue                           # Root component
+│   │   └── main.js                           # Application entry point
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
 │
-├── .gitattributes                             # Git attributes
-├── .gitignore                                 # Git ignore rules
-├── LICENSE                                    # Project license
-└── README.md                                  # Project documentation
+├── .gitattributes
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
 
-## 3️⃣ Features
+---
 
-**User Features**  
--  Create account & log in (LDAP/JWT)  
--  View desk availability on map 
--  Book a desk for a specific date and time  
--  Edit or cancel existing bookings  
--  Add/Remove Favourite Desks  
--  Receive email notifications for booking confirmation/cancellation  
+## 4. Features
 
-**Admin Features**  
--  Create and manage desks  
--  Create/edit and delete user’s bookings
--  Manage users and assign roles  
--  Update desk coordinates and metadata  
--  View booking history and user activity  
--  Manage validations  
+### User Features
+
+* Account creation and authentication (LDAP/JWT)
+* View desk availability calendar
+* Book, edit, or cancel reservations
+* Mark desks as favourites
+* Weekly booking limit validations
+* Email notifications (confirmation/cancellation)
+
+### Administrator Features
+
+* Desk creation, editing, and availability controls
+* User management and role assignment
+* Desk metadata and coordinate management
+* Access to booking history and activity logs
+* Administrative booking validation and override tools
 
 ---
 
-## 4️⃣ Requirements
+## 5. Requirements
 
-**Software Requirements**  
-- Java 17+  
-- Maven 3.9+  
-- Node.js 21+  
-- Yarn or npm  
-- PostgreSQL 17+  
-- YAJSW (for Windows Server deployment)  
+**Software Requirements**
 
-**System Requirements**  
-- Windows Server machine  
-- Database access credentials  
-- Port availability for backend  
+* Java 17+
+* Maven 3.9+
+* Node.js 18+
+* Yarn or npm
+* PostgreSQL 17+
+* YAJSW (for Windows deployments)
+
+**System Requirements**
+
+* Windows Server machine
+* PostgreSQL database access
+* Network port availability
 
 ---
 
-## 5️⃣ Local Development Setup
+## 6. Local Development Setup
 
 ### Backend Setup
 
-1. **Clone repository**
-2. **Import as Maven project**
-3. **Configure environment variables or `application.properties`:**
-```yaml
+1. Clone the repository
+
+2. Import as a Maven project
+
+3. Configure `application.properties`:
+
+   ```yaml
    spring:
      datasource:
-       url: jdbc:postgresql://localhost:5432/desk_booking_system
+       url: jdbc:postgresql://localhost:5432/desk_booking
        username: your_user
        password: your_password
      jpa:
        hibernate:
          ddl-auto: update
+   ```
+
+4. Run:
+
+   ```bash
+   mvn spring-boot:run
+   ```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-4. **Run with IntelliJ:**
-   - Simply select the "dev" run profile in IntelliJ
-   - No manual frontend build required — Maven handles frontend build during backend startup
+### Frontend Build
+
+```bash
+npm run build
+```
 
 ---
 
-## 6️⃣ Production Deployment (Windows Server + YAJSW)
+# 7. Production Deployment (Windows Server + YAJSW)
 
-### a. Database Setup
+## 7.1 Database Setup
 
-### b. Build the Full Application
+```sql
+CREATE DATABASE desk_booking;
+CREATE USER desk_user WITH ENCRYPTED PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE desk_booking TO desk_user;
+```
+
+---
+
+## 7.2 Build the Backend
+
 ```bash
 mvn clean package -DskipTests
 ```
 
-### c. YAJSW Configuration
+Output:
 
-1. **Place the jar inside the YAJSW `/app` folder**
-
-2. **Generate YAJSW config:**
-```bash
-   bin\genConfig.bat C:\path\to\desk-booking-system.jar
 ```
-
-3. **Edit the generated `conf/wrapper.conf` and adjust:**
-   - Java path
-   - JAR path
-   - Working directory
-   - Log path
-   - Active Spring profile:
-```properties
-     wrapper.java.additional.1=-Dspring.profiles.active=prod
-```
-
-4. **Install & Start as Windows Service:**
-```
-   bin\installService.bat
-   bin\startService.bat
+/target/desk-booking-system.jar
 ```
 
 ---
 
-## 7️⃣ API Documentation
+## 7.3 Frontend Production Build
 
-The project uses **Swagger (OpenAPI 3)** for automatic REST API documentation.
+The Vue.js frontend is automatically built via:
 
-**Swagger UI is available at:**  
- `http://localhost:8080/swagger-ui/index.html`
+* `frontend-maven-plugin`
+* `maven-resources-plugin`
 
-### Main Endpoints
+No manual steps are required.
 
-- **`/api/v1/auth/*`** – Register, login
-- **`/api/v1/booking/*`** – My bookings, all, upcoming, by date, booking CRUD
-- **`/api/v1/desk/*`** – Coordinates, `{deskId}/availability`
-- **`/api/v1/admin/*`** – Admin-specific operations for managing desks, zones, bookings, users
-- **`/api/statistics/*`** – Get statistics for range period of time
+---
 
-### JavaDoc Documentation
+## 7.4 YAJSW Configuration (Windows Service)
 
-The backend also includes **JavaDoc documentation** for services, controllers, and domain logic.
+1. Place the JAR inside `yajsw/app/`.
 
-**Generate JavaDoc with:**
+2. Generate configuration:
+
+   ```bash
+   bin\genConfig.bat C:\path\to\desk-booking-system.jar
+   ```
+
+3. Edit:
+
+   ```
+   conf/wrapper.conf
+   ```
+
+4. Install as a Windows service:
+
+   ```bash
+   bin\installService.bat
+   ```
+   
+---
+
+# 8. API Documentation
+
+Swagger UI:
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+### Main API Categories
+
+* `/api/v1/auth/*` — authentication
+* `/api/v1/booking/*` — booking operations
+* `/api/v1/desk/*` — desk availability and coordinates
+* `/api/v1/admin/*` — administrative actions
+* `/api/statistics/*` — reporting and analytics
+
+### JavaDoc Generation
+
 ```bash
 mvn javadoc:javadoc
 ```
 
 ---
 
-## 8️⃣ Security
+# 9. Security
 
-✅ **JWT Authentication**  
-✅ **LDAP Authentication**  
-✅ **Role-based authorization:** `USER`, `ADMIN`  
-✅ **Password hashing with Bcrypt**  
-✅ **Password encryption & decryption on frontend**  
-✅ **Token refresh endpoints**  
-✅ **CORS configured for frontend development**
+The system implements several security measures to ensure safe user access, data protection, and secure communication between the frontend and backend.
+
+### JWT Authentication
+
+The backend uses JSON Web Tokens to authenticate users. Each request to protected endpoints must include a valid token in the `Authorization` header.
+
+### LDAP Authentication
+
+Integration with LDAP allows login through the organization’s directory service when required.
+
+### Role-Based Authorization
+
+Two access levels are supported:
+
+* **USER** – regular employees
+* **ADMIN** – users with extended privileges and administrative rights
+
+Access is enforced with Spring Security.
+
+### Password Hashing
+
+All passwords are stored securely using **BCrypt hashing**.
+
+### Frontend Encryption
+
+Sensitive inputs such as passwords are encrypted on the frontend before being sent to the server.
+
+### Token Refresh
+
+The backend exposes endpoints for refreshing expired access tokens without requiring a full login.
+
+### CORS Configuration
+
+Cross-Origin Resource Sharing (CORS) is configured to allow the frontend and backend to communicate during development and production.
 
 ---
 
-## 9️⃣ Testing
+# 10. Testing
 
-### Unit Tests
+### 10.1 Covered Areas
 
-- Booking logic
-- Validation rules
-- User and desk services
-- Admin specific functionalities and validation
+* Booking rules and validation
+* User and desk services
+* Admin operations and constraints
 
-**Tests executed via Mockito:**
+### 10.2 Execute Tests
+
 ```bash
 mvn test
 ```
-
 ---
 
-## 1️⃣0️⃣ Contributors
+# 11. Contributors
 
-👩‍💻 **Fantaziu Irina**  
-👨‍💻 **Gherta Lilian**  
-👨‍💻 **Iachim Vlad**  
-👨‍💻 **Rijenco Vladimir**  
-👨‍💻 **Vlasitchi Stefan**
+- Fantaziu Irina
+- Gherta Lilian
+- Iachim Vlad
+- Rijenco Vladimir
+- Vlasitchi Stefan
 
 ---
 

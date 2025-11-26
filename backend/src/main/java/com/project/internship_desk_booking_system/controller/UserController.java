@@ -1,6 +1,7 @@
 package com.project.internship_desk_booking_system.controller;
 
 import com.project.internship_desk_booking_system.command.DeleteUserRequest;
+import com.project.internship_desk_booking_system.dto.UserInfoDto;
 import com.project.internship_desk_booking_system.entity.CustomUserPrincipal;
 import com.project.internship_desk_booking_system.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,4 +22,10 @@ public class UserController {
         userService.deleteUser(principal, deleteUserRequest.getEmail());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/get-me")
+    public ResponseEntity<UserInfoDto> getMe(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(userService.getCurrentUserInfo(principal));
+    }
+
 }

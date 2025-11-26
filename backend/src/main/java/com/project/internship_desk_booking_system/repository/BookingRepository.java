@@ -74,8 +74,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
             "AND b.status IN ('SCHEDULED', 'ACTIVE', 'CONFIRMED') " +
-            "AND b.startTime < :endTime " +
-            "AND b.endTime > :startTime")
+            "AND b.startTime <= :endTime " +
+            "AND b.endTime >= :startTime")
     List<Booking> findUserBookings(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,
