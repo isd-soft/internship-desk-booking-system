@@ -7,13 +7,4 @@ import java.util.Optional;
 
 public interface ZoneRepository extends JpaRepository<Zone, Long> {
     Optional<Zone> findById(Long id);
-
-    Optional<Zone> findByZoneName(String zoneName);
-
-    Optional<Zone> findByZoneAbv(String zoneAbv);
-
-    boolean existsByZoneName(String zoneName);
-
-    boolean existsByZoneAbv(String zoneAbv);
-
 }

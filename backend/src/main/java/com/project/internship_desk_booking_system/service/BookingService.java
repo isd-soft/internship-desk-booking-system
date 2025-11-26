@@ -122,13 +122,15 @@ public class BookingService {
         bookingToCancel.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(bookingToCancel);
 
-        emailService.sendCancelledBookingEmail(
-                email,
-                bookingToCancel.getId(),
-                bookingToCancel.getDesk().getDeskName(),
-                bookingToCancel.getDesk().getZone().getZoneAbv(),
-                OffsetDateTime.now()
-        );
+        if (!bookingToCancel.getUser().isGuest()) {
+            emailService.sendCancelledBookingEmail(
+                    email,
+                    bookingToCancel.getId(),
+                    bookingToCancel.getDesk().getDeskName(),
+                    bookingToCancel.getDesk().getZone().getZoneAbv(),
+                    OffsetDateTime.now()
+            );
+        }
     }
 
     /**

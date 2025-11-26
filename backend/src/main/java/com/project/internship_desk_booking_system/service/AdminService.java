@@ -772,5 +772,4 @@ public class AdminService {
 
         bookingService.createBooking(user.getEmail(),userBookingReq);
     }
-
 }
