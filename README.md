@@ -198,7 +198,7 @@ mvn clean package -DskipTests
 The project uses **Swagger (OpenAPI 3)** for automatic REST API documentation.
 
 **Swagger UI is available at:**  
-👉 `http://localhost:8080/swagger-ui/index.html`
+ `http://localhost:8080/swagger-ui/index.html`
 
 ### Main Endpoints
 
