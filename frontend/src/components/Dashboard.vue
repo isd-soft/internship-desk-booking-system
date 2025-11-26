@@ -76,12 +76,12 @@ function handleFavouriteToggled(payload) {
 }
 
 const legends = [
-  { color: "#50c878", label: "Available", icon: "mdi-check-circle", deskColor: "GREEN" },
-  { color: "#ee4b2b", label: "Fully Booked", icon: "mdi-close-circle", deskColor: "RED" },
-  { color: "#ffbf00", label: "Partially Booked", icon: "mdi-clock-outline", deskColor: "AMBER" },
-  { color: "#7393b3", label: "Assigned", icon: "mdi-account", deskColor: "BLUE" },
-  { color: "#818589", label: "Unavailable", icon: "mdi-minus-circle", deskColor: "GRAY" },
-  { color: "#E1BEE7", label: "Your Booking", icon: "mdi-account-check", deskColor: "PURPLE" },
+  { color: "#10b981", label: "Available", icon: "mdi-check-circle", deskColor: "GREEN" },
+  { color: "#ef4444", label: "Fully Booked", icon: "mdi-close-circle", deskColor: "RED" },
+  { color: "#f59e0b", label: "Partially Booked", icon: "mdi-clock-outline", deskColor: "AMBER" },
+  { color: "#3b82f6", label: "Assigned", icon: "mdi-account", deskColor: "BLUE" },
+  { color: "#6b7280", label: "Unavailable", icon: "mdi-minus-circle", deskColor: "GRAY" },
+  { color: "#8b5cf6", label: "Your Booking", icon: "mdi-account-check", deskColor: "PURPLE" },
 ];
 
 function handleLegendClick(deskColor) {
