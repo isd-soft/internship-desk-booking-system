@@ -286,14 +286,29 @@ export default {
 
     async copyEmail(user) {
       try {
-        await navigator.clipboard.writeText(user.email);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(user.email);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = user.email;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+
         this.successMessage = 'Email copied to clipboard';
         this.showSuccessSnackbar = true;
+
       } catch (err) {
         console.error('Failed to copy email:', err);
         this.error = 'Failed to copy email';
       }
     },
+
     async updateUserRole(user, role) {
       try {
         await api.patch('/admin/users/role', {
