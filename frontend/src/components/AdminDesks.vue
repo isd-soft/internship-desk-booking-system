@@ -318,12 +318,14 @@ const headers = [
 const filteredDesks = computed(() => {
   let filtered = desks.value || [];
 
-
-  if (statusFilter.value !== 'ALL') {
-    filtered = filtered.filter((d) => d.deskStatus === statusFilter.value);
+  if (statusFilter.value && statusFilter.value !== 'ALL') {
+    filtered = filtered.filter((d) => {
+      const deskStatus = d.deskStatus || d.status;
+      return deskStatus === statusFilter.value;
+    });
   }
 
-  if (typeFilter.value !== 'ALL') {
+  if (typeFilter.value && typeFilter.value !== 'ALL') {
     filtered = filtered.filter((d) => d.type === typeFilter.value);
   }
 
@@ -331,7 +333,7 @@ const filteredDesks = computed(() => {
     const search = searchQuery.value.toLowerCase();
     filtered = filtered.filter((d) =>
         d.displayName?.toLowerCase().includes(search) ||
-        d.id?.toString().includes(search)  ||
+        d.id?.toString().includes(search) ||
         d.zoneDto?.zoneName?.toLowerCase().includes(search)
     );
   }
@@ -462,11 +464,11 @@ async function handleDeleteConfirm() {
 
 onMounted(async () => {
   const initialPromises = [fetchDesks(), fetchColors()];
-  if (!statusDeskOptions.value || statusDeskOptions.value.length === 0) {
+  if (!statusDeskOptions.value || statusDeskOptions.value.length <= 1) {
     initialPromises.push(fetchDeskStatusEnum());
   }
 
-  if (!typeDeskOptions.value || typeDeskOptions.value.length === 0) {
+  if (!typeDeskOptions.value || typeDeskOptions.value.length <= 1) {
     initialPromises.push(fetchDeskTypeEnum());
   }
 
