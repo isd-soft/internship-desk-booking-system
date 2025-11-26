@@ -761,7 +761,7 @@ public class AdminService {
     ) {
         applyTemporaryAvailability(desk, isTemporarilyAvailable, from, until);
     }
-
+@Transactional
     public void createBookingForUserOrGuest(AdminCreateBookingRequest request) {
         User user = adminServiceValidation.resolveUser(request);
         BookingCreateRequest userBookingReq = BookingCreateRequest.builder()

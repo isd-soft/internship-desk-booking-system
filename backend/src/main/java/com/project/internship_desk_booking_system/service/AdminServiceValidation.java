@@ -85,7 +85,7 @@ public class AdminServiceValidation {
 
     @Transactional
     public User resolveUser(AdminCreateBookingRequest req) {
-        if (!req.isGuest()) {
+        if (req.isGuest()) {
             return guestUserService.createGuestUser();
 
         } else {

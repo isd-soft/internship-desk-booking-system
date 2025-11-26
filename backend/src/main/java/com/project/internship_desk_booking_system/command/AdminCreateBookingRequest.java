@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class AdminCreateBookingRequest {
     @Email(message = "Email format is invalid")
     private String email;
-    private boolean isGuest;
+    private boolean guest;
     @NotNull(message = "Desk ID must not be null")
     private Long deskId;
     @NotNull(message = "Start time must not be null")

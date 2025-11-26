@@ -16,8 +16,8 @@ const emit = defineEmits<Emits>();
 
 // Form state
 const bookingForm = reactive({
-  isGuest: false,
-  userEmail: "",
+  guest: false,
+  email: "",
   deskId: 0,
   startTime: "",
   endTime: "",
@@ -38,7 +38,7 @@ const isProcessing = ref(false);
 
 // Computed: Can create booking
 const canCreate = computed(() => {
-  const hasValidUser = bookingForm.isGuest || bookingForm.userEmail.trim().length > 0;
+  const hasValidUser = bookingForm.guest || bookingForm.email.trim().length > 0;
   return (
       hasValidUser &&
       fetchedDeskId.value > 0 &&
@@ -125,8 +125,8 @@ async function handleCreate() {
     error.value = "";
 
     const payload = {
-      userEmail: bookingForm.isGuest ? null : bookingForm.userEmail.trim(),
-      isGuest: bookingForm.isGuest,
+      email: bookingForm.guest ? null : bookingForm.email.trim(),
+      guest: bookingForm.guest,
       deskId: bookingForm.deskId,
       startTime: bookingForm.startTime,
       endTime: bookingForm.endTime,
@@ -145,8 +145,8 @@ async function handleCreate() {
 }
 
 function resetForm() {
-  bookingForm.userEmail = "";
-  bookingForm.isGuest = false;
+  bookingForm.email = "";
+  bookingForm.guest = false;
   bookingForm.deskId = 0;
   bookingForm.startTime = "";
   bookingForm.endTime = "";
@@ -216,19 +216,19 @@ function closeModal() {
             <div class="input-label mb-2">User Email</div>
             <div class="d-flex align-center gap-3">
               <v-text-field
-                  v-model="bookingForm.userEmail"
+                  v-model="bookingForm.email"
                   type="email"
                   variant="outlined"
                   density="comfortable"
-                  :disabled="bookingForm.isGuest"
-                  :placeholder="bookingForm.isGuest ? 'Guest booking' : 'Enter user email'"
+                  :disabled="bookingForm.guest"
+                  :placeholder="bookingForm.guest ? 'Guest booking' : 'Enter user email'"
                   hide-details="auto"
-                  :messages="bookingForm.isGuest ? 'A guest can\'t have an email' : ''"
+                  :messages="bookingForm.guest ? 'A guest can\'t have an email' : ''"
                   class="modern-input flex-grow-1"
                   prepend-inner-icon="mdi-account"
               />
               <v-checkbox
-                  v-model="bookingForm.isGuest"
+                  v-model="bookingForm.guest"
                   label="Guest"
                   density="compact"
                   hide-details
@@ -323,7 +323,7 @@ function closeModal() {
                 <div class="d-flex justify-space-between align-center">
                   <div class="summary-item">
                     <span class="text-grey-lighten-1 text-caption">User Email</span>
-                    <div class="text-white font-weight-bold text-truncate" style="max-width: 200px;">{{ bookingForm.userEmail || "—" }}</div>
+                    <div class="text-white font-weight-bold text-truncate" style="max-width: 200px;">{{ bookingForm.email || "—" }}</div>
                   </div>
                   <div class="summary-divider"></div>
                   <div class="summary-item text-right">
