@@ -7,11 +7,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Image service.
+ */
 @Service
 @RequiredArgsConstructor
 public class ImageService {
     private final ImageRepository imageRepository;
 
+    /**
+     * Get image by id image.
+     *
+     * @param id the id
+     * @return the image
+     */
     public Image getImageById(
             Long id
     ){
@@ -27,6 +36,11 @@ public class ImageService {
                 ));
     }
 
+    /**
+     * Get background image image.
+     *
+     * @return the image
+     */
     public Image getBackgroundImage(){
         return imageRepository
                 .findBackground()

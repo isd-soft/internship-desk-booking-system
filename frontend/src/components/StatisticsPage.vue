@@ -1,7 +1,6 @@
 <template>
   <div class="admin-statistics">
     <div class="admin-card">
-      <!-- Header Section -->
       <div class="admin-header">
         <div class="title-wrap">
           <div class="workspace-label">ADMIN PANEL</div>
@@ -26,7 +25,6 @@
       </div>
 
       <template v-else-if="stats">
-        <!-- Date Range Filters -->
         <div class="filter-section">
           <v-text-field
               v-model="startDate"
@@ -64,51 +62,86 @@
           </v-btn>
         </div>
 
-        <!-- Stats Cards Grid -->
         <div class="stats-grid">
-          <!-- Weekly Bookings -->
           <div class="stat-card">
-            <div class="stat-icon-wrap" :class="stats.weeklyBookings >= 0 ? 'positive' : 'negative'">
+            <div class="stat-icon-wrap" :class="(stats.weeklyBookings || 0) >= 0 ? 'positive' : 'negative'">
               <v-icon size="32">
-                {{ stats.weeklyBookings >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                {{ (stats.weeklyBookings || 0) >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
               </v-icon>
             </div>
-            <div class="stat-value" :class="stats.weeklyBookings >= 0 ? 'positive' : 'negative'">
-              {{ stats.weeklyBookings >= 0 ? '+' : '' }}{{ stats.weeklyBookings }}%
+            <div class="stat-value" :class="(stats.weeklyBookings || 0) >= 0 ? 'positive' : 'negative'">
+              {{ (stats.weeklyBookings || 0) >= 0 ? '+' : '' }}{{ stats.weeklyBookings || 0 }}%
             </div>
             <div class="stat-label">Weekly Bookings</div>
             <div class="stat-count">{{ stats.weeklyBookings || 0 }} bookings</div>
           </div>
 
-          <!-- Weekly Users -->
           <div class="stat-card">
-            <div class="stat-icon-wrap" :class="stats.weeklyUsers >= 0 ? 'positive' : 'negative'">
+            <div class="stat-icon-wrap" :class="(stats.weeklyUsers || 0) >= 0 ? 'positive' : 'negative'">
               <v-icon size="32">
-                {{ stats.weeklyUsers >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                {{ (stats.weeklyUsers || 0) >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
               </v-icon>
             </div>
-            <div class="stat-value" :class="stats.weeklyUsers >= 0 ? 'positive' : 'negative'">
-              {{ stats.weeklyUsers >= 0 ? '+' : '' }}{{ stats.weeklyUsers }}
+            <div class="stat-value" :class="(stats.weeklyUsers || 0) >= 0 ? 'positive' : 'negative'">
+              {{ (stats.weeklyUsers || 0) >= 0 ? '+' : '' }}{{ stats.weeklyUsers || 0 }}
             </div>
             <div class="stat-label">Weekly Users</div>
             <div class="stat-count">Active this week</div>
           </div>
 
-          <!-- Monthly Bookings -->
           <div class="stat-card">
-            <div class="stat-icon-wrap" :class="stats.monthlyBookings >= 0 ? 'positive' : 'negative'">
+            <div class="stat-icon-wrap" :class="(stats.monthlyBookings || 0) >= 0 ? 'positive' : 'negative'">
               <v-icon size="32">
-                {{ stats.monthlyBookings >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
+                {{ (stats.monthlyBookings || 0) >= 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
               </v-icon>
             </div>
-            <div class="stat-value" :class="stats.monthlyBookings >= 0 ? 'positive' : 'negative'">
+            <div class="stat-value" :class="(stats.monthlyBookings || 0) >= 0 ? 'positive' : 'negative'">
               {{ stats.monthlyBookings || 0 }}
             </div>
             <div class="stat-label">Monthly Bookings</div>
             <div class="stat-count">{{ stats.monthlyUsers || 0 }} users</div>
           </div>
 
-          <!-- Most Booked Desk -->
+          <div class="stat-card neutral">
+            <div class="stat-icon-wrap neutral">
+              <v-icon size="32">mdi-cancel</v-icon>
+            </div>
+            <div class="stat-value">{{ stats.weeklyCancelledBookings || 0 }}</div>
+            <div class="stat-label">Weekly Cancelled</div>
+            <div class="stat-count">Total in 7 days</div>
+          </div>
+
+          <div class="stat-card neutral">
+            <div class="stat-icon-wrap neutral">
+              <v-icon size="32">mdi-cancel</v-icon>
+            </div>
+            <div class="stat-value">{{ stats.monthlyCancelledBookings || 0 }}</div>
+            <div class="stat-label">Monthly Cancelled</div>
+            <div class="stat-count">Total in 30 days</div>
+          </div>
+
+          <div class="stat-card" :class="(stats.weeklyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+            <div class="stat-icon-wrap" :class="(stats.weeklyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+              <v-icon size="32">mdi-percent</v-icon>
+            </div>
+            <div class="stat-value" :class="(stats.weeklyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+              {{ (stats.weeklyCancellationRate || 0).toFixed(1) }}%
+            </div>
+            <div class="stat-label">Weekly Cancel Rate</div>
+            <div class="stat-count">Higher is worse</div>
+          </div>
+
+          <div class="stat-card" :class="(stats.monthlyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+            <div class="stat-icon-wrap" :class="(stats.monthlyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+              <v-icon size="32">mdi-percent</v-icon>
+            </div>
+            <div class="stat-value" :class="(stats.monthlyCancellationRate || 0) > 10 ? 'negative' : 'positive'">
+              {{ (stats.monthlyCancellationRate || 0).toFixed(1) }}%
+            </div>
+            <div class="stat-label">Monthly Cancel Rate</div>
+            <div class="stat-count">Higher is worse</div>
+          </div>
+
           <div class="stat-card highlight">
             <div class="stat-icon-wrap highlight">
               <v-icon size="32">mdi-star</v-icon>
@@ -118,7 +151,6 @@
             <div class="stat-count">{{ getMostBookedCount() }} bookings</div>
           </div>
 
-          <!-- Least Booked Desk -->
           <div class="stat-card neutral">
             <div class="stat-icon-wrap neutral">
               <v-icon size="32">mdi-emoticon-sad-outline</v-icon>
@@ -127,41 +159,71 @@
             <div class="stat-label">Least Booked Desk</div>
             <div class="stat-count">{{ getLeastBookedCount() }} bookings</div>
           </div>
+
+          <div class="stat-card negative">
+            <div class="stat-icon-wrap negative">
+              <v-icon size="32">mdi-alert-octagon-outline</v-icon>
+            </div>
+            <div class="stat-value">{{ getMostCancelledDeskName() }}</div>
+            <div class="stat-label">Most Cancelled Desk</div>
+            <div class="stat-count">{{ getMostCancelledCount() }} cancellations</div>
+          </div>
         </div>
 
-        <!-- Charts Section -->
         <div class="charts-section">
-          <!-- Bookings Per Day Chart -->
           <div class="chart-card">
             <div class="chart-header">
               <h3 class="chart-title">Daily Bookings</h3>
-              <v-chip size="small" color="#171717" variant="flat" class="chart-chip">
-                Bar Chart
-              </v-chip>
+              <v-chip size="small" color="#171717" variant="flat" class="chart-chip">Bar Chart</v-chip>
             </div>
             <div class="chart-container" v-if="hasBookingsPerDay()">
               <canvas ref="bookingsChartCanvas"></canvas>
             </div>
             <div v-else class="no-data">
               <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-bar</v-icon>
-              <div>No daily booking data available</div>
+              <div>No daily booking data</div>
             </div>
           </div>
 
-          <!-- Bookings Per Week Chart -->
           <div class="chart-card">
             <div class="chart-header">
               <h3 class="chart-title">Weekly Bookings</h3>
-              <v-chip size="small" color="#171717" variant="flat" class="chart-chip">
-                Line Chart
-              </v-chip>
+              <v-chip size="small" color="#171717" variant="flat" class="chart-chip">Line Chart</v-chip>
             </div>
             <div class="chart-container" v-if="hasBookingsPerWeek()">
               <canvas ref="hoursChartCanvas"></canvas>
             </div>
             <div v-else class="no-data">
               <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-line</v-icon>
-              <div>No weekly booking data available</div>
+              <div>No weekly booking data</div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">Daily Cancellations</h3>
+              <v-chip size="small" color="#dc2626" variant="flat" class="chart-chip">Bar Chart</v-chip>
+            </div>
+            <div class="chart-container" v-if="hasCancelledPerDay()">
+              <canvas ref="cancelledDayChartCanvas"></canvas>
+            </div>
+            <div v-else class="no-data">
+              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-bar-stacked</v-icon>
+              <div>No daily cancellation data</div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">Weekly Cancellations</h3>
+              <v-chip size="small" color="#dc2626" variant="flat" class="chart-chip">Line Chart</v-chip>
+            </div>
+            <div class="chart-container" v-if="hasCancelledPerWeek()">
+              <canvas ref="cancelledWeekChartCanvas"></canvas>
+            </div>
+            <div v-else class="no-data">
+              <v-icon size="48" color="#a3a3a3" class="mb-3">mdi-chart-line-variant</v-icon>
+              <div>No weekly cancellation data</div>
             </div>
           </div>
         </div>
@@ -179,19 +241,27 @@ export default {
   name: 'BookingStatistics',
 
   setup() {
+    // Data Refs
     const loading = ref(false);
     const error = ref(null);
     const stats = ref(null);
     const startDate = ref('');
     const endDate = ref('');
+
+    // Canvas Refs
     const bookingsChartCanvas = ref(null);
     const hoursChartCanvas = ref(null);
+    const cancelledDayChartCanvas = ref(null);
+    const cancelledWeekChartCanvas = ref(null);
 
+    // Chart Instances
     let bookingsChartInstance = null;
     let hoursChartInstance = null;
+    let cancelledDayChartInstance = null;
+    let cancelledWeekChartInstance = null;
 
+    // Watcher
     watch(stats, async (newStats) => {
-      console.log('Stats updated:', newStats);
       if (!newStats) return;
       await nextTick();
       setTimeout(() => {
@@ -199,43 +269,34 @@ export default {
       }, 100);
     });
 
+    // API Calls
     const apiService = {
       async getStatistics() {
         try {
           const response = await api.get("/admin/statistics");
           return response.data;
         } catch (err) {
-          throw new Error(
-              err?.response?.data?.message ||
-              err?.message ||
-              "Failed to fetch statistics"
-          );
+          throw new Error(err?.response?.data?.message || err?.message || "Failed to fetch statistics");
         }
       },
-
       async getStatisticsForRange(start, end) {
         try {
           const params = { startDate: start, endDate: end };
           const response = await api.get("/admin/statistics/range", { params });
           return response.data;
         } catch (err) {
-          throw new Error(
-              err?.response?.data?.message ||
-              err?.message ||
-              "Failed to fetch range statistics"
-          );
+          throw new Error(err?.response?.data?.message || err?.message || "Failed to fetch range statistics");
         }
       }
     };
+
     const fetchStatistics = async () => {
       try {
         loading.value = true;
         error.value = null;
-
         const data = await apiService.getStatistics();
         console.log("Fetched statistics:", data);
         stats.value = data;
-
       } catch (err) {
         console.error("Error fetching statistics:", err);
         error.value = err.message || "Failed to fetch statistics";
@@ -249,26 +310,19 @@ export default {
         error.value = "Please select both start and end dates";
         return;
       }
-
       try {
         loading.value = true;
         error.value = null;
-
         const start = new Date(startDate.value).toISOString();
         const end = new Date(endDate.value).toISOString();
-
         const data = await apiService.getStatisticsForRange(start, end);
-        console.log("Fetched range statistics:", data);
         stats.value = data;
-
       } catch (err) {
-        console.error("Error fetching range statistics:", err);
         error.value = err.message || "Failed to fetch statistics";
       } finally {
         loading.value = false;
       }
     };
-
 
     const resetToDefault = () => {
       startDate.value = '';
@@ -276,271 +330,163 @@ export default {
       fetchStatistics();
     };
 
-    // Helper functions to extract data from the API response
-    const hasBookingsPerDay = () => {
-      return stats.value?.bookingHoursPerDay &&
-          Array.isArray(stats.value.bookingHoursPerDay) &&
-          stats.value.bookingHoursPerDay.length > 0;
+    // --- Helpers ---
+
+    const hasBookingsPerDay = () => stats.value?.bookingHoursPerDay?.length > 0;
+    const hasBookingsPerWeek = () => stats.value?.bookingHoursPerWeek?.length > 0;
+    const hasCancelledPerDay = () => stats.value?.cancelledBookingsPerDay?.length > 0;
+    const hasCancelledPerWeek = () => stats.value?.cancelledBookingsPerWeek?.length > 0;
+
+    const getMostBookedDeskName = () => stats.value?.mostBookedDesk?.deskName || 'N/A';
+    const getMostBookedCount = () => stats.value?.mostBookedDesk?.bookingCount || 0;
+    const getLeastBookedDeskName = () => stats.value?.leastBookedDesk?.deskName || 'N/A';
+    const getLeastBookedCount = () => stats.value?.leastBookedDesk?.bookingCount || 0;
+    const getMostCancelledDeskName = () => stats.value?.mostCancelledDesk?.deskName || 'N/A';
+    const getMostCancelledCount = () => stats.value?.mostCancelledDesk?.bookingCount || 0;
+
+    const parseChartDate = (item) => {
+      let date;
+      if (Array.isArray(item.date)) {
+        date = new Date(item.date[0], item.date[1] - 1, item.date[2]);
+      } else {
+        date = new Date(item.date);
+      }
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
-    const hasBookingsPerWeek = () => {
-      return stats.value?.bookingHoursPerWeek &&
-          Array.isArray(stats.value.bookingHoursPerWeek) &&
-          stats.value.bookingHoursPerWeek.length > 0;
-    };
-
-    const getMostBookedDeskName = () => {
-      return stats.value?.mostBookedDesk?.deskName || 'N/A';
-    };
-
-    const getMostBookedCount = () => {
-      return stats.value?.mostBookedDesk?.bookingCount || 0;
-    };
-
-    const getLeastBookedDeskName = () => {
-      return stats.value?.leastBookedDesk?.deskName || 'N/A';
-    };
-
-    const getLeastBookedCount = () => {
-      return stats.value?.leastBookedDesk?.bookingCount || 0;
-    };
+    // --- Chart Creation ---
 
     const createCharts = () => {
-      console.log('Creating charts with stats:', stats.value);
+      if (!stats.value) return;
 
-      if (!stats.value) {
-        console.warn('No stats available for charts');
-        return;
-      }
+      // Destroy existing
+      if (bookingsChartInstance) bookingsChartInstance.destroy();
+      if (hoursChartInstance) hoursChartInstance.destroy();
+      if (cancelledDayChartInstance) cancelledDayChartInstance.destroy();
+      if (cancelledWeekChartInstance) cancelledWeekChartInstance.destroy();
 
-      // Destroy existing charts
-      if (bookingsChartInstance) {
-        bookingsChartInstance.destroy();
-        bookingsChartInstance = null;
-      }
-      if (hoursChartInstance) {
-        hoursChartInstance.destroy();
-        hoursChartInstance = null;
-      }
-
-      // Daily Bookings Chart
+      // 1. Daily Bookings
       if (bookingsChartCanvas.value && hasBookingsPerDay()) {
-        const ctx = bookingsChartCanvas.value.getContext('2d');
-
-        // Backend now sends aggregated data: [{date: "2025-11-09", count: 10}, ...]
-        const dailyData = stats.value.bookingHoursPerDay;
-
-        console.log('Daily data from backend:', dailyData);
-
-        try {
-          const labels = dailyData.map(item => {
-            // Parse the date string (format: "2025-11-09" or array [2025, 11, 9])
-            let date;
-            if (Array.isArray(item.date)) {
-              // Handle LocalDate as array [year, month, day]
-              date = new Date(item.date[0], item.date[1] - 1, item.date[2]);
-            } else {
-              date = new Date(item.date);
-            }
-
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          });
-
-          const bookingCounts = dailyData.map(item => item.count);
-
-          bookingsChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: 'Bookings per Day',
-                data: bookingCounts,
-                backgroundColor: '#171717',
-                borderColor: '#171717',
-                borderWidth: 0,
-                borderRadius: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    stepSize: 1,
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 12
-                    },
-                    color: '#737373'
-                  },
-                  grid: {
-                    color: '#f5f5f5'
-                  }
-                },
-                x: {
-                  ticks: {
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 12
-                    },
-                    color: '#737373'
-                  },
-                  grid: {
-                    display: false
-                  }
-                }
-              },
-              plugins: {
-                legend: {
-                  display: true,
-                  position: 'top',
-                  labels: {
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 13
-                    },
-                    color: '#171717',
-                    usePointStyle: true,
-                    padding: 15
-                  }
-                }
-              }
-            }
-          });
-          console.log('Daily bookings chart created successfully');
-        } catch (err) {
-          console.error('Error creating daily bookings chart:', err);
-        }
+        const data = stats.value.bookingHoursPerDay;
+        bookingsChartInstance = new Chart(bookingsChartCanvas.value.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: data.map(parseChartDate),
+            datasets: [{
+              label: 'Bookings per Day',
+              data: data.map(i => i.count),
+              backgroundColor: '#171717',
+              borderColor: '#171717',
+              borderWidth: 0,
+              borderRadius: 8
+            }]
+          },
+          options: getChartOptions()
+        });
       }
 
-      // Weekly Bookings Chart
+      // 2. Weekly Bookings
       if (hoursChartCanvas.value && hasBookingsPerWeek()) {
-        const ctx = hoursChartCanvas.value.getContext('2d');
+        const data = stats.value.bookingHoursPerWeek;
+        hoursChartInstance = new Chart(hoursChartCanvas.value.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: data.map(parseChartDate),
+            datasets: [{
+              label: 'Bookings per Week',
+              data: data.map(i => i.count),
+              borderColor: '#171717',
+              backgroundColor: 'rgba(23, 23, 23, 0.1)',
+              tension: 0.4,
+              fill: true,
+              pointRadius: 6,
+              pointBackgroundColor: '#171717',
+              pointBorderColor: '#ffffff',
+              borderWidth: 3
+            }]
+          },
+          options: getChartOptions()
+        });
+      }
 
-        // Backend now sends aggregated data: [{date: "2025-11-02", count: 1}, ...]
-        const weeklyData = stats.value.bookingHoursPerWeek;
+      // 3. Daily Cancelled
+      if (cancelledDayChartCanvas.value && hasCancelledPerDay()) {
+        const data = stats.value.cancelledBookingsPerDay;
+        cancelledDayChartInstance = new Chart(cancelledDayChartCanvas.value.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: data.map(parseChartDate),
+            datasets: [{
+              label: 'Cancellations per Day',
+              data: data.map(i => i.count),
+              backgroundColor: '#dc2626',
+              borderRadius: 8
+            }]
+          },
+          options: getChartOptions()
+        });
+      }
 
-        console.log('Weekly data from backend:', weeklyData);
-
-        try {
-          const labels = weeklyData.map(item => {
-            // Parse the date string (format: "2025-11-09" or array [2025, 11, 9])
-            let date;
-            if (Array.isArray(item.date)) {
-              // Handle LocalDate as array [year, month, day]
-              date = new Date(item.date[0], item.date[1] - 1, item.date[2]);
-            } else {
-              date = new Date(item.date);
-            }
-
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          });
-
-          const bookingCounts = weeklyData.map(item => item.count);
-
-          hoursChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: 'Bookings per Week',
-                data: bookingCounts,
-                borderColor: '#171717',
-                backgroundColor: 'rgba(23, 23, 23, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 6,
-                pointBackgroundColor: '#171717',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                borderWidth: 3
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    stepSize: 1,
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 12
-                    },
-                    color: '#737373'
-                  },
-                  grid: {
-                    color: '#f5f5f5'
-                  }
-                },
-                x: {
-                  ticks: {
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 12
-                    },
-                    color: '#737373'
-                  },
-                  grid: {
-                    display: false
-                  }
-                }
-              },
-              plugins: {
-                legend: {
-                  display: true,
-                  position: 'top',
-                  labels: {
-                    font: {
-                      family: 'Inter',
-                      weight: '600',
-                      size: 13
-                    },
-                    color: '#171717',
-                    usePointStyle: true,
-                    padding: 15
-                  }
-                }
-              }
-            }
-          });
-          console.log('Weekly bookings chart created successfully');
-        } catch (err) {
-          console.error('Error creating weekly bookings chart:', err);
-        }
+      // 4. Weekly Cancelled
+      if (cancelledWeekChartCanvas.value && hasCancelledPerWeek()) {
+        const data = stats.value.cancelledBookingsPerWeek;
+        cancelledWeekChartInstance = new Chart(cancelledWeekChartCanvas.value.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: data.map(parseChartDate),
+            datasets: [{
+              label: 'Cancellations per Week',
+              data: data.map(i => i.count),
+              borderColor: '#dc2626',
+              backgroundColor: 'rgba(220, 38, 38, 0.1)',
+              tension: 0.4,
+              fill: true,
+              pointRadius: 6,
+              pointBackgroundColor: '#dc2626',
+              pointBorderColor: '#ffffff',
+              borderWidth: 3
+            }]
+          },
+          options: getChartOptions()
+        });
       }
     };
 
+    // Shared Options for consistency
+    const getChartOptions = () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, font: { family: 'Inter', weight: '600', size: 12 }, color: '#737373' },
+          grid: { color: '#f5f5f5' }
+        },
+        x: {
+          ticks: { font: { family: 'Inter', weight: '600', size: 12 }, color: '#737373' },
+          grid: { display: false }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { font: { family: 'Inter', weight: '600', size: 13 }, color: '#171717', usePointStyle: true, padding: 15 }
+        }
+      }
+    });
+
     onMounted(() => {
-      console.log('Component mounted, fetching statistics...');
       fetchStatistics();
     });
 
     return {
-      loading,
-      error,
-      stats,
-      startDate,
-      endDate,
-      bookingsChartCanvas,
-      hoursChartCanvas,
-      fetchStatistics,
-      fetchStatisticsForRange,
-      resetToDefault,
-      hasBookingsPerDay,
-      hasBookingsPerWeek,
-      getMostBookedDeskName,
-      getMostBookedCount,
-      getLeastBookedDeskName,
-      getLeastBookedCount
+      loading, error, stats, startDate, endDate,
+      bookingsChartCanvas, hoursChartCanvas, cancelledDayChartCanvas, cancelledWeekChartCanvas,
+      fetchStatistics, fetchStatisticsForRange, resetToDefault,
+      hasBookingsPerDay, hasBookingsPerWeek, hasCancelledPerDay, hasCancelledPerWeek,
+      getMostBookedDeskName, getMostBookedCount, getLeastBookedDeskName, getLeastBookedCount,
+      getMostCancelledDeskName, getMostCancelledCount
     };
   }
 };
@@ -622,7 +568,6 @@ export default {
   letter-spacing: 0.3px;
 }
 
-/* Filter Section */
 .filter-section {
   display: flex;
   align-items: center;
@@ -843,16 +788,13 @@ export default {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-
   .charts-section {
     grid-template-columns: 1fr;
   }
-
   .filter-section {
     flex-direction: column;
     align-items: stretch;
   }
-
   .date-field {
     max-width: 100%;
   }
