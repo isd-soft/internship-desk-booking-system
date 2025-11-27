@@ -4,7 +4,7 @@
       <div class="results-header">
         <div class="results-title-wrap">
           <div class="results-title">{{ title }}</div>
-          <div class="results-sub">{{ items.length }} itemа аs</div>
+          <div class="results-sub">{{ items.length }} items</div>
         </div>
 
         <v-chip

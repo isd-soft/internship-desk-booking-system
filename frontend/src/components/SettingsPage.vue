@@ -114,7 +114,7 @@
         <div class="settings-section">
           <div class="section-header">
             <v-icon color="#171717" size="20">mdi-pencil-outline</v-icon>
-            <h3 class="section-title">Edit Desk Colors</h3>
+            <h3 class="section-title">Edit Colors</h3>
           </div>
 
           <form @submit.prevent="updateColor">
@@ -237,7 +237,7 @@
         <div class="settings-section">
           <div class="section-header">
             <v-icon color="#171717" size="20">mdi-plus-circle-outline</v-icon>
-            <h3 class="section-title">Add New Desk Color</h3>
+            <h3 class="section-title">Add New Color</h3>
           </div>
 
           <form @submit.prevent="createColor">
