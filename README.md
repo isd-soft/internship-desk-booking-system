@@ -26,7 +26,7 @@ It supports both **regular users** and **administrators**, offering functionalit
 
 **Technology Stack**
 
-* **Backend:** Java 17, Spring Boot, Spring Security, JPA/Hibernate, BCrypt, MailService, Mockito
+* **Backend:** Java 17, Spring Boot, Spring Security, JPA/Hibernate, BCrypt, MailService, Mockito, JUnit 
 * **Frontend:** Vue 3, Vue Router, Axios, GridLayout
 * **Database:** PostgreSQL (Flyway for migrations)
 * **Build Tools:** Maven, Node/Yarn
@@ -135,7 +135,7 @@ internship-desk-booking-system/
 
 * Windows Server machine
 * PostgreSQL database access
-* Network port availability
+* Network port availability (8081, 5432, 3000(for local development), 389)
 
 ---
 
@@ -143,28 +143,39 @@ internship-desk-booking-system/
 
 ### Backend Setup
 
-1. Clone the repository
+1.  **Clone the repository**
 
-2. Import as a Maven project
+2.  **Start Infrastructure (Database & LDAP)**
+    The project uses Docker to run PostgreSQL and the LDAP server locally.
+    
+    ```bash
+    docker-compose up -d
+    ```
+    *This command will start the PostgreSQL database on port 5432 and the LDAP server on port 389/10389.*
 
-3. Configure `application.properties`:
+3.  **Import as a Maven project** in your IDE
 
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:postgresql://localhost:5432/desk_booking
-       username: your_user
-       password: your_password
-     jpa:
-       hibernate:
-         ddl-auto: update
-   ```
+4.  **Configure `application.properties`**
+    Ensure your properties match the ports exposed by Docker.
 
-4. Run:
+    ```properties
+    spring.datasource.url=jdbc:postgresql://localhost:5432/desk_booking
+    spring.datasource.username=your_user
+    spring.datasource.password=your_password
+    spring.jpa.hibernate.ddl-auto=update
+    
+    # Mail & Security configs...
+    spring.mail.username=your@example.com
+    # ... other properties
+    ```
 
-   ```bash
-   mvn spring-boot:run
-   ```
+    *Or follow the guide in `application-dev_example.properties`.*
+
+5.  **Run the Application:**
+
+    a. Select run config: `Run backend (Dev profile)`
+    
+    b. Run it
 
 ### Frontend Setup
 
@@ -173,6 +184,8 @@ cd frontend
 npm install
 npm run dev
 ```
+
+   *This command will start the Vite server on port 3000*
 
 ### Frontend Build
 
@@ -196,14 +209,24 @@ GRANT ALL PRIVILEGES ON DATABASE desk_booking TO desk_user;
 
 ## 7.2 Build the Backend
 
+* Select 1 of 2 run confgis `Build executable jar` or `Build executable jar (no tests)` and just run it 
+---
+* `Build executable jar (no tests)` is same to
+
 ```bash
-mvn clean package -DskipTests
+mvn clean package -DskipTests -Pprod
+```
+
+* `Build executable jar` is same to
+
+```bash
+mvn clean package -Pprod
 ```
 
 Output:
 
 ```
-/target/desk-booking-system.jar
+/target/internship-desk-booking-system-0.0.1-SNAPSHOT.jar
 ```
 
 ---
@@ -226,13 +249,18 @@ No manual steps are required.
 2. Generate configuration:
 
    ```bash
-   bin\genConfig.bat C:\path\to\desk-booking-system.jar
+   bin\genConfig.bat C:\path\to\internship-desk-booking-system-0.0.1-SNAPSHOT.jar
    ```
 
 3. Edit:
 
    ```
    conf/wrapper.conf
+   ```
+
+4. Edit: 
+   ```
+   ${wrapper.working.dir}/secret.conf
    ```
 
 4. Install as a Windows service:
@@ -248,7 +276,7 @@ No manual steps are required.
 Swagger UI:
 
 ```
-http://localhost:8080/swagger-ui/index.html
+http://localhost:8081/swagger-ui/index.html
 ```
 
 ### Main API Categories
