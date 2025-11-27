@@ -81,31 +81,55 @@
           <div class="input-label mb-2">Booking Timeline</div>
           <v-sheet border rounded="lg" class="pa-4 bg-grey-lighten-5 mb-6">
             <v-row dense>
-              <v-col cols="12" sm="6">
-                <span class="sub-label">Start Time</span>
-                <v-text-field
-                    v-model="bookingForm.startTime"
-                    type="datetime-local"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="bg-white"
-                    prepend-inner-icon="mdi-clock-start"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <span class="sub-label">End Time</span>
-                <v-text-field
-                    v-model="bookingForm.endTime"
-                    type="datetime-local"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="bg-white"
-                    prepend-inner-icon="mdi-clock-end"
-                />
-              </v-col>
-            </v-row>
+                  <v-col cols="12" sm="6">
+                    <span class="sub-label">Available From</span>
+                    <v-text-field
+                        v-model="bookingForm.startTime"
+                        type="datetime-local"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="bg-white"
+                        prepend-inner-icon="mdi-calendar-start"
+                        ref="startTimeInput"
+                    >
+                      <template #append-inner>
+                        <v-icon
+                          size="small"
+                          @click="openDatePicker('startTimeInput')"
+                          class="calendar-icon"
+                          color="#171717"
+                        >
+                          mdi-calendar
+                        </v-icon>
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <span class="sub-label">Available Until</span>
+                    <v-text-field
+                        v-model="bookingForm.endTime"
+                        type="datetime-local"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="bg-white"
+                        prepend-inner-icon="mdi-calendar-end"
+                        ref="endTimeInput"
+                    >
+                      <template #append-inner>
+                        <v-icon
+                          size="small"
+                          @click="openDatePicker('endTimeInput')"
+                          class="calendar-icon"
+                          color="#171717"
+                        >
+                          mdi-calendar
+                        </v-icon>
+                      </template>
+                    </v-text-field>  
+                  </v-col>
+                </v-row>
           </v-sheet>
 
           <div class="section mb-6">
@@ -221,6 +245,21 @@ const deskType = ref<string>("");
 const loadingDesk = ref(false);
 const deskError = ref<string>("");
 const fetchedDeskId = ref<number>(0);
+
+// Template refs for datetime inputs
+const startTimeInput = ref<any>(null);
+const endTimeInput = ref<any>(null);
+
+// Function to open date picker
+function openDatePicker(refName: string) {
+  const inputRef = refName === 'startTimeInput' ? startTimeInput.value : endTimeInput.value;
+  if (inputRef && inputRef.$el) {
+    const input = inputRef.$el.querySelector('input');
+    if (input && input.showPicker) {
+      input.showPicker();
+    }
+  }
+}
 
 watch(
     () => props.booking,
@@ -600,6 +639,16 @@ function closeModal() {
 
 .gap-3 {
   gap: 12px;
+}
+
+.calendar-icon {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-icon:hover {
+  transform: scale(1.1);
+  opacity: 0.7;
 }
 
 @media (max-width: 600px) {

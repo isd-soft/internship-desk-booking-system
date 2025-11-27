@@ -164,6 +164,21 @@ function resetForm() {
 function closeModal() {
   emit("close");
 }
+
+// Template refs for datetime inputs
+const startTimeInput = ref<any>(null);
+const endTimeInput = ref<any>(null);
+
+// Function to open date picker
+function openDatePicker(refName: string) {
+  const inputRef = refName === 'startTimeInput' ? startTimeInput.value : endTimeInput.value;
+  if (inputRef && inputRef.$el) {
+    const input = inputRef.$el.querySelector('input');
+    if (input && input.showPicker) {
+      input.showPicker();
+    }
+  }
+}
 </script>
 
 <template>
@@ -295,7 +310,19 @@ function closeModal() {
                     hide-details
                     class="bg-white"
                     prepend-inner-icon="mdi-clock-start"
-                />
+                    ref="startTimeInput"
+                >
+                  <template #append-inner>
+                    <v-icon
+                      size="small"
+                      @click="openDatePicker('startTimeInput')"
+                      class="calendar-icon"
+                      color="#171717"
+                    >
+                      mdi-calendar
+                    </v-icon>
+                  </template>
+                </v-text-field>
               </v-col>
               <v-col cols="12" sm="6">
                 <span class="sub-label">End Time</span>
@@ -307,7 +334,19 @@ function closeModal() {
                     hide-details
                     class="bg-white"
                     prepend-inner-icon="mdi-clock-end"
-                />
+                    ref="endTimeInput"
+                >
+                  <template #append-inner>
+                    <v-icon
+                      size="small"
+                      @click="openDatePicker('endTimeInput')"
+                      class="calendar-icon"
+                      color="#171717"
+                    >
+                      mdi-calendar
+                    </v-icon>
+                  </template>
+                </v-text-field>
               </v-col>
             </v-row>
           </v-sheet>
@@ -584,5 +623,15 @@ function closeModal() {
 
 .guest-checkbox :deep(.v-selection-control__input) {
   transform: scale(1.15);
+}
+
+.calendar-icon {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-icon:hover {
+  transform: scale(1.1);
+  opacity: 0.7;
 }
 </style>
