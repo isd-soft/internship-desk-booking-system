@@ -32,7 +32,7 @@ public class EmailServiceImpl implements EmailService {
                     StandardCharsets.UTF_8.name()
             );
 
-            helper.setFrom("noreply@isd-booking.com", "ISD Booking System");
+            helper.setFrom("noreply@isd-desk-booking.com", "ISD Desk Booking");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
